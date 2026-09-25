@@ -7,7 +7,9 @@
 //   ## Question            (the text ticks are keyed on — rename = fresh tick)
 //   Plain paragraphs       blank line between paragraphs; `code` and **bold** work
 //   | a | b |              a table; first row is the header
-//   - point                bullet list of key points
+//   - point                bullet list of key points (shown after the paragraphs)
+//   1. step                numbered step — its own paragraph, stays in order
+//     - sub-point          indented bullet — its own "•" paragraph, stays in order
 //   ```lang ... ```        code example(s), shown inside the answer
 //   ```lang q ... ```      code that belongs to the QUESTION — always visible,
 //                          so "predict the output" cards work
@@ -56,6 +58,10 @@ for (const raw of lines) {
   if (/^! /.test(line)) { flushPara(); it.trap = line.slice(2).trim(); continue; }
   if (/^> /.test(line)) { flushPara(); it.h = line.slice(2).trim(); continue; }
   if (line === "") { flushPara(); continue; }
+  if (/^\d+\. /.test(line)) flushPara();   // numbered step: its own paragraph, keeps flow
+  if (/^\s+- /.test(line)) {                // sub-point under a step: its own paragraph, stays in place
+    flushPara(); para.push("• " + line.trim().slice(2)); flushPara(); continue;
+  }
   para.push(line.trim());
 }
 flushPara();

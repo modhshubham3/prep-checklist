@@ -268,7 +268,7 @@ section.hidden,.group.hidden,.row.hidden{display:none;}
 .ch-card .ch-body-btn,
 .ch-card .ch-txt{
   flex:1;border:none;background:none;padding:0;margin:0;font:inherit;color:inherit;
-  text-align:left;cursor:pointer;
+  text-align:left;cursor:pointer;min-width:0;overflow-wrap:anywhere;
 }
 .ch-card .ch-body-btn:focus-visible,
 .ch-card .ch-txt:focus-visible{outline:2px solid var(--pen);outline-offset:3px;border-radius:5px;}
@@ -286,7 +286,7 @@ section.hidden,.group.hidden,.row.hidden{display:none;}
 .ch-card[data-state="naa"] .box .i-naa{display:block;}
 
 /* ---- cheatsheet 2 accordion ---- */
-.c2-main{flex:1;min-width:0;}
+.c2-main{flex:1;min-width:0;overflow-wrap:anywhere;}
 .c2-q{
   width:100%;display:flex;align-items:flex-start;gap:9px;
   border:none;background:none;padding:0;margin:0;cursor:pointer;
