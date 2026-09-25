@@ -181,8 +181,12 @@ document.addEventListener("keydown", e => {
 });
 
 /* ---- filter ---- */
-document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
-  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected","false"));
+// Scoped to [data-filter], not .tab: the cheatsheet filters and their
+// expand/collapse buttons share the .tab class for styling, so the broad
+// selector let a cheatsheet click rewrite this list's filter to undefined —
+// deselecting every tab, force-opening all sections and hiding marked rows.
+document.querySelectorAll("[data-filter]").forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll("[data-filter]").forEach(x => x.setAttribute("aria-selected","false"));
   t.setAttribute("aria-selected","true");
   filter = t.dataset.filter;
   applyFilter();
