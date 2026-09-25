@@ -12,7 +12,8 @@ const REDIS_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_
 const REDIS_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
 const KEY_RE = /^[A-Za-z0-9_-]{20,64}$/;
-const MAX_BODY = 300 * 1024;   // ~900 marks is ~40 KB; this is generous headroom
+const MAX_BODY = 1024 * 1024;  // marks are ~40 KB; notes can add a few hundred KB
+const MAX_NOTE = 5000;          // characters per note
 const MAX_ENTRIES = 5000;
 const VALID = new Set(["haan", "thoda", "naa", null]);
 
@@ -41,6 +42,20 @@ function clean(e) {
   return out;
 }
 
+// Notes: short key, string body within the cap, numeric timestamp.
+function cleanNotes(n) {
+  const out = {};
+  if (!n || typeof n !== "object") return out;
+  let c = 0;
+  for (const k of Object.keys(n)) {
+    if (++c > MAX_ENTRIES) break;
+    const x = n[k];
+    if (k.length > 40 || !x || typeof x.t !== "number" || typeof x.s !== "string") continue;
+    out[k] = { s: x.s.slice(0, MAX_NOTE), t: x.t };
+  }
+  return out;
+}
+
 // Last write wins, per key. A clear is a {v:null} tombstone, so it can beat
 // an older mark instead of being resurrected by it.
 function merge(a, b) {
@@ -58,9 +73,14 @@ module.exports = async (req, res) => {
 
   const rk = "prep:" + key;
   try {
-    const stored = clean(JSON.parse((await redis(["GET", rk])) || "{}"));
+    // Stored shape is { e: marks, n: notes }. Records written before notes
+    // existed are a bare marks map; read those as marks with no notes.
+    const raw = JSON.parse((await redis(["GET", rk])) || "{}");
+    const isNew = raw && typeof raw.e === "object" && !Array.isArray(raw.e);
+    const stored = clean(isNew ? raw.e : raw);
+    const storedNotes = cleanNotes(isNew ? raw.n : null);
 
-    if (req.method === "GET") return res.status(200).json({ e: stored });
+    if (req.method === "GET") return res.status(200).json({ e: stored, n: storedNotes });
 
     if (req.method === "PUT") {
       let body = req.body;
@@ -71,8 +91,9 @@ module.exports = async (req, res) => {
         return res.status(413).json({ error: "too large" });
       }
       const merged = merge(stored, clean(body && body.e));
-      await redis(["SET", rk, JSON.stringify(merged)]);
-      return res.status(200).json({ e: merged });
+      const mergedNotes = merge(storedNotes, cleanNotes(body && body.n));
+      await redis(["SET", rk, JSON.stringify({ e: merged, n: mergedNotes })]);
+      return res.status(200).json({ e: merged, n: mergedNotes });
     }
 
     res.setHeader("Allow", "GET, PUT");

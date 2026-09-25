@@ -1,0 +1,14 @@
+{
+  "name": "Interview Prep — .NET, Angular, PostgreSQL",
+  "short_name": "Prep",
+  "description": "Interview prep: answers, tricky questions, checklist and practice mode.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f4f7",
+  "theme_color": "#2340d6",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

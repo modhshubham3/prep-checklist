@@ -12,6 +12,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <script>try{var t=localStorage.getItem("prep-theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 </head>
 <body>
@@ -33,6 +37,11 @@
 
 <button class="cheat-open alt" id="cheatopen">
   <span class="co-t"><strong>Cheatsheet kholo</strong><span>226 ek-line answers — tick bhi kar sakte ho</span></span>
+  <span class="co-n">&rsaquo;</span>
+</button>
+
+<button class="cheat-open practice" id="practiceopen">
+  <span class="co-t"><strong>Practice mode</strong><span>Ek-ek sawaal, pehle socho phir jawab — kamzor wale pehle</span></span>
   <span class="co-n">&rsaquo;</span>
 </button>
 
@@ -91,6 +100,61 @@
   </div>
 </div>
 
+<div class="cheat" id="practice" role="dialog" aria-modal="true" aria-label="Practice">
+  <div class="cheat-bar">
+    <h2>Practice</h2>
+    <span class="ch-tally" id="prprog"></span>
+    <button class="cheat-close" id="practiceclose">Band karo</button>
+  </div>
+  <div class="cheat-body">
+    <div class="inner">
+      <div id="prsetup">
+        <p class="note">Ek-ek sawaal aayega. Pehle khud socho (ya zor se bolo, jaise interview mein), phir jawab kholo aur imaandari se mark karo.</p>
+        <div class="pr-opts" role="radiogroup" aria-label="Kaunse sawaal">
+          <label><input type="radio" name="prsrc" value="weak" checked> Kamzor wale — Naa bhai, phir Thoda thoda, phir Baaki</label>
+          <label><input type="radio" name="prsrc" value="naa"> Sirf Naa bhai</label>
+          <label><input type="radio" name="prsrc" value="baaki"> Jo abhi tak mark nahi kiye</label>
+          <label><input type="radio" name="prsrc" value="all"> Sab, random</label>
+        </div>
+        <div class="pr-row">
+          <select id="prgroup" class="cheat-search" aria-label="Topic"><option value="">Saare topics</option></select>
+          <select id="prcount" class="cheat-search pr-count" aria-label="Kitne sawaal">
+            <option value="10">10 sawaal</option>
+            <option value="20" selected>20 sawaal</option>
+            <option value="50">50 sawaal</option>
+            <option value="0">Saare</option>
+          </select>
+        </div>
+        <p class="sync-help" id="pravail"></p>
+        <div class="ask-btns"><button id="prstart" type="button">Shuru karo</button></div>
+      </div>
+
+      <div id="prcard" hidden>
+        <div class="pr-grp" id="prgrp"></div>
+        <h3 class="pr-q" id="prq"></h3>
+        <code class="ch-ex c2-qc" id="prqc" hidden></code>
+        <div class="ask-btns pr-reveal"><button id="prreveal" type="button">Jawab dikhao</button></div>
+        <div class="c2-det pr-ans" id="prans" hidden></div>
+        <div id="prmark" hidden>
+          <p class="sync-help pr-how">Kaisa gaya?</p>
+          <div class="ask-btns">
+            <button class="b-haan" data-pr="haan" type="button"><span class="dot" style="background:var(--done)"></span>Haan bhai — sahi socha</button>
+            <button class="b-thoda" data-pr="thoda" type="button"><span class="dot" style="background:var(--flag)"></span>Thoda thoda — adhoora tha</button>
+            <button class="b-naa" data-pr="naa" type="button"><span class="dot" style="background:var(--miss)"></span>Naa bhai — nahi aaya</button>
+          </div>
+        </div>
+        <button class="ask-cancel" id="prskip" type="button">Skip</button>
+      </div>
+
+      <div id="prdone" hidden>
+        <p class="ask-q">Round khatam</p>
+        <p class="sync-help" id="prsummary"></p>
+        <div class="ask-btns"><button id="pragain" type="button">Naya round</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="cheat" id="cheat" role="dialog" aria-modal="true" aria-label="Cheatsheet">
   <div class="cheat-bar">
     <h2>Cheatsheet</h2>
@@ -113,27 +177,42 @@
 </div>
 
 <div class="scrim" id="syncsheet" role="dialog" aria-modal="true" aria-labelledby="synctitle">
-  <div class="sheet-ask">
+  <div class="sheet-ask sync-sheet">
     <p class="ask-q" id="synctitle">Phone aur laptop sync</p>
     <p class="ask-topic" id="syncstatus"></p>
 
     <div id="sync-off">
-      <p class="sync-help">Is device pe sync chalu karo — ek code milega. Wahi code doosre device pe daal do, dono ke ticks ek ho jayenge.</p>
-      <div class="ask-btns"><button id="syncstart" type="button">Sync chalu karo — naya code banao</button></div>
-      <p class="sync-help sync-or">Doosre device pe code pehle se hai? Yahan daalo:</p>
+      <p class="sync-help"><b>Sabse aasaan:</b> laptop pe sync chalu karo, ek QR code dikhega — phone ke camera se scan kar lo. Kuch type nahi karna.</p>
+      <div class="ask-btns"><button id="syncstart" type="button">Sync chalu karo</button></div>
+
+      <p class="sync-help sync-or"><b>Ya apna password chuno</b> — dono devices pe wahi daalna. Kam se kam 12 characters, aur kahin aur use kiya hua password mat daalna.</p>
       <div class="sync-join">
-        <input class="cheat-search" id="syncinput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Sync code paste karo">
-        <button class="cheat-close" id="syncjoin" type="button">Jodo</button>
+        <input class="cheat-search" id="syncpass" type="password" autocomplete="new-password" placeholder="Sync password (12+ characters)">
+        <button class="cheat-close" id="syncpassgo" type="button">Chalu</button>
       </div>
+
+      <details class="sync-more">
+        <summary>Code pehle se hai? (purana tareeka)</summary>
+        <div class="sync-join">
+          <input class="cheat-search" id="syncinput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Sync code paste karo">
+          <button class="cheat-close" id="syncjoin" type="button">Jodo</button>
+        </div>
+      </details>
     </div>
 
     <div id="sync-on" hidden>
-      <p class="sync-help">Ye code doosre device pe daalo. Jiske paas ye code hai wo tumhare ticks dekh aur badal sakta hai — kisi ke saath share mat karna.</p>
-      <div class="sync-code" id="synccode"></div>
+      <p class="sync-help"><b>Doosre device pe:</b> phone ke camera se ye QR scan karo, ya neeche wala link bhej ke kholo. Ek baar mein jud jaayega.</p>
+      <div class="sync-qr" id="syncqr" aria-label="Sync QR code"></div>
       <div class="ask-btns">
-        <button id="synccopy" type="button">Code copy karo</button>
+        <button id="synclink" type="button">Link copy karo</button>
         <button id="syncnow" type="button">Abhi sync karo</button>
       </div>
+      <p class="sync-help sync-warn">Jiske paas ye QR/link hai wo tumhare ticks aur notes dekh-badal sakta hai — kisi ke saath share mat karna.</p>
+      <details class="sync-more">
+        <summary>Code dikhao</summary>
+        <div class="sync-code" id="synccode"></div>
+        <button class="c2-copy" id="synccopy" type="button">Code copy karo</button>
+      </details>
       <button class="ask-cancel" id="syncstop" type="button">Is device pe sync band karo</button>
     </div>
 

@@ -386,3 +386,41 @@ section.hidden,.group.hidden,.row.hidden{display:none;}
 /* ---- tricky cards: question code always visible ---- */
 .c2-qc{margin-top:9px;}
 .ch-card.open .c2-qc{border-left-color:var(--flag);}
+
+/* ---- sync: QR, password, collapsibles ---- */
+.sync-sheet{max-height:92vh;overflow-y:auto;}
+.sync-qr{display:grid;place-items:center;margin:4px auto 14px;min-height:40px;}
+.sync-qr img,.sync-qr canvas{background:#fff;padding:10px;border-radius:10px;max-width:220px;width:100%;height:auto;}
+.sync-warn{font-size:12.5px;margin-top:12px;}
+.sync-more{margin-top:14px;font-size:14px;color:var(--ink-soft);}
+.sync-more summary{cursor:pointer;font-weight:600;margin-bottom:10px;}
+.sync-more .sync-code{margin-top:4px;}
+
+/* ---- notes on answer cards ---- */
+.note-box{margin-top:14px;}
+.note-toggle{
+  font:inherit;font-size:13px;font-weight:700;cursor:pointer;background:none;
+  color:var(--pen);border:1px dashed var(--pen);border-radius:7px;padding:5px 11px;
+}
+.note-ta{
+  display:block;width:100%;margin-top:8px;font:inherit;font-size:14.5px;line-height:1.5;
+  padding:10px 12px;border:1.5px solid var(--rule);border-radius:9px;resize:vertical;
+  background:var(--pen-soft);color:var(--ink);min-height:74px;
+}
+.note-ta:focus{outline:none;border-color:var(--pen);}
+.ch-card.has-note .c2-q span::after{content:" \1F4DD";font-size:.85em;}
+.note-box + .c2-copy{margin-top:12px;}
+
+/* ---- practice mode ---- */
+.cheat-open.practice{background:var(--done);}
+.pr-opts{display:grid;gap:8px;margin:0 0 14px;font-size:15px;}
+.pr-opts label{display:flex;gap:9px;align-items:flex-start;cursor:pointer;background:var(--card);border:1px solid var(--rule);border-radius:9px;padding:11px 12px;}
+.pr-opts input{margin-top:3px;accent-color:var(--pen);}
+.pr-row{display:flex;gap:8px;}
+.pr-row .cheat-search{margin-bottom:10px;}
+.pr-count{max-width:140px;}
+.pr-grp{font-size:13px;font-weight:800;color:var(--pen);margin-bottom:6px;}
+.pr-q{font-size:21px;font-weight:800;letter-spacing:-0.02em;line-height:1.3;margin:0 0 6px;}
+.pr-reveal{margin-top:16px;}
+#prans:not([hidden]){display:block;background:var(--card);border:1px solid var(--rule);border-radius:11px;padding:14px 15px;margin-top:14px;}
+.pr-how{margin-top:16px;}

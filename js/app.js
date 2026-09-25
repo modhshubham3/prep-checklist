@@ -24,13 +24,22 @@ function rebuild(){
   state = {};
   for(const k in entries) if(entries[k] && entries[k].v) state[k] = entries[k].v;
 }
+// Personal notes per answer card, same key and same last-write-wins rule as
+// ticks. An emptied note is kept as {s:""} so the deletion syncs too.
+let notes = {};        // key -> { s: string, t: ms }
+
 function save(){
   if(!storageOK) return;
-  try{ localStorage.setItem(STORE, JSON.stringify({ e: entries })); }catch(e){ storageOK = false; }
+  try{ localStorage.setItem(STORE, JSON.stringify({ e: entries, n: notes })); }catch(e){ storageOK = false; }
 }
 function put(key, v){
   entries[key] = { v: v || null, t: Date.now() };
   rebuild(); save();
+  if(typeof sync !== "undefined") sync.soon();
+}
+function putNote(key, s){
+  notes[key] = { s: s, t: Date.now() };
+  save();
   if(typeof sync !== "undefined") sync.soon();
 }
 
@@ -52,7 +61,7 @@ function migrateV2(){
 
 try{
   const raw = localStorage.getItem(STORE);
-  if(raw) entries = (JSON.parse(raw) || {}).e || {};
+  if(raw){ const o = JSON.parse(raw) || {}; entries = o.e || {}; notes = o.n || {}; }
   else migrateV2();
   rebuild();
 }catch(e){
@@ -437,6 +446,69 @@ function inl(t){
     .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
 }
 
+// One answer → its HTML and a plain-text version (for copy and search).
+// Shared by the main list and practice mode.
+function answerParts(it){
+  const paras = Array.isArray(it.a) ? it.a : (it.a ? [it.a] : []);
+  let plain = it.q + (it.qc ? "\n\n" + it.qc : "") + "\n\n" + paras.join("\n\n");
+  let html = paras.map(p => "<p>" + inl(p) + "</p>").join("");
+  if(it.t){
+    html += '<div class="tbl-wrap"><table class="ch-tbl"><tr>' + it.t.h.map(x => "<th>" + inl(x) + "</th>").join("") + "</tr>";
+    plain += "\n\n" + it.t.h.join(" | ");
+    it.t.r.forEach(r => { html += "<tr>" + r.map(x => "<td>" + inl(x) + "</td>").join("") + "</tr>";
+      plain += "\n" + r.join(" | "); });
+    html += "</table></div>";
+  }
+  if(it.pts){
+    html += '<ul class="ch-pts">' + it.pts.map(p => "<li>" + inl(p) + "</li>").join("") + "</ul>";
+    plain += "\n\n" + it.pts.map(p => "- " + p).join("\n");
+  }
+  if(it.ex){ html += '<code class="ch-ex">' + esc(it.ex) + "</code>"; plain += "\n\n" + it.ex; }
+  if(it.trap){ html += '<p class="ch-trap">' + inl(it.trap) + "</p>"; plain += "\n\nInterview trap: " + it.trap; }
+  if(it.h){ html += '<em class="ch-hook">' + inl(it.h) + "</em>"; plain += "\n\nYaad rakho: " + it.h; }
+  return { html, plain };
+}
+
+// "My note" box under an answer. Saves as you type (debounced) and syncs.
+function noteBox(key){
+  const wrap = document.createElement("div");
+  wrap.className = "note-box";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "note-toggle";
+  const ta = document.createElement("textarea");
+  ta.className = "note-ta";
+  ta.rows = 3;
+  ta.placeholder = "Apne project ka example, numbers, jo interview mein bolna hai…";
+  ta.dataset.key = key;
+  let timer = null;
+  const paint = () => {
+    const has = !!(notes[key] && notes[key].s);
+    ta.hidden = !has && document.activeElement !== ta && !wrap.classList.contains("editing");
+    btn.textContent = has ? "📝 Mera note" : "📝 Apna note likho";
+    wrap.closest(".ch-card")?.classList.toggle("has-note", has);
+  };
+  btn.addEventListener("click", () => { wrap.classList.add("editing"); ta.hidden = false; ta.focus(); });
+  ta.value = (notes[key] && notes[key].s) || "";
+  ta.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { putNote(key, ta.value.trim() ? ta.value : ""); paint(); }, 600);
+  });
+  ta.addEventListener("blur", () => { wrap.classList.remove("editing"); paint(); });
+  wrap.append(btn, ta);
+  wrap.paint = paint;
+  return wrap;
+}
+
+// Re-read notes into every box (after a sync merge), without clobbering one being typed in.
+function refreshNotes(){
+  document.querySelectorAll(".note-ta").forEach(ta => {
+    if(document.activeElement === ta) return;
+    ta.value = (notes[ta.dataset.key] && notes[ta.dataset.key].s) || "";
+    ta.parentElement.paint();
+  });
+}
+
 CHEAT2.forEach((grp, gi) => {
   const h = document.createElement("div");
   h.className = "ch-grp";
@@ -450,24 +522,7 @@ CHEAT2.forEach((grp, gi) => {
     c.dataset.key = key;
     if(state[key]) c.dataset.state = state[key];
 
-    const paras = Array.isArray(it.a) ? it.a : (it.a ? [it.a] : []);
-    let plain = it.q + (it.qc ? "\n\n" + it.qc : "") + "\n\n" + paras.join("\n\n");
-    let html = paras.map(p => "<p>" + inl(p) + "</p>").join("");
-    if(it.t){
-      html += '<div class="tbl-wrap"><table class="ch-tbl"><tr>' + it.t.h.map(x => "<th>" + inl(x) + "</th>").join("") + "</tr>";
-      plain += "\n\n" + it.t.h.join(" | ");
-      it.t.r.forEach(r => { html += "<tr>" + r.map(x => "<td>" + inl(x) + "</td>").join("") + "</tr>";
-        plain += "\n" + r.join(" | "); });
-      html += "</table></div>";
-    }
-    if(it.pts){
-      html += '<ul class="ch-pts">' + it.pts.map(p => "<li>" + inl(p) + "</li>").join("") + "</ul>";
-      plain += "\n\n" + it.pts.map(p => "- " + p).join("\n");
-    }
-    if(it.ex){ html += '<code class="ch-ex">' + esc(it.ex) + "</code>"; plain += "\n\n" + it.ex; }
-    if(it.trap){ html += '<p class="ch-trap">' + inl(it.trap) + "</p>"; plain += "\n\nInterview trap: " + it.trap; }
-    if(it.h){ html += '<em class="ch-hook">' + inl(it.h) + "</em>"; plain += "\n\nYaad rakho: " + it.h; }
-
+    const { html, plain } = answerParts(it);
     c.dataset.find = plain.toLowerCase();
 
     const mb = document.createElement("button");
@@ -496,7 +551,8 @@ CHEAT2.forEach((grp, gi) => {
     cp.className = "c2-copy";
     cp.textContent = "Copy karo";
     cp.addEventListener("click", () => copyTopic(c, plain));
-    det.appendChild(cp);
+    const nb = noteBox(key);
+    det.append(nb, cp);
 
     // Question code stays visible when the card is closed: think first, then open.
     if(it.qc){
@@ -507,6 +563,7 @@ CHEAT2.forEach((grp, gi) => {
     } else main.append(qb, det);
     c.append(mb, main);
     cheat2List.appendChild(c);
+    nb.paint();
   });
 });
 
@@ -519,7 +576,9 @@ function cheat2Filter(){
     else {
       const st = node.dataset.state;
       const okF = c2filter === "all" ? true : (c2filter === "baaki" ? !st : st === c2filter);
-      const ok = okF && (!q || node.dataset.find.includes(q));
+      const note = notes[node.dataset.key];
+      const hay = note && note.s ? node.dataset.find + "\n" + note.s.toLowerCase() : node.dataset.find;
+      const ok = okF && (!q || hay.includes(q));
       node.classList.toggle("hidden", !ok);
       if(q){
         node.classList.toggle("open", ok);
@@ -624,24 +683,73 @@ const sync = (() => {
       error: "Sync nahi hua."
     }[s];
   }
+  const qrEl = document.getElementById("syncqr");
+
+  // The join link carries the code in the #fragment, which browsers never send
+  // to the server — so it stays out of access logs.
+  function joinLink(){ return location.origin + location.pathname + "#sync=" + code; }
+
+  // QR library is only needed when the panel shows a code, so load it then.
+  // Pinned version + SRI hash: a tampered CDN file refuses to run.
+  let qrLib = null;
+  function loadQR(){
+    if(window.QRCode) return Promise.resolve();
+    if(qrLib) return qrLib;
+    qrLib = new Promise((ok, fail) => {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+      s.integrity = "sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==";
+      s.crossOrigin = "anonymous";
+      s.referrerPolicy = "no-referrer";
+      s.onload = ok;
+      s.onerror = () => { qrLib = null; fail(); };
+      document.head.appendChild(s);
+    });
+    return qrLib;
+  }
+  function paintQR(){
+    qrEl.textContent = "";
+    if(!code) return;
+    loadQR().then(() => {
+      qrEl.textContent = "";
+      new window.QRCode(qrEl, { text: joinLink(), width: 220, height: 220, correctLevel: window.QRCode.CorrectLevel.M });
+    }).catch(() => {
+      qrEl.textContent = "QR load nahi hua (internet?). Link copy karke doosre device pe khol do.";
+    });
+  }
+
   function paint(){
     offEl.hidden = !!code; onEl.hidden = !code;
     codeEl.textContent = code || "";
-    if(!code) status("off");
+    if(code) paintQR(); else { qrEl.textContent = ""; status("off"); }
+  }
+
+  // A chosen password becomes the sync code via SHA-256, so the password itself
+  // never leaves the device and the server sees the same 43-char code format.
+  async function codeFromPassword(p){
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("prep-sync:" + p));
+    return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   }
   function newCode(){
     const a = new Uint8Array(18);
     crypto.getRandomValues(a);
     return btoa(String.fromCharCode(...a)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   }
-  function merge(remote){
-    let changed = false;
+  function merge(remote, remoteNotes){
+    let changed = false, notesChanged = false;
     for(const k in remote){
       const r = remote[k];
       if(!r || typeof r.t !== "number") continue;
       if(!entries[k] || r.t > entries[k].t){ entries[k] = { v: r.v || null, t: r.t }; changed = true; }
     }
-    if(changed){ rebuild(); save(); refreshAll(); }
+    for(const k in remoteNotes){
+      const r = remoteNotes[k];
+      if(!r || typeof r.t !== "number" || typeof r.s !== "string") continue;
+      if(!notes[k] || r.t > notes[k].t){ notes[k] = { s: r.s, t: r.t }; notesChanged = true; }
+    }
+    if(changed || notesChanged){ rebuild(); save(); }
+    if(changed) refreshAll();
+    if(notesChanged) refreshNotes();
   }
   async function run(){
     if(!code) return;
@@ -651,7 +759,7 @@ const sync = (() => {
       const res = await fetch("/api/progress?key=" + encodeURIComponent(code), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ e: entries })
+        body: JSON.stringify({ e: entries, n: notes })
       });
       const j = await res.json().catch(() => ({}));
       if(!res.ok){
@@ -660,7 +768,7 @@ const sync = (() => {
                   : "Server ne mana kar diya (" + res.status + ").";
         throw new Error(why);
       }
-      merge(j.e || {});
+      merge(j.e || {}, j.n || {});
       status("ok");
     }catch(e){
       status("error", e.message && !/fetch/i.test(e.message) ? e.message : "Internet ya server se connect nahi ho paaya. Marks is device pe safe hain, baad mein sync ho jayenge.");
@@ -687,6 +795,15 @@ const sync = (() => {
     setCode(c);
   });
   document.getElementById("synccopy").addEventListener("click", () => copyTopic(sheet, code));
+  document.getElementById("synclink").addEventListener("click", () => copyTopic(sheet, joinLink()));
+  document.getElementById("syncpassgo").addEventListener("click", async () => {
+    const pw = document.getElementById("syncpass");
+    if(pw.value.length < 12){ status("error", "Password kam se kam 12 characters ka rakho."); return; }
+    if(!(crypto && crypto.subtle)){ status("error", "Is browser mein password wala tareeka nahi chalega — QR use karo."); return; }
+    const c = await codeFromPassword(pw.value);
+    pw.value = "";
+    setCode(c);
+  });
   document.getElementById("syncnow").addEventListener("click", run);
   document.getElementById("syncstop").addEventListener("click", () => {
     if(!confirm("Is device pe sync band ho jayega. Marks yahan bache rahenge. Pakka?")) return;
@@ -696,7 +813,132 @@ const sync = (() => {
   // Coming back to the tab (phone unlocked, laptop tab refocused) pulls the latest.
   document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") run(); });
 
+  // Opened from a scanned QR / shared link: join, then strip the code from the
+  // address bar so it isn't left in history or re-shared by accident.
+  let joined = false;
+  const m = location.hash.match(/^#sync=([A-Za-z0-9_-]{20,64})$/);
+  if(m){
+    history.replaceState(null, "", location.pathname + location.search);
+    if(m[1] !== code){
+      setCode(m[1]);                 // setCode runs the first sync itself
+      joined = true;
+      flash("Sync jud gaya — ticks aur notes aa rahe hain");
+    }
+  }
+
   paint();
-  if(code) run();
+  if(code && !joined) run();
   return { soon, run };
 })();
+
+/* ================= PRACTICE MODE ================= */
+// One card at a time: question (and its code) first, answer on demand, then
+// an honest self-mark that goes into the same ticks the rest of the app uses.
+const practice = (() => {
+  const $ = id => document.getElementById(id);
+  const ov = $("practice");
+  const ALL = CHEAT2.flatMap(g => g.items.map(it => ({ it, g: g.g, key: kA(it.q) })));
+  const RANK = { naa: 0, thoda: 1 };           // weak-first ordering; unmarked last
+  let queue = [], i = 0, tally = null;
+
+  CHEAT2.forEach(g => {
+    const o = document.createElement("option");
+    o.value = g.g; o.textContent = g.g + " (" + g.items.length + ")";
+    $("prgroup").appendChild(o);
+  });
+
+  const src = () => document.querySelector('input[name="prsrc"]:checked').value;
+  function pool(){
+    const grp = $("prgroup").value, s = src();
+    return ALL.filter(x => {
+      if(grp && x.g !== grp) return false;
+      const st = state[x.key];
+      if(s === "weak")  return st !== "haan";
+      if(s === "naa")   return st === "naa";
+      if(s === "baaki") return !st;
+      return true;
+    });
+  }
+  function shuffle(a){
+    for(let j = a.length - 1; j > 0; j--){ const k = Math.floor(Math.random() * (j + 1)); [a[j], a[k]] = [a[k], a[j]]; }
+    return a;
+  }
+  function avail(){
+    const n = pool().length;
+    $("pravail").textContent = n ? n + " sawaal is filter mein hain." : "Is filter mein koi sawaal nahi — doosra chuno.";
+    $("prstart").disabled = !n;
+  }
+  function screen(name){
+    $("prsetup").hidden = name !== "setup";
+    $("prcard").hidden  = name !== "card";
+    $("prdone").hidden  = name !== "done";
+    ov.querySelector(".cheat-body").scrollTop = 0;
+  }
+  function show(){
+    if(i >= queue.length) return done();
+    const x = queue[i];
+    $("prprog").textContent = (i + 1) + " / " + queue.length;
+    $("prgrp").textContent = x.g;
+    $("prq").textContent = x.it.q;
+    $("prqc").hidden = !x.it.qc;
+    $("prqc").textContent = x.it.qc || "";
+    $("prans").hidden = true; $("prans").innerHTML = "";
+    $("prmark").hidden = true;
+    $("prreveal").parentElement.hidden = false;
+    screen("card");
+  }
+  function reveal(){
+    $("prans").innerHTML = answerParts(queue[i].it).html;
+    $("prans").hidden = false;
+    $("prmark").hidden = false;
+    $("prreveal").parentElement.hidden = true;
+  }
+  function next(){ i++; show(); }
+  function done(){
+    $("prprog").textContent = "";
+    const t = tally;
+    $("prsummary").textContent =
+      "Haan bhai: " + t.haan + " · Thoda thoda: " + t.thoda + " · Naa bhai: " + t.naa + (t.skip ? " · Skip: " + t.skip : "") +
+      (t.naa + t.thoda ? ". Jo nahi aaye wo ab \"Naa bhai\" / \"Thoda thoda\" mein hain — agle round mein pehle wahi aayenge." : ". Badhiya!");
+    screen("done");
+  }
+  function start(){
+    const s = src(), n = +$("prcount").value;
+    let q = shuffle(pool());
+    if(s === "weak") q.sort((a, b) => (RANK[state[a.key]] ?? 2) - (RANK[state[b.key]] ?? 2));
+    queue = n ? q.slice(0, n) : q;
+    i = 0; tally = { haan: 0, thoda: 0, naa: 0, skip: 0 };
+    show();
+  }
+  function open(){ avail(); screen("setup"); ov.classList.add("on"); document.body.style.overflow = "hidden"; }
+  function close(){ ov.classList.remove("on"); document.body.style.overflow = ""; $("prprog").textContent = ""; }
+
+  $("practiceopen").addEventListener("click", open);
+  $("practiceclose").addEventListener("click", close);
+  $("prgroup").addEventListener("change", avail);
+  document.querySelectorAll('input[name="prsrc"]').forEach(r => r.addEventListener("change", avail));
+  $("prstart").addEventListener("click", start);
+  $("prreveal").addEventListener("click", reveal);
+  $("prskip").addEventListener("click", () => { tally.skip++; next(); });
+  $("pragain").addEventListener("click", () => { avail(); screen("setup"); });
+  document.querySelectorAll("[data-pr]").forEach(b => b.addEventListener("click", () => {
+    const v = b.dataset.pr;
+    put(queue[i].key, v);
+    tally[v]++;
+    refreshAll();
+    next();
+  }));
+  document.addEventListener("keydown", e => {
+    if(!ov.classList.contains("on")) return;
+    if(e.key === "Escape") close();
+    else if(e.key === " " && !$("prcard").hidden && !$("prreveal").parentElement.hidden && document.activeElement.tagName !== "INPUT"){ e.preventDefault(); reveal(); }
+  });
+  return { open };
+})();
+
+/* ================= OFFLINE ================= */
+// Service worker caches the app shell so it opens without internet (train,
+// flight). Pages stay network-first, so online visits always get the latest.
+if("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){
+  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
