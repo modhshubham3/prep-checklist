@@ -451,7 +451,7 @@ CHEAT2.forEach((grp, gi) => {
     if(state[key]) c.dataset.state = state[key];
 
     const paras = Array.isArray(it.a) ? it.a : (it.a ? [it.a] : []);
-    let plain = it.q + "\n\n" + paras.join("\n\n");
+    let plain = it.q + (it.qc ? "\n\n" + it.qc : "") + "\n\n" + paras.join("\n\n");
     let html = paras.map(p => "<p>" + inl(p) + "</p>").join("");
     if(it.t){
       html += '<div class="tbl-wrap"><table class="ch-tbl"><tr>' + it.t.h.map(x => "<th>" + inl(x) + "</th>").join("") + "</tr>";
@@ -498,7 +498,13 @@ CHEAT2.forEach((grp, gi) => {
     cp.addEventListener("click", () => copyTopic(c, plain));
     det.appendChild(cp);
 
-    main.append(qb, det);
+    // Question code stays visible when the card is closed: think first, then open.
+    if(it.qc){
+      const qc = document.createElement("code");
+      qc.className = "ch-ex c2-qc";
+      qc.textContent = it.qc;
+      main.append(qb, qc, det);
+    } else main.append(qb, det);
     c.append(mb, main);
     cheat2List.appendChild(c);
   });

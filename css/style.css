@@ -382,3 +382,7 @@ section.hidden,.group.hidden,.row.hidden{display:none;}
   .tbl-wrap .ch-tbl{font-size:12.5px;}
   .tbl-wrap .ch-tbl th,.tbl-wrap .ch-tbl td{padding:5px 6px;overflow-wrap:anywhere;}
 }
+
+/* ---- tricky cards: question code always visible ---- */
+.c2-qc{margin-top:9px;}
+.ch-card.open .c2-qc{border-left-color:var(--flag);}

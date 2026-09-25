@@ -8,7 +8,9 @@
 //   Plain paragraphs       blank line between paragraphs; `code` and **bold** work
 //   | a | b |              a table; first row is the header
 //   - point                bullet list of key points
-//   ```lang ... ```        code example(s)
+//   ```lang ... ```        code example(s), shown inside the answer
+//   ```lang q ... ```      code that belongs to the QUESTION — always visible,
+//                          so "predict the output" cards work
 //   ! text                 the interview trap / common wrong answer
 //   > text                 memory hook ("Yaad rakho")
 const fs = require("fs");
@@ -26,7 +28,11 @@ const flushPara = () => { if (para.length && it) it.a.push(para.join(" ")); para
 for (const raw of lines) {
   const line = raw.replace(/\s+$/, "");
   if (code !== null) {                       // inside a fenced block
-    if (/^```/.test(line)) { it.ex.push(codeBuf.join("\n")); code = null; codeBuf = []; }
+    if (/^```/.test(line)) {
+      const body = codeBuf.join("\n");
+      if (/(^|\s)q$/.test(code.trim())) it.qcode = body; else it.ex.push(body);
+      code = null; codeBuf = [];
+    }
     else codeBuf.push(raw);
     continue;
   }
@@ -63,6 +69,7 @@ const out = groups.map(gr => ({
     if (x.a.length) o.a = x.a;
     if (x.rows.length) o.t = { h: x.rows[0], r: x.rows.slice(1) };
     if (x.pts.length) o.pts = x.pts;
+    if (x.qcode) o.qc = x.qcode;
     if (x.ex.length) o.ex = x.ex.join("\n\n");
     if (x.trap) o.trap = x.trap;
     if (x.h) o.h = x.h;
@@ -73,7 +80,7 @@ const out = groups.map(gr => ({
 // Guard rails: every question needs an answer, and question text must be unique.
 const seen = new Map(), problems = [];
 out.forEach(gr => gr.items.forEach(x => {
-  if (!x.a && !x.t) problems.push("no answer: " + x.q);
+  if (!x.a && !x.t && !x.pts) problems.push("no answer: " + x.q);
   if (seen.has(x.q)) problems.push("duplicate question: " + x.q);
   seen.set(x.q, true);
 }));
