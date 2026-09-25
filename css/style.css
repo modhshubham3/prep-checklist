@@ -346,3 +346,18 @@ section.hidden,.group.hidden,.row.hidden{display:none;}
 .sticky-filters{position:sticky;top:0;z-index:5;background:var(--paper);padding:10px 0;margin-bottom:10px;}
 #allq .note{margin-top:2px;}
 #allq .sheet{margin-top:6px;}
+
+/* ---- sync ---- */
+.toprow{gap:8px;}
+.sync-help{font-size:14px;color:var(--ink-soft);line-height:1.45;margin:0 0 12px;}
+.sync-or{margin-top:18px;}
+.sync-join{display:flex;gap:8px;align-items:stretch;}
+.sync-join .cheat-search{margin:0;flex:1;min-width:0;}
+.sync-code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:17px;font-weight:700;
+  letter-spacing:.04em;word-break:break-all;text-align:center;
+  background:var(--pen-soft);border:1.5px dashed var(--pen);border-radius:9px;
+  padding:13px;margin:0 0 14px;color:var(--ink);user-select:all;
+}
+#syncbtn[data-s="ok"]{border-color:var(--done);color:var(--done);}
+#syncbtn[data-s="error"]{border-color:var(--miss);color:var(--miss);}

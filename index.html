@@ -19,6 +19,7 @@
 
 <header class="top">
   <div class="toprow">
+    <button class="theme-btn" id="syncbtn" type="button" aria-haspopup="dialog">Sync</button>
     <button class="theme-btn" id="themebtn" type="button" aria-label="Theme badlo"></button>
   </div>
   <h1>Interview prep</h1>
@@ -111,6 +112,35 @@
   </div>
 </div>
 
+<div class="scrim" id="syncsheet" role="dialog" aria-modal="true" aria-labelledby="synctitle">
+  <div class="sheet-ask">
+    <p class="ask-q" id="synctitle">Phone aur laptop sync</p>
+    <p class="ask-topic" id="syncstatus"></p>
+
+    <div id="sync-off">
+      <p class="sync-help">Is device pe sync chalu karo — ek code milega. Wahi code doosre device pe daal do, dono ke ticks ek ho jayenge.</p>
+      <div class="ask-btns"><button id="syncstart" type="button">Sync chalu karo — naya code banao</button></div>
+      <p class="sync-help sync-or">Doosre device pe code pehle se hai? Yahan daalo:</p>
+      <div class="sync-join">
+        <input class="cheat-search" id="syncinput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Sync code paste karo">
+        <button class="cheat-close" id="syncjoin" type="button">Jodo</button>
+      </div>
+    </div>
+
+    <div id="sync-on" hidden>
+      <p class="sync-help">Ye code doosre device pe daalo. Jiske paas ye code hai wo tumhare ticks dekh aur badal sakta hai — kisi ke saath share mat karna.</p>
+      <div class="sync-code" id="synccode"></div>
+      <div class="ask-btns">
+        <button id="synccopy" type="button">Code copy karo</button>
+        <button id="syncnow" type="button">Abhi sync karo</button>
+      </div>
+      <button class="ask-cancel" id="syncstop" type="button">Is device pe sync band karo</button>
+    </div>
+
+    <button class="ask-cancel" id="syncclose" type="button">Band karo</button>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <div class="scrim" id="scrim" role="dialog" aria-modal="true" aria-labelledby="askq">
@@ -128,6 +158,7 @@
 
 <!-- data.js must load first: app.js reads DATA, CHEAT and CHEAT2 from it. -->
 <script src="js/data.js"></script>
+<script src="js/migrate.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

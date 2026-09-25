@@ -24,9 +24,20 @@ All questions live in `js/data.js`:
 | `CHEAT`  | Cheatsheet 1 — `[term, one-line answer]` pairs |
 | `CHEAT2` | Cheatsheet 2 — `{ q, a, ex?, h?, t? }` objects (`t` renders a table) |
 
-**Saved progress is keyed by position**, e.g. `c2-3-7` = group 3, item 7. Add
-new items at the **end** of a group. Inserting or deleting in the middle shifts
-every later key, so ticks will land on the wrong questions.
+Progress is keyed by the **text** of each item, so reordering is safe. Editing
+an item's text (the question, term or topic) starts its tick fresh; editing
+only an answer keeps it.
+
+## Sync between devices
+
+`api/progress.js` is a Vercel function that stores progress in Upstash Redis.
+No accounts: one device creates a random sync code, other devices enter it.
+Marks merge per item by timestamp, and clearing a mark wins over an older mark.
+
+Needs a Redis store connected to the Vercel project (Storage → Upstash Redis).
+The integration injects `KV_REST_API_URL`/`KV_REST_API_TOKEN` or
+`UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN`; either pair works.
+Without it the site still works, and the Sync panel says storage is missing.
 
 ## Deploy
 
