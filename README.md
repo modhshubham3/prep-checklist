@@ -16,13 +16,20 @@ npx serve .
 
 ## Editing content
 
-All questions live in `js/data.js`:
+**Answers** (the main page) are written in markdown under `content/answers/`,
+one file per topic, read in filename order. After editing, rebuild:
 
-| Constant | What it is |
-|---|---|
-| `DATA`   | The checklist — sections → groups → items |
-| `CHEAT`  | Cheatsheet 1 — `[term, one-line answer]` pairs |
-| `CHEAT2` | Cheatsheet 2 — `{ q, a, ex?, h?, t? }` objects (`t` renders a table) |
+```
+node tools/build-answers.js
+```
+
+That regenerates `js/answers.js` — commit both. The markdown format (tables,
+bullets, code blocks, `! interview trap`, `> memory hook`) is described at the
+top of `tools/build-answers.js`. The build fails on a question with no answer
+or a duplicated question.
+
+The **checklist** (`DATA`) and **Cheatsheet 1** (`CHEAT`) are still plain
+arrays in `js/data.js`.
 
 Progress is keyed by the **text** of each item, so reordering is safe. Editing
 an item's text (the question, term or topic) starts its tick fresh; editing

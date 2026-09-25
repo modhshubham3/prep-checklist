@@ -430,6 +430,12 @@ const ch2Tally = document.getElementById("ch2tally");
 var c2filter = "all";
 
 function esc(t){ const d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
+// Escape first, then allow two bits of markdown: `code` and **bold**.
+function inl(t){
+  return esc(t)
+    .replace(/`([^`]+)`/g, '<code class="ic">$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+}
 
 CHEAT2.forEach((grp, gi) => {
   const h = document.createElement("div");
@@ -444,17 +450,23 @@ CHEAT2.forEach((grp, gi) => {
     c.dataset.key = key;
     if(state[key]) c.dataset.state = state[key];
 
-    let plain = it.q + " — " + (it.a || "");
-    let html = "";
-    if(it.a) html += "<p>" + esc(it.a) + "</p>";
+    const paras = Array.isArray(it.a) ? it.a : (it.a ? [it.a] : []);
+    let plain = it.q + "\n\n" + paras.join("\n\n");
+    let html = paras.map(p => "<p>" + inl(p) + "</p>").join("");
     if(it.t){
-      html += '<table class="ch-tbl"><tr>' + it.t.h.map(x => "<th>" + esc(x) + "</th>").join("") + "</tr>";
-      it.t.r.forEach(r => { html += "<tr>" + r.map(x => "<td>" + esc(x) + "</td>").join("") + "</tr>";
+      html += '<div class="tbl-wrap"><table class="ch-tbl"><tr>' + it.t.h.map(x => "<th>" + inl(x) + "</th>").join("") + "</tr>";
+      plain += "\n\n" + it.t.h.join(" | ");
+      it.t.r.forEach(r => { html += "<tr>" + r.map(x => "<td>" + inl(x) + "</td>").join("") + "</tr>";
         plain += "\n" + r.join(" | "); });
-      html += "</table>";
+      html += "</table></div>";
+    }
+    if(it.pts){
+      html += '<ul class="ch-pts">' + it.pts.map(p => "<li>" + inl(p) + "</li>").join("") + "</ul>";
+      plain += "\n\n" + it.pts.map(p => "- " + p).join("\n");
     }
     if(it.ex){ html += '<code class="ch-ex">' + esc(it.ex) + "</code>"; plain += "\n\n" + it.ex; }
-    if(it.h){ html += '<em class="ch-hook">' + esc(it.h) + "</em>"; plain += "\n\nYaad rakho: " + it.h; }
+    if(it.trap){ html += '<p class="ch-trap">' + inl(it.trap) + "</p>"; plain += "\n\nInterview trap: " + it.trap; }
+    if(it.h){ html += '<em class="ch-hook">' + inl(it.h) + "</em>"; plain += "\n\nYaad rakho: " + it.h; }
 
     c.dataset.find = plain.toLowerCase();
 

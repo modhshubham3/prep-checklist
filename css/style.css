@@ -361,3 +361,24 @@ section.hidden,.group.hidden,.row.hidden{display:none;}
 }
 #syncbtn[data-s="ok"]{border-color:var(--done);color:var(--done);}
 #syncbtn[data-s="error"]{border-color:var(--miss);color:var(--miss);}
+
+/* ---- long-form answers ---- */
+.c2-det p + p{margin-top:10px;}
+.c2-det b{display:inline;font-size:inherit;margin:0;font-weight:700;color:var(--ink);}
+.ic{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;
+  background:var(--pen-soft);border-radius:4px;padding:1px 5px;
+}
+.ch-pts{margin:10px 0 0;padding-left:20px;font-size:14.5px;line-height:1.55;}
+.ch-pts li{margin:3px 0;}
+.ch-trap{
+  margin:10px 0 0 !important;font-size:14px !important;line-height:1.5;
+  color:var(--miss) !important;border-left:2px solid var(--miss);padding-left:9px;
+}
+.ch-trap::before{content:"Interview trap: ";font-weight:700;}
+.tbl-wrap{overflow-x:auto;margin-top:10px;}
+.tbl-wrap .ch-tbl{margin-top:0;}
+@media (max-width:520px){
+  .tbl-wrap .ch-tbl{font-size:12.5px;}
+  .tbl-wrap .ch-tbl th,.tbl-wrap .ch-tbl td{padding:5px 6px;overflow-wrap:anywhere;}
+}
