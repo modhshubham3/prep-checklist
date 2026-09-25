@@ -37,13 +37,13 @@ only an answer keeps it.
 
 ## Sync between devices
 
-`api/progress.js` is a Vercel function that stores progress in Upstash Redis.
+`api/progress.js` is a Vercel function that stores progress in Redis.
 No accounts: one device creates a random sync code, other devices enter it.
 Marks merge per item by timestamp, and clearing a mark wins over an older mark.
 
-Needs a Redis store connected to the Vercel project (Storage → Upstash Redis).
-The integration injects `KV_REST_API_URL`/`KV_REST_API_TOKEN` or
-`UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN`; either pair works.
+Needs a Redis store connected to the Vercel project (Storage). Either works:
+- Redis Cloud (`REDIS_URL`, a redis:// connection string) — uses the `redis` package in package.json
+- Upstash (`KV_REST_API_URL`/`KV_REST_API_TOKEN` or `UPSTASH_REDIS_REST_*`) — plain REST, preferred if both are set
 Without it the site still works, and the Sync panel says storage is missing.
 
 ## Deploy

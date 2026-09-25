@@ -4,12 +4,14 @@
 // device holding that code shares one record. The code is effectively the
 // password, so it is long, random, and validated before it touches storage.
 //
-// Storage is Upstash Redis over its REST API (no npm dependency). Vercel's
-// Redis/KV integration injects either the KV_* or the UPSTASH_* variables
-// depending on how it was added; both are accepted.
+// Storage is Redis, reached one of two ways depending on which Vercel
+// integration was added:
+//   - Upstash: REST API via KV_* or UPSTASH_* variables (plain fetch)
+//   - Redis Cloud: a redis:// connection string in REDIS_URL (node-redis)
 
-const REDIS_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const REDIS_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+const REST_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const REST_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+const TCP_URL = process.env.REDIS_URL;
 
 const KEY_RE = /^[A-Za-z0-9_-]{20,64}$/;
 const MAX_BODY = 1024 * 1024;  // marks are ~40 KB; notes can add a few hundred KB
@@ -17,15 +19,31 @@ const MAX_NOTE = 5000;          // characters per note
 const MAX_ENTRIES = 5000;
 const VALID = new Set(["haan", "thoda", "naa", null]);
 
+// One TCP client per warm function instance; reconnects on the next call if
+// the connection was dropped.
+let tcpClient = null;
+async function tcp() {
+  if (tcpClient && tcpClient.isReady) return tcpClient;
+  if (tcpClient) { try { await tcpClient.disconnect(); } catch (e) {} }
+  const { createClient } = require("redis");
+  tcpClient = createClient({ url: TCP_URL, socket: { connectTimeout: 5000, reconnectStrategy: false } });
+  tcpClient.on("error", () => {});   // failures surface through the awaited command
+  await tcpClient.connect();
+  return tcpClient;
+}
+
 async function redis(cmd) {
-  const r = await fetch(REDIS_URL, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${REDIS_TOKEN}`, "Content-Type": "application/json" },
-    body: JSON.stringify(cmd),
-  });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error);
-  return j.result;
+  if (REST_URL && REST_TOKEN) {
+    const r = await fetch(REST_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${REST_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify(cmd),
+    });
+    const j = await r.json();
+    if (j.error) throw new Error(j.error);
+    return j.result;
+  }
+  return (await tcp()).sendCommand(cmd);
 }
 
 // Keep only well-formed entries: short key, known value, numeric timestamp.
@@ -69,7 +87,7 @@ module.exports = async (req, res) => {
 
   const key = String((req.query && req.query.key) || "");
   if (!KEY_RE.test(key)) return res.status(400).json({ error: "bad sync code" });
-  if (!REDIS_URL || !REDIS_TOKEN) return res.status(503).json({ error: "storage not configured" });
+  if (!(REST_URL && REST_TOKEN) && !TCP_URL) return res.status(503).json({ error: "storage not configured" });
 
   const rk = "prep:" + key;
   try {
@@ -99,6 +117,7 @@ module.exports = async (req, res) => {
     res.setHeader("Allow", "GET, PUT");
     return res.status(405).json({ error: "method not allowed" });
   } catch (err) {
+    console.error("sync failed:", err && err.message);   // shows in Vercel logs; never the key
     return res.status(500).json({ error: "sync failed" });
   }
 };

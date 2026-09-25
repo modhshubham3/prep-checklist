@@ -1,0 +1,8 @@
+{
+  "name": "prep-checklist",
+  "private": true,
+  "description": "Interview prep site; the only dependency is the Redis client for the sync API.",
+  "dependencies": {
+    "redis": "^4.7.0"
+  }
+}
