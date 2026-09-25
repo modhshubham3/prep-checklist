@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interview Prep — .NET, Angular, PostgreSQL</title>
+<!-- Personal prep tool: keep it out of search results. Remove if it should be findable. -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f2f4f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12161c" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>Interview prep checklist</h1>
+  <p class="sub">C#, ASP.NET Core, Angular aur PostgreSQL ke wo topics jo 2–3 saal experience pe actually poochhe jaate hain. Checkbox pe tap karke batao samajh aaya ya nahi. Topic ke naam pe tap karo to woh copy ho jayega — seedha Google ya ChatGPT mein paste kar sako.</p>
+</header>
+
+<div class="sheet">
+  <div class="sheet-head">
+    <div class="tally" id="tally">0<span> / 0 pakka</span></div>
+  </div>
+  <div class="marks" id="marks"></div>
+  <p class="marks-key" id="key">Box pe tap = mark karo. Topic ke naam pe tap = copy ho jayega.</p>
+</div>
+
+<button class="cheat-open" id="cheatopen">
+  <span class="co-t"><strong>Cheatsheet kholo</strong><span>226 ek-line answers — tick bhi kar sakte ho</span></span>
+  <span class="co-n">&rsaquo;</span>
+</button>
+
+<button class="cheat-open alt" id="cheat2open">
+  <span class="co-t"><strong>Cheatsheet 2 — answers + examples</strong><span>229 questions, poore jawab, code examples aur yaad rakhne ke tricks</span></span>
+  <span class="co-n">&rsaquo;</span>
+</button>
+
+<div class="tabs" role="tablist">
+  <button class="tab" role="tab" data-filter="all" aria-selected="true">Sab</button>
+  <button class="tab" role="tab" data-filter="haan" aria-selected="false">Haan bhai</button>
+  <button class="tab" role="tab" data-filter="thoda" aria-selected="false">Thoda thoda</button>
+  <button class="tab" role="tab" data-filter="naa" aria-selected="false">Naa bhai</button>
+  <button class="tab" role="tab" data-filter="baaki" aria-selected="false">Baaki hai</button>
+</div>
+
+<main id="list"></main>
+<p class="empty hidden" id="empty"></p>
+
+<div class="tools">
+  <button id="expand">Sab kholo</button>
+  <button id="collapse">Sab band karo</button>
+  <button id="reset">Sab clear karo</button>
+</div>
+<p class="warn" id="warn"></p>
+
+</div>
+
+<div class="cheat" id="cheat" role="dialog" aria-modal="true" aria-label="Cheatsheet">
+  <div class="cheat-bar">
+    <h2>Cheatsheet</h2>
+    <span class="ch-tally" id="chtally"></span>
+    <button class="cheat-close" id="cheatclose">Band karo</button>
+  </div>
+  <div class="cheat-body">
+    <div class="inner">
+      <input class="cheat-search" id="cheatsearch" type="search" placeholder="Search karo — jaise nvarchar, cursor, ngOnInit, OFFSET">
+      <div class="cheat-filters" role="tablist">
+        <button class="tab" role="tab" data-cfilter="all" aria-selected="true">Sab</button>
+        <button class="tab" role="tab" data-cfilter="haan" aria-selected="false">Haan bhai</button>
+        <button class="tab" role="tab" data-cfilter="thoda" aria-selected="false">Thoda thoda</button>
+        <button class="tab" role="tab" data-cfilter="naa" aria-selected="false">Naa bhai</button>
+        <button class="tab" role="tab" data-cfilter="baaki" aria-selected="false">Baaki hai</button>
+      </div>
+      <div id="cheatlist"></div>
+    </div>
+  </div>
+</div>
+
+<div class="cheat" id="cheat2" role="dialog" aria-modal="true" aria-label="Cheatsheet 2">
+  <div class="cheat-bar">
+    <h2>Cheatsheet 2</h2>
+    <span class="ch-tally" id="ch2tally"></span>
+    <button class="cheat-close" id="cheat2close">Band karo</button>
+  </div>
+  <div class="cheat-body">
+    <div class="inner">
+      <input class="cheat-search" id="cheat2search" type="search" placeholder="Search karo — jaise boxing, switchMap, N+1, MVCC">
+      <div class="cheat-filters" role="tablist">
+        <button class="tab" role="tab" data-c2filter="all" aria-selected="true">Sab</button>
+        <button class="tab" role="tab" data-c2filter="haan" aria-selected="false">Haan bhai</button>
+        <button class="tab" role="tab" data-c2filter="thoda" aria-selected="false">Thoda thoda</button>
+        <button class="tab" role="tab" data-c2filter="naa" aria-selected="false">Naa bhai</button>
+        <button class="tab" role="tab" data-c2filter="baaki" aria-selected="false">Baaki hai</button>
+        <button class="tab" id="c2expand" type="button">Sab kholo</button>
+        <button class="tab" id="c2collapse" type="button">Sab band</button>
+      </div>
+      <div id="cheat2list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="scrim" id="scrim" role="dialog" aria-modal="true" aria-labelledby="askq">
+  <div class="sheet-ask">
+    <p class="ask-q" id="askq">Pakka bhai, samajh aaya na?</p>
+    <p class="ask-topic" id="asktopic"></p>
+    <div class="ask-btns">
+      <button class="b-haan" data-set="haan"><span class="dot" style="background:var(--done)"></span>Haan bhai — pakka aa gaya</button>
+      <button class="b-thoda" data-set="thoda"><span class="dot" style="background:var(--flag)"></span>Thoda thoda — revision chahiye</button>
+      <button class="b-naa" data-set="naa"><span class="dot" style="background:var(--miss)"></span>Naa bhai — abhi nahi aaya</button>
+    </div>
+    <button class="ask-cancel" id="askclear">Mark hata do</button>
+  </div>
+</div>
+
+<!-- data.js must load first: app.js reads DATA, CHEAT and CHEAT2 from it. -->
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
