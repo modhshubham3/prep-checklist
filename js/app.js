@@ -343,17 +343,71 @@ function refreshAll(){
   refresh(); cheatRefresh(); if(typeof cheat2Refresh === "function") cheat2Refresh();
 }
 
+/* ================= FOLDABLE GROUPS ================= */
+// A group heading folds its cards away. Which groups are open is remembered
+// per list on this device only (a view preference, so it doesn't sync).
+// Nothing stored yet = every group folded, so a long list opens as an index.
+function folds(store){
+  let open;
+  try{ open = new Set(JSON.parse(localStorage.getItem(store) || "[]")); }catch(e){ open = new Set(); }
+  const keep = () => { try{ localStorage.setItem(store, JSON.stringify([...open])); }catch(e){} };
+  return {
+    isOpen: name => open.has(name),
+    set(name, on){ on ? open.add(name) : open.delete(name); keep(); },
+    all(names, on){ open = new Set(on ? names : []); keep(); },
+  };
+}
+
+// Heading button: chevron, title, and a count that the list's filter fills in.
+function grpHead(name, fold, onToggle){
+  const h = document.createElement("button");
+  h.type = "button";
+  h.className = "ch-grp";
+  h.dataset.g = name;
+  h.innerHTML = '<svg class="chev" viewBox="0 0 8 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1L6.5 6L1.5 11"/></svg><span class="g-t"></span><span class="g-n"></span>';
+  h.querySelector(".g-t").textContent = name;
+  h.addEventListener("click", () => { fold.set(name, !fold.isOpen(name)); onToggle(); });
+  return h;
+}
+
+// Shared filter walk for a list of headings followed by their cards.
+// match(card) decides filter + search; while searching, folds are ignored so
+// every hit shows. Heading count: matches while filtering, else haan/total.
+function walkGroups(list, fold, match, searching, filtering){
+  let node = list.firstChild, head = null, hits = 0, total = 0, haan = 0;
+  const flush = () => {
+    if(!head) return;
+    const open = searching || fold.isOpen(head.dataset.g);
+    head.classList.toggle("hidden", !hits);
+    head.classList.toggle("shut", !open);
+    head.setAttribute("aria-expanded", open ? "true" : "false");
+    head.querySelector(".g-n").textContent = (searching || filtering) ? hits : haan + "/" + total;
+  };
+  let open = true;
+  while(node){
+    if(node.classList.contains("ch-grp")){
+      flush(); head = node; hits = total = haan = 0;
+      open = searching || fold.isOpen(node.dataset.g);
+    } else {
+      const ok = match(node);
+      total++; if(node.dataset.state === "haan") haan++;
+      if(ok) hits++;
+      node.classList.toggle("hidden", !ok || !open);
+    }
+    node = node.nextSibling;
+  }
+  flush();
+}
+
 /* ================= CHEATSHEET ================= */
 const cheat = document.getElementById("cheat");
 const cheatList = document.getElementById("cheatlist");
 const cheatSearch = document.getElementById("cheatsearch");
 var cfilter = "all";
+const cheatFold = folds("prep-folds-cheat");
 
 CHEAT.forEach((grp, gi) => {
-  const h = document.createElement("div");
-  h.className = "ch-grp";
-  h.textContent = grp.g;
-  cheatList.appendChild(h);
+  cheatList.appendChild(grpHead(grp.g, cheatFold, () => cheatFilter()));
   grp.items.forEach(([term, def], ii) => {
     const key = kK(term);
     const c = document.createElement("div");
@@ -372,7 +426,7 @@ CHEAT.forEach((grp, gi) => {
     tb.className = "ch-txt";
     tb.title = "Tap karke copy karo";
     const b = document.createElement("b"); b.textContent = term;
-    const p = document.createElement("p"); p.textContent = def;
+    const p = document.createElement("p"); p.innerHTML = inl(def);   // `code` and **bold**
     tb.append(b, p);
     tb.addEventListener("click", () => copyTopic(c, term + " — " + def));
 
@@ -408,21 +462,14 @@ document.getElementById("cheatclose").addEventListener("click", () => {
 });
 function cheatFilter(){
   const q = cheatSearch.value.trim().toLowerCase();
-  let node = cheatList.firstChild, grpEl = null, grpHas = false;
-  const flush = () => { if(grpEl) grpEl.classList.toggle("hidden", !grpHas); };
-  while(node){
-    if(node.classList.contains("ch-grp")){ flush(); grpEl = node; grpHas = false; }
-    else {
-      const st = node.dataset.state;
-      const okF = cfilter === "all" ? true : (cfilter === "baaki" ? !st : st === cfilter);
-      const ok = okF && (!q || node.dataset.find.includes(q));
-      node.classList.toggle("hidden", !ok);
-      if(ok) grpHas = true;
-    }
-    node = node.nextSibling;
-  }
-  flush();
+  walkGroups(cheatList, cheatFold, node => {
+    const st = node.dataset.state;
+    const okF = cfilter === "all" ? true : (cfilter === "baaki" ? !st : st === cfilter);
+    return okF && (!q || node.dataset.find.includes(q));
+  }, !!q, cfilter !== "all");
 }
+document.getElementById("chexpand").addEventListener("click", () => { cheatFold.all(CHEAT.map(g => g.g), true); cheatFilter(); });
+document.getElementById("chcollapse").addEventListener("click", () => { cheatFold.all([], false); cheatFilter(); });
 
 cheatSearch.addEventListener("input", cheatFilter);
 document.querySelectorAll("[data-cfilter]").forEach(t => t.addEventListener("click", () => {
@@ -509,11 +556,9 @@ function refreshNotes(){
   });
 }
 
+const cheat2Fold = folds("prep-folds-main");
 CHEAT2.forEach((grp, gi) => {
-  const h = document.createElement("div");
-  h.className = "ch-grp";
-  h.textContent = grp.g;
-  cheat2List.appendChild(h);
+  cheat2List.appendChild(grpHead(grp.g, cheat2Fold, () => cheat2Filter()));
 
   grp.items.forEach((it, ii) => {
     const key = kA(it.q);
@@ -569,30 +614,25 @@ CHEAT2.forEach((grp, gi) => {
 
 function cheat2Filter(){
   const q = cheat2Search.value.trim().toLowerCase();
-  let node = cheat2List.firstChild, grpEl = null, grpHas = false;
-  const flush = () => { if(grpEl) grpEl.classList.toggle("hidden", !grpHas); };
-  while(node){
-    if(node.classList.contains("ch-grp")){ flush(); grpEl = node; grpHas = false; }
-    else {
-      const st = node.dataset.state;
-      const okF = c2filter === "all" ? true : (c2filter === "baaki" ? !st : st === c2filter);
-      const note = notes[node.dataset.key];
-      const hay = note && note.s ? node.dataset.find + "\n" + note.s.toLowerCase() : node.dataset.find;
-      const ok = okF && (!q || hay.includes(q));
-      node.classList.toggle("hidden", !ok);
-      if(q){
-        node.classList.toggle("open", ok);
-        const b = node.querySelector(".c2-q");
-        if(b) b.setAttribute("aria-expanded", ok ? "true" : "false");
-      }
-      if(ok) grpHas = true;
+  walkGroups(cheat2List, cheat2Fold, node => {
+    const st = node.dataset.state;
+    const okF = c2filter === "all" ? true : (c2filter === "baaki" ? !st : st === c2filter);
+    const note = notes[node.dataset.key];
+    const hay = note && note.s ? node.dataset.find + "\n" + note.s.toLowerCase() : node.dataset.find;
+    const ok = okF && (!q || hay.includes(q));
+    if(q){
+      node.classList.toggle("open", ok);
+      const b = node.querySelector(".c2-q");
+      if(b) b.setAttribute("aria-expanded", ok ? "true" : "false");
     }
-    node = node.nextSibling;
-  }
-  flush();
+    return ok;
+  }, !!q, c2filter !== "all");
 }
 
+// "Sab kholo" opens every group and answer; "Sab band" folds everything back.
 function cheat2Toggle(open){
+  cheat2Fold.all(CHEAT2.map(g => g.g), open);
+  cheat2Filter();
   cheat2List.querySelectorAll(".ch-card").forEach(c => {
     c.classList.toggle("open", open);
     const b = c.querySelector(".c2-q");
