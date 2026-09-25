@@ -13,6 +13,8 @@
 //   ```lang ... ```        code example(s), shown inside the answer
 //   ```lang q ... ```      code that belongs to the QUESTION — always visible,
 //                          so "predict the output" cards work
+//   ? text                 how an interviewer would ask it — practice mode shows
+//                          this instead of a bare title like "CLR"
 //   ! text                 the interview trap / common wrong answer
 //   > text                 memory hook ("Yaad rakho")
 const fs = require("fs");
@@ -55,6 +57,7 @@ for (const raw of lines) {
     continue;
   }
   if (/^- /.test(line)) { flushPara(); it.pts.push(line.slice(2).trim()); continue; }
+  if (/^\? /.test(line)) { flushPara(); it.pq = line.slice(2).trim(); continue; }
   if (/^! /.test(line)) { flushPara(); it.trap = line.slice(2).trim(); continue; }
   if (/^> /.test(line)) { flushPara(); it.h = line.slice(2).trim(); continue; }
   if (line === "") { flushPara(); continue; }
@@ -72,6 +75,7 @@ const out = groups.map(gr => ({
   g: gr.g,
   items: gr.items.map(x => {
     const o = { q: x.q };
+    if (x.pq) o.pq = x.pq;
     if (x.a.length) o.a = x.a;
     if (x.rows.length) o.t = { h: x.rows[0], r: x.rows.slice(1) };
     if (x.pts.length) o.pts = x.pts;

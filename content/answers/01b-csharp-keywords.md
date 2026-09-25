@@ -1,4 +1,5 @@
 ## var
+? `var` kya hai? Kya `var` se variable dynamic ho jaata hai?
 `var` se tum compiler ko bolte ho "type tum khud samajh lo". Compiler right side ki value dekh ke **compile time pe** type decide kar deta hai, aur uske baad variable ka type hamesha ke liye fix ho jaata hai. Yani `var` se code **dynamically typed nahi** hota — wo utna hi strongly typed hai jitna explicit type likhne pe.
 
 Rules: `var` sirf local variables ke liye hai (fields ya method parameters mein nahi), aur declaration ke saath hi value deni padti hai. `var x = null;` nahi chalega kyunki null se type pata nahi chalta.
@@ -19,6 +20,7 @@ var summary = orders.Select(o => new { o.Id, o.Total });   // anonymous type —
 > `var` = compiler type guess karta hai **ek baar**, phir type pakka.
 
 ## dynamic
+? `dynamic` kya hai aur `var` se kaise alag hai? Kab use karoge?
 `dynamic` ke saath **type checking compile time pe nahi, runtime pe** hoti hai. Compiler `dynamic` variable pe kuch bhi likhne deta hai — method call, property, operator — aur check runtime pe DLR (Dynamic Language Runtime) karta hai. Galat member hua to runtime pe `RuntimeBinderException` aayega.
 
 Isliye `dynamic` mein IntelliSense aur compile-time safety dono chale jaate hain. Performance bhi thodi kam hoti hai kyunki har call pe runtime binding hoti hai.
@@ -42,6 +44,7 @@ x.DoMagic();            // compile ho jaayega, runtime pe RuntimeBinderException
 > `var` = compile time pe type fix. `dynamic` = runtime tak "dekhte hain".
 
 ## const
+? `const` kya hai aur iski limitations kya hain?
 `const` ek **compile-time constant** hai — uski value code compile hote waqt hi fix ho jaati hai aur baad mein kabhi nahi badal sakti. Declaration ke saath hi value deni padti hai.
 
 `const` implicitly **static** hota hai — isliye `ClassName.Constant` se access karte ho, object ki zaroorat nahi. Sirf primitive types (`int`, `double`, `bool`, `char`…), `string`, `enum` aur `null` hi `const` ho sakte hain — koi object ya `DateTime.Now` jaisi runtime value nahi.
@@ -62,6 +65,7 @@ double area = Config.Pi * r * r;    // compiler yahan seedha 3.14159 likh deta h
 > const ki value DLL mein bake ho jaati hai — library update pe consumer ko rebuild karna padta hai.
 
 ## readonly
+? `readonly` kya hai aur `const` se kaise alag hai?
 `readonly` field ki value **sirf do jagah** set ho sakti hai: declaration pe, ya class ke **constructor** mein. Uske baad wo change nahi ho sakti. Isliye ise "runtime constant" kehte hain — value runtime pe calculate ho sakti hai (jaise `DateTime.Now` ya constructor parameter), par set hone ke baad locked.
 
 `const` se farak: har object ki `readonly` value alag ho sakti hai (constructor se aati hai), aur ye kisi bhi type ki ho sakti hai. `static readonly` class-level constant ke liye use hota hai jiski value runtime pe aati hai — aur ye const ki tarah consumer mein bake nahi hota.
@@ -92,6 +96,7 @@ public class Order
 > const = compile time, readonly = run time. Har object ki readonly value alag ho sakti hai.
 
 ## static
+? `static` keyword kya karta hai — static class, method aur field?
 `static` member **class ka hota hai, object ka nahi**. Poori application mein uski ek hi copy hoti hai jo saare objects share karte hain, aur use access karne ke liye object banana nahi padta — `ClassName.Member`.
 
 **Static class** (`static class`) ka object ban hi nahi sakta, sirf static members ho sakte hain, aur wo inherit nahi hoti. Utility/helper methods (`Math.Max`, `string.IsNullOrEmpty`) aur **extension methods** static class mein hi likhe jaate hain. **Static constructor** class ke pehle use se theek pehle ek hi baar chalta hai.
@@ -121,6 +126,7 @@ public static class StringExtensions      // extension methods yahin
 > static = class ka, object ka nahi. Isliye `new` ki zaroorat nahi.
 
 ## sealed
+? `sealed` class/method kya hai aur kab use karte ho?
 `sealed` class se **aage inherit nahi kiya ja sakta**. Aur `sealed override` method ko child class dobara override nahi kar sakti.
 
 Kyun use karte hain? (1) **Design lock** — tum nahi chahte ki koi tumhari class extend karke uska behaviour tod de (jaise security-sensitive ya carefully tuned class). (2) **Intent saaf** — class inheritance ke liye design nahi ki gayi. (3) Thodi **performance** — JIT sealed class ke virtual calls ko direct calls mein badal sakta hai (devirtualization).
@@ -142,6 +148,7 @@ public class Leaf   : Middle
 > string sealed hai. Security ya design lock ke liye sealed lagao.
 
 ## partial
+? Partial class kya hai aur kahan use hoti hai?
 `partial` keyword se ek class (ya struct, interface, method) ka code **kai files mein baant** sakte ho. Compile hone pe compiler saare hisse jod ke ek hi class bana deta hai — runtime pe koi farak nahi.
 
 Sabse bada use case: **generated code aur apna code alag rakhna**. WinForms/WPF designer, EF Core scaffolding, gRPC, source generators — ye sab code generate karte hain. Agar tum generated file mein apna code likh do, to agli baar regenerate hone pe wo mit jaayega. `partial` se generated code ek file mein, tumhara code doosri file mein — dono safe.
@@ -166,6 +173,7 @@ public partial class Order
 > Designer-generated code aur apna code alag rakhne ke liye partial.
 
 ## Method Overloading
+? Method overloading kya hai? Sirf return type badal ke overload ho sakta hai?
 **Method overloading** matlab ek hi class mein **same naam ke kai methods, alag parameter list** ke saath. Parameters ka number, type ya order alag hona chahiye. Kaunsa method chalega ye compiler **compile time pe** arguments dekh ke decide karta hai — isliye ise compile-time polymorphism kehte hain.
 
 Fayda: caller ke liye API saaf rehti hai — `Log(string)`, `Log(Exception)`, `Log(string, Exception)`; har baar naya naam yaad nahi rakhna padta. `Console.WriteLine` ke 18 overloads hain.
@@ -189,6 +197,7 @@ svc.Pay(99.5m, "USD");     // doosra
 ! "Return type alag karke overload kar sakte hain" — galat. Parameters alag hone chahiye.
 
 ## Method Overriding
+? Method overriding kya hai? `virtual`, `override` aur `new` ka farak batao.
 **Method overriding** mein child class, parent class ke method ko **apne tareeke se dobara likhti** hai — same naam, same parameters, same return type. Ye **runtime polymorphism** hai: kaunsa version chalega ye variable ke type se nahi, **object ke asli type** se runtime pe decide hota hai.
 
 Override karne ke liye parent method `virtual`, `abstract` ya `override` hona chahiye, aur child mein `override` keyword lagana padta hai. Child mein `base.Method()` call karke parent ka logic bhi chala sakte ho aur uske upar kuch jod sakte ho.
@@ -216,6 +225,7 @@ Animal b = new Cat();  Console.WriteLine(b.Speak());   // "..." — new ne overr
 > Parent mein `virtual`/`abstract` hona zaroori hai, warna override nahi kar sakte.
 
 ## Virtual
+? `virtual` method kya hai aur runtime pe kaunsa method chalega ye kaise decide hota hai?
 `virtual` keyword method (ya property) ko **override hone ki permission** deta hai, par saath mein ek **default implementation** bhi deta hai. Child class chahe to override kare, chahe to parent wala hi use kare.
 
 C# mein methods **by default non-virtual** hote hain (Java mein ulta hai). Yani jab tak tum `virtual` na likho, child override nahi kar sakti. Ye jaan-boojh ke design hai — class ke author ko decide karna padta hai ki kaunse hisse extend ho sakte hain.
@@ -243,6 +253,7 @@ public class RegularCustomer : Customer { }            // override nahi kiya —
 > virtual = optional override. abstract = compulsory override.
 
 ## Abstract Method
+? Abstract method kya hai aur virtual method se kaise alag hai?
 **Abstract method** mein sirf **declaration hota hai, body nahi**. Wo kehta hai "har child class ko ye method likhna hi padega". Agar child class use implement nahi karti, to wo child bhi abstract banni chahiye, warna compile error.
 
 Abstract method sirf **abstract class** ke andar ho sakta hai, aur wo implicitly virtual hota hai (isliye `virtual` likhne ki zaroorat nahi). Ye `private` nahi ho sakta, kyunki child ko use dekhna aur override karna hai.
@@ -270,6 +281,7 @@ public class SalesReport : ReportGenerator
 > Abstract method sirf abstract class mein ho sakta hai, aur child ko override karna hi padta hai.
 
 ## Interface
+? Interface kya hai? C# 8 ke baad interface mein kya naya aaya?
 **Interface** ek **contract** hai — ye batata hai ki class ko **kya** karna padega (method, property, event ke signatures), **kaise** karna hai ye nahi. Jo class interface implement karti hai, use uske saare members likhne padte hain.
 
 Ek class **kai interfaces** implement kar sakti hai — C# mein multiple inheritance ka yahi tareeka hai. Interface ka object nahi banta, aur usme instance fields (state) nahi ho sakte. C# 8 se interface mein **default method implementation** aur static members bhi ho sakte hain, par iska asli kaam contract define karna hi hai.
@@ -295,6 +307,7 @@ builder.Services.AddScoped<IOrderRepository, PgOrderRepository>();   // DI mein 
 > Interface = "kya karna hai" ka contract. Ek class kai contracts sign kar sakti hai.
 
 ## Abstract Class
+? Abstract class kya hai aur uska object kyun nahi ban sakta?
 **Abstract class** ek aisi class hai jiska **object nahi ban sakta** — ye sirf base class ki tarah use hoti hai. Ismein **dono** ho sakte hain: abstract members (sirf declaration, child ko likhna padega) aur normal members (poori implementation, jo saare children share karenge).
 
 Interface se bada farak: abstract class ke paas **state** (fields), **constructors**, aur access modifiers (`protected`, `private`) ho sakte hain. Isliye jab kai related classes mein common data aur common logic ho, to abstract class us common hisse ko ek jagah rakh deti hai.
@@ -322,6 +335,7 @@ public class Bus : Vehicle
 > Abstract class = adhoora blueprint: kuch kaam ho chuka hai, kuch child ko karna hai.
 
 ## Abstract Class vs Interface
+? Abstract class aur interface mein farak kya hai, aur real project mein kab kaunsa chunoge?
 Ye top-5 interview sawaal hai. Seedha jawab: **abstract class tab, jab related classes ke beech common state ya common code share karna ho ("is-a" family). Interface tab, jab sirf ek capability ya contract batana ho ("can-do"), khaas kar unrelated classes ke liye.**
 
 Example: `Bus`, `Truck`, `Car` sab `Vehicle` hain aur sabke paas `RegNo`, `Describe()` common hai → abstract class `Vehicle`. Par `Bus`, `Printer`, `Invoice` — teeno bilkul alag cheezein hain, phir bhi teeno "print ho sakti hain" → interface `IPrintable`.
@@ -358,6 +372,7 @@ public class Bus : Vehicle, IPrintable                  // ek base class + kai i
 > Family (is-a) → abstract class. Capability (can-do) → interface.
 
 ## ref
+? `ref` keyword kya karta hai? Example ke saath batao.
 `ref` se argument **reference se pass** hota hai — method ko variable ki copy nahi, **wahi variable** milta hai. Method ke andar jo change hoga, wo caller ke variable mein bhi dikhega.
 
 Rules: caller ko variable **pehle se initialize** karna padta hai (kyunki method use padh bhi sakta hai), aur call karte waqt bhi `ref` likhna padta hai — isse call site pe saaf dikhta hai ki variable badal sakta hai.
@@ -380,6 +395,7 @@ Console.WriteLine(items.Count);   // 0
 > ref = Read + Write. Pehle initialize karo, phir bhejo.
 
 ## out
+? `out` parameter kya hai aur `ref` se kaise alag hai?
 `out` bhi reference se pass karta hai, par iska matlab hai **"ye method is variable mein value daal ke dega"**. Isliye method ko `out` parameter ko **return se pehle value assign karni hi padti hai**, aur caller ko variable initialize karne ki zaroorat nahi.
 
 Sabse common use: **ek se zyada value return karna**, khaas kar `TryXxx` pattern — method `bool` return karta hai ki kaam hua ya nahi, aur asli result `out` mein. Isse exception ki jagah saaf success/failure milta hai, jo performance mein bhi better hai (exceptions mehnge hote hain).
@@ -404,6 +420,7 @@ bool TryGetUser(int id, out User? user)
 > out = Must Output. `TryParse` ka dost.
 
 ## in
+? `in` parameter kya hai aur kab use karte ho?
 `in` parameter **reference se pass hota hai, par read-only** — method use padh sakta hai, badal nahi sakta. Compiler koi bhi assignment rok deta hai.
 
 Kyun chahiye? **Bade structs** ke liye. Struct value type hai, to normally har method call pe poora struct copy hota hai. 100 bytes ka struct loop mein lakhon baar pass karo to bahut copying. `in` se sirf reference jaata hai (copy nahi), aur read-only hone se original ke badalne ka darr bhi nahi.
@@ -450,6 +467,7 @@ double Length(in Vector3 v) => Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
 > ref = Read + Write, out = Must Output, in = Read Only.
 
 ## ==
+? `==` operator value types aur reference types (aur string) pe kaise behave karta hai?
 `==` ek **operator** hai, aur iska behaviour type pe depend karta hai.
 
 **Value types** (`int`, `double`, `DateTime`) ke liye `==` **values compare** karta hai. **Reference types** (classes) ke liye by default `==` **reference compare** karta hai — dono variables ek hi object ko point kar rahe hain ya nahi. Do alag objects jinke saare properties same hain, `==` phir bhi `false` dega.
@@ -475,6 +493,7 @@ Console.WriteLine(o1 == o2);          // false — object ka ==, reference compa
 > == ka matlab type decide karta hai — aur wo bhi compile-time type.
 
 ## Equals()
+? `Equals()` kya karta hai aur isko override kab karte ho?
 `Equals()` ek **virtual method** hai jo `System.Object` mein define hai, isliye har type ke paas hota hai. Default implementation reference types ke liye **reference equality** hai (same object?), aur structs ke liye field-by-field value comparison (jo reflection se hota hai, isliye slow).
 
 Iska asli kaam: tum ise **override** karke apni class ke liye "logically barabar" ka matlab define kar sakte ho — jaise do `Employee` barabar hain agar unka `Id` same hai. Kyunki ye virtual hai, ye **runtime type** ke hisaab se chalta hai (`==` ki tarah compile-time pe nahi).
@@ -502,6 +521,7 @@ public record EmpDto(int Id, string Name);   // Equals + GetHashCode + == sab re
 ! `Equals` override kiya aur `GetHashCode` bhool gaye — `HashSet`/`Dictionary` mein bug. Interviewer yahi follow-up poochta hai.
 
 ## ReferenceEquals()
+? `ReferenceEquals()` kya check karta hai?
 `Object.ReferenceEquals(a, b)` sirf ek cheez check karta hai: **kya dono references exactly ek hi object ko point kar rahe hain?** Ye static method hai, aur ise override ya overload nahi kiya ja sakta — isliye iska jawab hamesha bharosemand hai, chahe class ne `==` ya `Equals` kuch bhi kar rakha ho.
 
 Kab kaam aata hai? Jab tum khud `==` ya `Equals` override kar rahe ho, aur uske andar null check ya "same object" shortcut chahiye — wahan `==` use karoge to infinite recursion ho sakta hai. Value types ke liye ye hamesha `false` deta hai, kyunki dono taraf alag-alag boxed copies banti hain.

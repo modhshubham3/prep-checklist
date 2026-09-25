@@ -1,6 +1,7 @@
 # Project, performance aur security answers
 
 ## Project Architecture
+? Apne current project ki architecture explain karo.
 "Apne project ka architecture samjhao" — ye lagbhag har interview mein aata hai, aur yahan interviewer check karta hai ki tumne sach mein system dekha hai ya sirf apna ek module. **Sirf wahi layers aur technologies bolo jo tumne sach mein use ki hain** — follow-up questions mein banaya hua sab khul jaata hai.
 
 Request ke safar ki tarah bolo — upar se neeche:
@@ -21,6 +22,7 @@ Angular ──HttpClient──► Interceptor (JWT) ──► Nginx / LB ──�
 ! Jo cheez use nahi ki (Kubernetes, microservices, Kafka) wo impressive dikhne ke liye mat bolo — ek follow-up mein pakde jaoge aur baaki jawab ki credibility bhi jaayegi.
 
 ## Explain One API
+? Apne project ki ek API ka poora flow batao — request se response tak.
 "Apni koi ek API end-to-end samjhao" — interviewer dekhta hai ki tum request ke har step ko samajhte ho. Ek aisi API chuno jo tumne khud banayi ho aur jisme thoda asli logic ho (sirf CRUD nahi).
 
 Is sequence mein bolo:
@@ -47,6 +49,7 @@ GET /api/vehicles?status=Active&page=1
 ```
 
 ## Pagination
+? API mein pagination kaise implement karoge? Offset aur keyset mein farak?
 **Pagination** matlab bada data ek saath bhejne ki jagah **chhote pages** mein bhejna. Isse DB, server memory, network aur browser — sab bachte hain.
 
 **Offset pagination** (sabse common): frontend `page` aur `pageSize` bhejta hai. Backend: `skip = (page - 1) × pageSize`. Page 2, size 10 → skip 10. SQL: `ORDER BY id LIMIT 10 OFFSET 10`. Saath mein `totalCount` (alag `COUNT` query) taaki frontend total pages dikha sake.
@@ -77,6 +80,7 @@ ORDER BY id LIMIT 10;
 | Inserts se items khisak sakte hain | Stable |
 
 ## Logging
+? Apne project mein logging kaise karte ho?
 **Logging** production ki aankhein hain — bug aaye to logs hi batate hain kya hua. Achhi logging ke rules:
 
 **Structured logging**: message ko string jod ke mat banao; **named placeholders** use karo — `_logger.LogError(ex, "Failed to fetch vehicle {VehicleId}", id)`. Isse log mein `VehicleId` ek alag searchable field banta hai (Kibana mein `VehicleId: 42` filter kar sakte ho). String interpolation (`$"..."`) se ye fayda chala jaata hai.
@@ -103,6 +107,7 @@ catch (Exception ex)
 ```
 
 ## Difficult Production Issue
+? Sabse mushkil production issue jo tumne solve kiya — batao.
 "Koi mushkil production issue batao jo tumne solve kiya" — ye behavioural + technical dono hai. **STAR** format use karo: **Situation → Task → Action → Result**.
 
 - **Situation** — kya ho raha tha, kitna bada impact (kitne users, kaunsa feature, kab se).
@@ -124,6 +129,7 @@ R: Numbers + prevention + seekh
 ! Sirf "maine fix kar diya" — kaise pata chala aur kyun wahi fix, ye missing ho to jawab kamzor lagta hai.
 
 ## Security
+? Apni API ko secure kaise karte ho?
 API security ek list nahi, **layers** hai — ek toote to doosri bachaye. Main points:
 
 - **HTTPS everywhere** — data encrypted, HSTS.
@@ -156,6 +162,7 @@ if (order is null) return NotFound();
 > SQL injection ka ilaaj: parameterized queries. IDOR ka ilaaj: har record pe "kya ye isi user ka hai?"
 
 ## API Performance
+? API performance kaise improve ki? Numbers ke saath batao.
 API performance improve karne ke tareeke — par pehle **measure** karo (APM, logs mein timing, `EXPLAIN ANALYZE`), phir sabse bade bottleneck pe kaam karo. Andaze se optimize karna time barbaad karta hai.
 
 1. **Database query optimization** — zyada tar slow APIs ka asli kaaran. N+1 hatao, sirf zaroori columns, sahi JOINs.
@@ -182,6 +189,7 @@ builder.Services.AddHttpClient<PaymentClient>(c => c.Timeout = TimeSpan.FromSeco
 ```
 
 ## Database Performance
+? Database performance kaise improve ki?
 Slow PostgreSQL query ko theek karne ka step-by-step tareeka:
 
 1. **Reproduce** — exact query aur parameters (app logs, `pg_stat_statements` se sabse zyada total time wali queries).
@@ -366,6 +374,7 @@ DELETE bhi idempotent hai — pehli baar delete, doosri baar resource hai hi nah
 # Templates — tell me about yourself, project explain
 
 ## Project Questions
+? Project ke baare mein aur kya-kya poochha ja sakta hai?
 Project ke baare mein ye sawaal lagbhag pakke aate hain, aur har ek ke peeche interviewer kuch specific check kar raha hai. Har ek ka **apne project se** ek-do minute ka jawab ready rakho — asli naam, asli numbers, asli problems ke saath.
 
 | Sawaal | Interviewer kya dekhna chahta hai |
@@ -402,6 +411,7 @@ Tips: resume line-by-line mat padho. Ek **concrete achievement** zaroor daalo �
 > Present (abhi kya karte ho) → Past (kya kiya) → Skills → Aage kya chahte ho. 60–90 second.
 
 ## Explain Your Project Template
+? Apna project 2 minute mein explain karo.
 Project explain karne ka order — isse jawab bikharta nahi:
 
 1. **Problem** — project kya problem solve karta hai?

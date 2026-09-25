@@ -1,6 +1,7 @@
 # ASP.NET Core — pipeline, API, auth
 
 ## ASP.NET Core
+? ASP.NET Core kya hai aur purane ASP.NET (Framework) se kya farak hai?
 **ASP.NET Core** Microsoft ka modern, **cross-platform, open-source** framework hai Web APIs, websites aur real-time apps (SignalR) banane ke liye. Ye .NET pe chalta hai aur Windows, Linux, Docker — kahin bhi deploy ho sakta hai.
 
 Iske core building blocks: **Kestrel** (built-in, bahut tez web server), **middleware pipeline** (har request isse guzarti hai), **built-in Dependency Injection**, **configuration system** (appsettings, environment variables, secrets), **logging**, aur routing. APIs do style mein ban sakti hain — **Controllers** (classic, attribute-based) aur **Minimal APIs** (chhote endpoints ke liye kam code).
@@ -21,6 +22,7 @@ app.Run();
 ```
 
 ## Program.cs
+? `Program.cs` mein kya-kya hota hai? Services register aur pipeline setup kaise karte ho?
 **Program.cs** application ka **entry point** aur startup configuration hai. .NET 6 se `Startup.cs` alag nahi hota — sab kuch yahin, do hisson mein:
 
 **1. Services register karna** (`builder.Services...`) — DI container mein batao kaunsi services available hain: controllers, DbContext, authentication, CORS, apni repositories/services. Ye `app` banne se **pehle** hota hai.
@@ -54,6 +56,7 @@ app.Run();
 > Build() se pehle services, Build() ke baad pipeline.
 
 ## appsettings.json
+? `appsettings.json` kya hai aur alag environments ki config kaise manage karte ho?
 **appsettings.json** application ki **configuration** file hai — connection strings, API URLs, feature flags, logging levels, JWT settings. ASP.NET Core ise startup pe apne aap padh leta hai.
 
 Configuration **layers** mein aati hai, aur baad wali pehle wali ko override karti hai: `appsettings.json` → `appsettings.Development.json` / `appsettings.Production.json` (environment ke hisaab se, `ASPNETCORE_ENVIRONMENT` se decide) → User Secrets (sirf development) → **environment variables** → command-line args. Isliye production mein connection string environment variable se de sakte ho, file badle bina. Nested keys environment variable mein double underscore se likhte hain: `ConnectionStrings__Default`.
@@ -84,6 +87,7 @@ public class TokenService(IOptions<JwtOptions> opt)
 ! Password/API key Git mein commit ho gaya to wo hamesha ke liye history mein hai — rotate karna padta hai.
 
 ## Middleware
+? Middleware kya hai? Apna custom middleware kaise likhoge?
 **Middleware** ek software component hai jo **HTTP request ke raaste** mein baitha hai. Har request pipeline mein ek-ek karke middlewares se guzarti hai, aur har middleware do kaam kar sakta hai: request pe kuch kare aur **aage bhej de** (`next()`), ya wahin **short-circuit** karke response lauta de (jaise authentication fail hone pe 401).
 
 Response ulte order mein wapas aata hai — isliye middleware request ke pehle aur response ke baad dono jagah code chala sakta hai (jaise timing measure karna, response headers jodna).
@@ -117,6 +121,7 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 > Authentication hamesha Authorization se PEHLE. Ulta kiya to sab 401.
 
 ## Routing
+? ASP.NET Core mein routing kaise kaam karti hai?
 **Routing** incoming URL ko sahi **endpoint** (controller action ya minimal API handler) se jodta hai. `GET /api/orders/42` aaya → routing dekhta hai kaunsa endpoint is URL aur HTTP method se match karta hai → us action ko chalata hai, aur `42` ko parameter mein daal deta hai.
 
 ASP.NET Core mein **endpoint routing** hai: `UseRouting()` pehle match karta hai ki kaunsa endpoint chalega (taaki beech ke middleware — jaise authorization — usko jaan sakein), aur `MapControllers()`/`MapGet()` endpoints register karte hain. .NET 6+ mein `UseRouting` aur `UseEndpoints` aksar apne aap lag jaate hain.
@@ -132,6 +137,7 @@ app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
 ```
 
 ## Attribute Routing
+? Attribute routing kya hai aur conventional routing se kaise alag hai?
 **Attribute routing** mein route **attributes ke through controller aur action pe hi** likhte ho — `[Route]`, `[HttpGet]`, `[HttpPost]` wagairah. Web APIs mein yahi standard hai kyunki URL design action ke bilkul saath dikhta hai.
 
 Controller pe `[Route("api/[controller]")]` — `[controller]` token class ke naam se "Controller" hata ke replace hota hai (`OrdersController` → `api/orders`). Action pe HTTP verb attribute aur baaki path. `[ApiController]` attribute ke saath attribute routing **compulsory** hai, aur ye automatic model validation (400) aur binding source inference bhi deta hai.
@@ -159,6 +165,7 @@ public class OrdersController : ControllerBase
 ```
 
 ## Model Binding
+? Model binding kya hai? `[FromBody]`, `[FromQuery]`, `[FromRoute]` kab use karte ho?
 **Model binding** HTTP request ke data (route, query string, headers, form, JSON body) ko **automatically action ke parameters aur C# objects** mein convert kar deta hai. Tumhe `Request.Query["page"]` parse nahi karna padta.
 
 Source attributes se batate ho data kahan se aayega: `[FromRoute]` (URL path ka hissa), `[FromQuery]` (`?page=2`), `[FromBody]` (JSON body — ek action mein sirf **ek** `[FromBody]` ho sakta hai, kyunki body stream ek hi baar padhi jaati hai), `[FromHeader]`, `[FromForm]` (form/file upload), `[FromServices]` (DI se).
@@ -180,6 +187,7 @@ public IActionResult Update(
 ! Do `[FromBody]` parameters ek action mein — nahi chalega. Ek DTO banao jisme dono ho.
 
 ## Model Validation
+? Model validation kaise karte ho? `[ApiController]` isme kya karta hai?
 **Model validation** check karta hai ki bind hua data **rules follow karta hai ya nahi** — required field, length, range, email format. Rules **Data Annotations** attributes se DTO pe lagte hain: `[Required]`, `[StringLength]`, `[Range]`, `[EmailAddress]`, `[RegularExpression]`, `[Compare]`.
 
 `[ApiController]` ke saath agar validation fail hui to action chalta hi nahi — framework apne aap **400** ke saath `ValidationProblemDetails` (field-wise errors) lauta deta hai. Bina `[ApiController]` ke tumhe khud `if (!ModelState.IsValid) return BadRequest(ModelState);` likhna padta hai.
@@ -204,6 +212,7 @@ public class CreateUserDto
 > Frontend validation = user ki suvidha. Backend validation = suraksha.
 
 ## ControllerBase
+? `ControllerBase` kya hai aur API controller `Controller` ki jagah isse kyun inherit karta hai?
 `ControllerBase` **Web API controllers** ki base class hai. Isme API ke liye saari helpful cheezein hain: `HttpContext`, `Request`, `Response`, `User` (claims), `ModelState`, aur response banane ke helper methods — `Ok()`, `Created()`, `CreatedAtAction()`, `NoContent()`, `BadRequest()`, `NotFound()`, `Unauthorized()`, `Forbid()`, `Conflict()`, `Problem()`.
 
 Isme **Views (HTML) ka support nahi** hai — jo API ke liye sahi hai, kyunki API JSON lautati hai. Isse class halki rehti hai. API controllers pe hamesha `[ApiController]` attribute bhi lagao.
@@ -226,6 +235,7 @@ public class UsersController(IUserService svc) : ControllerBase
 ```
 
 ## Controller
+? `Controller` aur `ControllerBase` mein kya farak hai?
 `Controller` class **`ControllerBase` se inherit** karti hai aur usme **MVC Views** ka support jodti hai: `View()`, `PartialView()`, `ViewBag`, `ViewData`, `TempData`, `RedirectToAction()` (HTML page redirect ke saath), `Json()`.
 
 Isliye: **server-rendered web pages** (Razor views, jahan server HTML banata hai) → `Controller`. **Pure JSON API** (Angular/React frontend ya mobile app ke liye) → `ControllerBase`. API mein `Controller` use karna galat nahi hai par bekaar ka weight hai aur intent saaf nahi hota.
@@ -245,6 +255,7 @@ public class HomeController : Controller
 ```
 
 ## Middleware Pipeline
+? Middleware pipeline mein order kyun matter karta hai? Ek galat order ka example do.
 **Middleware pipeline** middlewares ki wo **chain** hai jisse har HTTP request guzarti hai. Request upar se neeche jaati hai (har middleware `next()` bula ke aage bhejta hai), endpoint pe pahunchti hai, aur response **ulte order** mein wapas aata hai. Koi bhi middleware short-circuit karke aage jaane se rok sakta hai.
 
 Typical recommended order neeche table mein hai.
@@ -271,6 +282,7 @@ Response ← Exception ← HTTPS ← Routing ← CORS ← AuthN ← AuthZ ← Co
 ```
 
 ## Global Exception Handling
+? ASP.NET Core mein global exception handling kaise implement karoge?
 **Global exception handling** matlab unhandled exceptions ko **ek hi jagah** pakadna — har controller mein try/catch likhne ki jagah. Isse teen fayde: saare errors **log** hote hain (stack trace ke saath), client ko **consistent error format** milta hai, aur **internal details** (stack trace, SQL, file paths) bahar leak nahi hote.
 
 Tareeke: (1) apna **exception middleware** jo `try { await next(ctx); } catch` kare; (2) built-in `UseExceptionHandler`; (3) .NET 8 ka **`IExceptionHandler`** interface — sabse saaf. Response ka standard format **ProblemDetails** (RFC 7807) hai: `type`, `title`, `status`, `detail`, `traceId`.
@@ -308,6 +320,7 @@ app.UseExceptionHandler();
 ! Production mein client ko `ex.Message` ya stack trace bhejna security issue hai — DB structure, file paths leak hote hain.
 
 ## Web API
+? Web API kya hai? REST principles kya hain?
 **Web API** ek HTTP service hai jo data (usually **JSON**) lautati hai, HTML nahi — Angular app, mobile app ya doosri services ise call karti hain. REST style mein har cheez ek **resource** hai (URL se pehchani jaati hai), aur kya karna hai ye **HTTP method** batata hai.
 
 REST design ke rules: URLs mein **naam (nouns)**, verbs nahi — `GET /api/orders/42`, `/api/getOrder?id=42` nahi. Plural collections (`/api/orders`). Nested resources (`/api/orders/42/items`). Sahi status codes. Stateless — har request apne aap mein poori (auth token saath mein). Versioning (`/api/v1/`).
@@ -335,6 +348,7 @@ Location: /api/orders/1051
 > PUT = poora object bhejo. PATCH = sirf badla hua hissa.
 
 ## HTTP Status Codes
+? Main HTTP status codes batao — 200, 201, 204, 400, 401, 403, 404, 409, 500 — kab kaunsa?
 Status code client ko batata hai request ka **kya hua**, aur sahi code dena achhi API ki pehchaan hai — frontend isi pe decide karta hai ki error dikhana hai, login pe bhejna hai, ya retry karna hai.
 
 Families: **2xx** success, **3xx** redirect, **4xx** client ki galti (request theek karo), **5xx** server ki galti (client ki galti nahi, retry ho sakta hai).
@@ -360,6 +374,7 @@ Families: **2xx** success, **3xx** redirect, **4xx** client ki galti (request th
 > 401 = "tum kaun ho?" 403 = "pata hai tum kaun ho, par ijaazat nahi".
 
 ## Jwt Authentication
+? JWT authentication kaise kaam karta hai? Token mein kya hota hai aur server usko kaise verify karta hai?
 **JWT (JSON Web Token)** ek **signed token** hai jisme user ki info (**claims**) hoti hai — user id, email, roles, expiry. Server login pe token banata hai, client har request ke saath bhejta hai, aur server bina database dekhe sirf **signature verify** karke user pehchaan leta hai. Isliye JWT **stateless** hai — server pe session store nahi karna padta, jo scaling ke liye achha hai.
 
 JWT ke 3 hisse dot se jude: **Header** (algorithm, jaise HS256) . **Payload** (claims) . **Signature** (header + payload ko secret key se sign kiya). Koi payload badle to signature match nahi karega aur token reject.
@@ -392,6 +407,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0MiIsInJvbGUiOiJBZG1pbiJ9.
 > Authentication = tum kaun ho? Authorization = tumhe kya karne ki ijaazat hai?
 
 ## Action Filters
+? Action filters kya hain aur kab use karoge? Middleware se kaise alag hain?
 **Filters** MVC/controller pipeline ke andar chalte hain — action ke **aas-paas** — aur cross-cutting kaam (logging, caching, validation, authorization) ek jagah likhne dete hain. Middleware poori HTTP pipeline pe kaam karta hai; filters ko **MVC context** milta hai — kaunsa controller, kaunsa action, action ke arguments, `ModelState`, action ka result.
 
 Filter types, is order mein chalte hain: **Authorization** filters (sabse pehle — access check), **Resource** filters (model binding se pehle/baad — caching), **Action** filters (action method ke theek pehle `OnActionExecuting` aur baad `OnActionExecuted` — logging, argument validation), **Exception** filters (action/filters mein exception), **Result** filters (result execute hone ke pehle/baad — response format).
@@ -422,6 +438,7 @@ public class PaymentsController : ControllerBase { }
 ```
 
 ## DTO
+? DTO kya hai aur entity seedha API se return kyun nahi karte?
 **DTO (Data Transfer Object)** ek simple class/record hai jo **sirf data le jaane** ke liye hai — API request mein kya aayega aur response mein kya jaayega. Isme business logic nahi hota.
 
 **Entity seedha API se return kyun nahi karte?** (1) **Security** — entity mein `PasswordHash`, internal flags, audit columns hote hain jo leak ho jaayenge. (2) **Over-posting** — agar request mein entity bind kari to user `IsAdmin: true` bhej ke khud admin ban sakta hai. (3) **Circular references** — `Order.Customer.Orders...` JSON serializer ko infinite loop mein daal deta hai. (4) **Coupling** — DB column ka naam badla to API contract toot jaayega; DTO se API aur DB alag rehte hain. (5) **Performance** — sirf zaroori fields select karo.
@@ -442,6 +459,7 @@ var users = await db.Users
 > Entity return karoge to password, internal flags aur navigation properties leak ho jaayengi.
 
 ## IEnumerable
+? `IEnumerable` kya hai aur DB query pe iska kya asar hota hai?
 `IEnumerable<T>` .NET ka sabse basic collection interface hai — sirf itna batata hai ki is par **ek-ek karke iterate** kiya ja sakta hai (`foreach`). Iska ek hi method hai `GetEnumerator()`. `List`, array, `HashSet`, `Dictionary` — sab `IEnumerable` hain.
 
 Uske LINQ methods (`Enumerable.Where`, `Select`) **C# delegates** (`Func<T, bool>`) lete hain aur **memory mein** chalte hain. EF Core context mein iska matlab: agar tumne DB query ko `IEnumerable` bana diya (`AsEnumerable()`, ya repository ne `IEnumerable` return kiya aur caller ne `.Where` lagaya), to **poora data pehle database se aa jaayega** aur filtering app ki memory mein hogi. 10 lakh rows ki table pe ye app ko maar deta hai.
@@ -458,6 +476,7 @@ var list = big.ToList();                      // SQL: SELECT * FROM orders (poor
 > Yeh interview ka favourite trap hai — galat use karoge to poora table memory mein aa jaayega.
 
 ## IQueryable
+? `IQueryable` kya hai aur `IEnumerable` se kaise alag hai?
 `IQueryable<T>` `IEnumerable<T>` ko extend karta hai, par farak bahut bada hai: iske LINQ methods (`Queryable.Where`, `Select`) **Expression trees** (`Expression<Func<T, bool>>`) lete hain — yani code ko data ki tarah. Ek **query provider** (EF Core) us expression tree ko padh ke **SQL** bana deta hai.
 
 Isliye `db.Orders.Where(o => o.Amount > 100)` ka filter **database pe** chalta hai — SQL mein `WHERE amount > 100`, aur sirf matching rows network pe aati hain. `OrderBy`, `Skip`, `Take`, `Select` sab SQL mein jaate hain. Query tab tak execute nahi hoti jab tak `ToListAsync`, `FirstAsync`, `CountAsync` jaisa kuch na bulao.

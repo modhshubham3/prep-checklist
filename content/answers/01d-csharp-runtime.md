@@ -1,4 +1,5 @@
 ## Garbage Collection
+? Garbage Collector kaise kaam karta hai?
 **Garbage Collector (GC)** CLR ka wo hissa hai jo **heap** ki memory automatically free karta hai. Tum `new` se object banate ho, par use delete nahi karte — jab koi object "unreachable" ho jaata hai (koi variable, field ya static use point nahi kar raha), GC baad mein uski memory wapas le leta hai.
 
 GC kaise decide karta hai? Wo **roots** se shuru karta hai — local variables, static fields, CPU registers — aur unse jude har object ko "zinda" mark karta hai. Jo mark nahi hua wo garbage hai. Phir wo zinda objects ko ek saath sarka deta hai (**compaction**) taaki memory mein chhed na rahein aur naya allocation tez ho.
@@ -23,6 +24,7 @@ void Process()
 > Gen 0 (naye, sabse zyada saaf hote hain) → Gen 1 → Gen 2 (lambe chalne wale).
 
 ## Gen 0
+? GC ki Gen 0 kya hai aur kaunse objects isme hote hain?
 **Gen 0** mein **naye bane objects** jaate hain. Ye chhoti si jagah hai aur sabse **zyada baar** collect hoti hai — aur sabse **tez** bhi, kyunki usme thode hi objects hote hain.
 
 Isake peeche idea ("generational hypothesis"): zyada tar objects **bahut kam jeete hain**. Method ke andar ka temporary string, DTO, LINQ ka iterator — ye sab kuch milliseconds mein bekaar ho jaate hain. Isliye GC poore heap ki jagah baar-baar sirf Gen 0 check karta hai. Jo object Gen 0 collection ke baad bhi zinda bacha, wo **Gen 1** mein promote ho jaata hai.
@@ -37,6 +39,7 @@ for (int i = 0; i < 1_000_000; i++)
 ```
 
 ## Gen 1
+? Gen 1 kya hai aur iska role kya hai?
 **Gen 1** ek **buffer** hai — Gen 0 aur Gen 2 ke beech. Jo objects ek Gen 0 collection se bach gaye, wo yahan aate hain.
 
 Ye objects "medium-lived" hote hain — jaise ek HTTP request ke dauraan bane objects jo request khatam hote hi mar jaate hain. Gen 1 collection Gen 0 se kam baar hoti hai. Iska kaam hai un objects ko pakadna jo thoda zyada jeete hain par permanent nahi hain, taaki wo Gen 2 (jo sabse mehnga hai) tak na pahunchein.
@@ -44,6 +47,7 @@ Ye objects "medium-lived" hote hain — jaise ek HTTP request ke dauraan bane ob
 Gen 1 collection bachne wale objects ko **Gen 2** mein promote karti hai.
 
 ## Gen 2
+? Gen 2 kya hai? Large Object Heap kya hai?
 **Gen 2** mein **lambe samay tak jeene wale** objects rehte hain — caches, Singleton services, static data, config, connection pools. Ye kai collections se bach chuke hote hain.
 
 Gen 2 collection ko **full GC** kehte hain aur ye sabse **mehnga** hai, kyunki poora heap (aur LOH) check hota hai. Isme app kuch der ke liye ruk sakti hai (pause), jo latency spikes ke roop mein dikhta hai. Isliye performance tuning ka ek bada hissa hai **Gen 2 collections kam karna**.
@@ -58,6 +62,7 @@ Gen 2 collection ko **full GC** kehte hain aur ye sabse **mehnga** hai, kyunki p
 | LOH | 85 KB+ objects | Gen 2 ke saath | Mehngi, kam compact |
 
 ## IDisposable
+? `IDisposable` kya hai aur kab implement karte ho?
 `IDisposable` ek interface hai jiska ek hi method hai: `Dispose()`. Ye un classes ke liye hai jo **unmanaged resources** pakadti hain — database connection, file handle, network socket, `HttpResponseMessage`, stream. Aise resources GC nahi sambhalta, aur agar turant chhode nahi gaye to wo khatam ho sakte hain (jaise connection pool khali ho jaana).
 
 `Dispose()` ka matlab hai "ye resource **abhi** chhod do", GC ke intezaar ke bina. Dispose ke baad object use nahi karna chahiye (`ObjectDisposedException`). Achhi class ka `Dispose()` baar-baar call karne pe bhi safe hota hai.
@@ -84,6 +89,7 @@ public class ReportWriter : IDisposable
 > GC memory sambhalta hai. IDisposable baaki resources (file, connection, socket).
 
 ## using
+? `using` statement kya karta hai? Iske bina kya problem ho sakti hai?
 `using` statement ek `IDisposable` object ko scope ke end pe **automatically Dispose** kar deta hai — **chahe exception aaye ya na aaye**. Andar se compiler ise `try/finally` mein badal deta hai, jahan `finally` mein `Dispose()` hota hai.
 
 C# 8 se **using declaration** bhi hai (`using var x = ...;`) — isme braces nahi chahiye, aur object variable ke scope (usually method) ke end pe dispose hota hai. Async resource ke liye `await using`.
@@ -119,6 +125,7 @@ Isliye GC **non-deterministic** hai — tum exactly nahi bata sakte ki memory ka
 > Reference gaya = "collect ho sakta hai", "collect ho gaya" nahi.
 
 ## async
+? `async` keyword kya karta hai? Kya ye method ko naye thread pe chala deta hai?
 `async` keyword method ko **asynchronous** banata hai, taaki uske andar `await` use ho sake. Aise method ka return type `Task`, `Task<T>`, `ValueTask<T>` ya (sirf event handlers ke liye) `void` hota hai.
 
 Asal fayda: jab method kisi **I/O** (database, HTTP call, file) ka wait kar raha hota hai, tab wo thread ko **block nahi karta** — thread wapas thread pool mein chala jaata hai aur doosri requests serve karta hai. Result aane pe method wahin se aage chalta hai. Isse web server kam threads mein zyada requests sambhal leta hai (**scalability**).
@@ -138,6 +145,7 @@ public async Task<Order?> GetOrderAsync(int id)
 > async = "main wait karte waqt thread ko pakad ke nahi baithunga".
 
 ## await
+? `await` kya karta hai aur await ke dauraan thread ke saath kya hota hai?
 `await` ek `Task` ke complete hone ka **intezaar karta hai bina thread block kiye**. Jab `await` kisi aise task pe aata hai jo abhi complete nahi hua, to method wahin **ruk (suspend)** jaata hai aur control caller ko wapas chala jaata hai. Task complete hone pe baaki method (continuation) chalta hai — ho sakta hai kisi doosre thread pe.
 
 `await` task ka **result bhi nikalta hai** (`Task<int>` se `int`) aur agar task fail hua to uska **exception throw** karta hai — isliye normal `try/catch` async code pe bhi kaam karta hai.
@@ -159,6 +167,7 @@ var (u, o) = (userTask.Result, ordersTask.Result);   // yahan Result safe hai �
 > await ke baad ka code "continuation" ban jaata hai — compiler state machine banata hai.
 
 ## Task
+? `Task` kya hai aur `Thread` se kaise alag hai?
 `Task` ek **async operation ko represent** karta hai — "ek kaam jo abhi chal raha hai ya baad mein complete hoga". `Task<T>` wo kaam hai jo end mein `T` type ka result dega. Task ke paas status hota hai (Running, RanToCompletion, Faulted, Canceled), exception store ho sakta hai, aur usse continuation jod sakte ho.
 
 **Task ≠ Thread.** Thread ek OS-level worker hai jo mehnga hota hai (lagbhag 1 MB stack). Task ek halka object hai jo sirf "kaam" batata hai. Ek I/O task (DB call) ke dauraan **koi thread use nahi hota** — OS jawab aane pe notify karta hai. CPU-bound kaam ke liye `Task.Run` thread pool ka thread use karta hai.
@@ -179,6 +188,7 @@ if (done != work) throw new TimeoutException();
 > Task = kaam. Thread = worker. Ek thread kai tasks chala sakta hai; I/O task ke dauraan thread hota hi nahi.
 
 ## Async I/O
+? Async I/O kya hai aur ye server ki scalability kaise badhata hai?
 **Async I/O** matlab input/output operation (DB query, HTTP call, file read, network) ke **wait** ke dauraan thread ko block na karna. Jab tum `await db.Orders.ToListAsync()` karte ho, request OS/driver ko chali jaati hai aur thread wapas pool mein. Database 200 ms baad jawab deta hai, tab koi bhi free thread continuation chala deta hai.
 
 Web API ke liye ye kyun zaroori hai? Maano server ke paas 100 threads hain aur har request 200 ms DB ka wait karti hai. **Sync** code mein har request ek thread 200 ms tak pakad ke baithi rehti hai — 100 requests ek saath aaye to 101va wait karega (**thread pool starvation**), aur app slow ho jaayegi jabki CPU khaali baitha hai. **Async** mein wait ke dauraan thread free hota hai, to wahi 100 threads hazaaron requests sambhal lete hain.
@@ -198,6 +208,7 @@ var text    = await File.ReadAllTextAsync(path);
 ! "Async se API fast ho jaati hai" — ek request fast nahi hoti; server zyada requests ek saath sambhal pata hai.
 
 ## Parallelism
+? Parallelism aur async mein kya farak hai? `Parallel.ForEach` kab use karoge?
 **Parallelism** matlab **CPU-bound kaam** ko kai CPU cores pe **ek saath** chalana taaki total time kam ho — jaise 10,000 images resize karna, bada calculation, data crunching.
 
 Ye async se alag cheez hai. **Async** = wait karte waqt thread chhodna (I/O ke liye). **Parallel** = kaam ko tod ke kai threads/cores pe chalana (CPU ke liye). Tools: `Parallel.ForEach`, `Parallel.For`, PLINQ (`.AsParallel()`), `Task.Run`, aur async I/O ke liye `Parallel.ForEachAsync` (.NET 6+).
@@ -243,6 +254,7 @@ GetDataAsync() call
 > async naya thread nahi, ek state machine hai jo "yahan se aage baad mein" yaad rakhti hai.
 
 ## Transient
+? DI mein Transient lifetime kya hai aur kab use karoge?
 **Transient** lifetime mein DI container **har baar** naya instance deta hai — jitni jagah inject hoga, utne naye objects. Ek hi request mein do classes ne maanga to dono ko alag object milega.
 
 Kab use karein? Halki (lightweight), **stateless** services ke liye jinka apna koi shared data nahi — jaise validators, mappers, calculators, email formatters. Transient + `IDisposable` service ko container request/scope end pe dispose karta hai.
@@ -259,6 +271,7 @@ builder.Services.AddTransient<IPriceCalculator, PriceCalculator>();
 > Transient = har baar naya. Halke, stateless kaam ke liye.
 
 ## Scoped
+? Scoped lifetime kya hai aur DbContext scoped kyun hota hai?
 **Scoped** lifetime mein **har scope ke liye ek instance** banta hai. ASP.NET Core mein **har HTTP request ek scope** hai — to ek request ke andar jitni baar bhi service inject ho, **wahi ek object** milega; agli request mein naya.
 
 **DbContext by default scoped** hota hai (`AddDbContext`), aur ye bilkul sahi hai: ek request ke andar saare repositories ek hi DbContext share karte hain, isliye change tracking consistent rehti hai aur ek `SaveChanges` mein sab save ho jaata hai. DbContext thread-safe nahi hai — request ke bahar share nahi karna chahiye.
@@ -277,6 +290,7 @@ var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 > Scoped = ek request, ek instance. DbContext ka ghar.
 
 ## Singleton
+? Singleton lifetime kya hai, aur Singleton mein Scoped service inject karo to kya hoga?
 **Singleton** lifetime mein poori application mein **sirf ek instance** banta hai — pehli baar maangne pe (ya startup pe), aur wo app band hone tak zinda rehta hai. Har request, har class ko wahi object milta hai.
 
 Kab use karein? Jo cheez **mehngi banti hai** aur share ho sakti hai, ya jisme **app-wide state** ho: in-memory cache (`IMemoryCache`), configuration, `HttpClient` factory, logger. Kyunki ek hi object kai requests ek saath use karengi, **Singleton thread-safe hona chahiye** — mutable fields pe `lock` ya concurrent collections.
@@ -332,6 +346,7 @@ builder.Services.AddScoped<OrderService>();
 > Class kehti hai "kya chahiye", container deta hai "kaun sa".
 
 ## S — Srp
+? Single Responsibility Principle kya hai? Ek violation aur uska fix batao.
 **Single Responsibility Principle**: ek class ka **sirf ek kaam** hona chahiye — ya Robert Martin ke shabdon mein, "class badalne ki sirf ek wajah honi chahiye".
 
 Maano `OrderService` order save bhi karta hai, invoice PDF bhi banata hai, aur email bhi bhejta hai. Ab email template badla to `OrderService` badlo, PDF format badla to bhi `OrderService` — har badlaav se order saving ka code risk mein. SRP kehta hai inhe alag karo: `OrderService`, `InvoiceGenerator`, `EmailNotifier`. Har ek chhota, samajhne mein aasaan aur alag se testable.
@@ -352,6 +367,7 @@ public class OrderService(IOrderRepository repo, IInvoiceGenerator pdf, INotifie
 ```
 
 ## O — Ocp
+? Open/Closed Principle kya hai? Example do.
 **Open/Closed Principle**: code **extension ke liye open**, par **modification ke liye closed** hona chahiye. Yani naya feature jodne ke liye purana, tested code chhedna na pade — naya code likh ke jod do.
 
 Classic galti: `if (type == "UPI") ... else if (type == "Card") ... else if (type == "Wallet")`. Har naye payment type pe ye method badlega aur purane cases todne ka risk hai. OCP ka tareeka: interface `IPaymentMethod` banao, har type ek class. Naya "NetBanking" chahiye? Nayi class likho aur DI mein register karo — koi purana code nahi badla.
@@ -371,6 +387,7 @@ public class Checkout(IEnumerable<IPaymentMethod> methods)
 ```
 
 ## L — Lsp
+? Liskov Substitution Principle kya hai? Rectangle–Square wala example samjhao.
 **Liskov Substitution Principle**: child class ko parent ki jagah **bina kuch tode** use kar sakna chahiye. Agar code `Animal` ke saath sahi chalta hai, to use `Dog` do tab bhi sahi chalna chahiye — koi surprise exception ya ulta behaviour nahi.
 
 Famous example: `Square : Rectangle`. Maths mein square ek rectangle hai, par code mein `Rectangle` ki width badalne se height nahi badalti, jabki `Square` mein dono saath badalti hain. Jo code `rect.Width = 5; rect.Height = 10;` karke area 50 expect karta hai, use square pe 100 milega — contract toot gaya.
@@ -391,6 +408,7 @@ public class Penguin2 { }   // fly ka promise hi nahi kiya
 ```
 
 ## I — Isp
+? Interface Segregation Principle kya hai?
 **Interface Segregation Principle**: kisi class ko aise methods implement karne pe **majboor mat karo jo wo use nahi karti**. Ek bada "sab kuch" interface banane ki jagah chhote, focused interfaces banao.
 
 Maano `IRepository` mein `Get`, `Add`, `Update`, `Delete`, `ExportToExcel`, `SendReport` sab hai. Ek read-only reporting class ko bhi `Delete` aur `SendReport` likhna padega — wo `NotImplementedException` throw karegi (jo LSP bhi todta hai). ISP kehta hai: `IReadRepository`, `IWriteRepository` alag karo; jise jo chahiye wo implement kare.
@@ -410,6 +428,7 @@ public class Robot2 : IWorkable { public void Work() { } }
 ```
 
 ## D — Dip
+? Dependency Inversion Principle kya hai aur DI se kaise juda hai?
 **Dependency Inversion Principle**: high-level modules (business logic) ko low-level modules (database, email, file system) pe **seedha depend nahi karna chahiye** — dono ko **abstractions (interfaces)** pe depend karna chahiye. Aur abstraction details pe depend na kare, details abstraction pe.
 
 Bina DIP: `OrderService` (business) → `PgOrderRepository` (detail). Postgres badla to business code badla. DIP ke saath: `OrderService` → `IOrderRepository` ← `PgOrderRepository`. Dependency ka "teer" ulta ho gaya — ab detail interface ke hisaab se chalta hai. Clean Architecture isi pe khadi hai: Domain/Application layer interfaces define karti hai, Infrastructure unhe implement karta hai.
@@ -434,6 +453,7 @@ public class PgOrderRepository : IOrderRepository { public Task SaveAsync(Order 
 | D | Dependency Inversion | Interface pe depend karo, concrete class pe nahi |
 
 ## Dispose
+? `Dispose()` kya karta hai aur kaun call karta hai?
 `Dispose()` resources ko **turant aur deterministic** tareeke se chhodne ka method hai — developer (ya `using`) khud call karta hai, isliye pata hota hai **kab** chalega. File handle band, DB connection wapas pool mein, socket close.
 
 Full **Dispose pattern** (jab class ke paas seedha unmanaged resource ho): `Dispose()` public method, ek `protected virtual Dispose(bool disposing)`, finalizer backup ke liye, aur `GC.SuppressFinalize(this)` taaki dispose ho chuke object ka finalizer na chale. Aaj kal zyada tar classes sirf managed disposable objects (jaise `DbConnection`) wrap karti hain — unke liye simple `Dispose()` jo andar ke objects dispose kare, kaafi hai. Seedhe unmanaged handles ke liye `SafeHandle` use karo, finalizer khud likhne ki zaroorat nahi padti.
@@ -462,6 +482,7 @@ public class FileLogger : IDisposable
 > Dispose deterministic hai (kab chalega pata hai), Finalize nahi.
 
 ## Finalize
+? Finalizer kya hai aur isko use karne se kyun bachte hain?
 **Finalizer** (C# syntax `~ClassName()`) ek method hai jo **GC** object ko collect karne se pehle call karta hai. Ye **safety net** hai — agar developer `Dispose()` bhool gaya, to finalizer unmanaged resource chhod de.
 
 Problems: (1) **Kab chalega pata nahi** — GC ki marzi, ho sakta hai minutes baad. (2) **Performance cost** — finalizer wale objects ek extra GC cycle tak zinda rehte hain (pehle finalization queue mein, phir agle GC mein collect), aur ek alag finalizer thread pe chalte hain. (3) Finalizer mein doosre managed objects use karna unsafe hai, kyunki wo pehle hi collect ho chuke ho sakte hain. (4) Finalizer mein exception app crash kar sakta hai.
@@ -489,6 +510,7 @@ public class NativeBuffer : IDisposable
 > Finalizer object ko ek extra GC cycle tak zinda rakhta hai — performance cost.
 
 ## Deadlock
+? Deadlock kya hai? C# code mein deadlock kaise ho sakta hai aur kaise bachoge?
 **Deadlock** tab hota hai jab do (ya zyada) cheezein ek doosre ka intezaar karti hain aur koi aage nahi badh pata — app atak jaati hai, na error, na result.
 
 **Async wala classic deadlock** (UI apps aur purana ASP.NET): tum async method pe `.Result` ya `.Wait()` karte ho. Wo thread block ho jaata hai. Async method ka `await` complete hone pe continuation ko **usi original thread/context** pe chalana chahta hai — jo `.Result` pe block hai. Thread continuation ka wait kar raha hai, continuation thread ka. Deadlock. ASP.NET Core mein SynchronizationContext nahi hai, isliye ye specific deadlock nahi hota — par blocking se **thread pool starvation** hota hai jo high load pe app ko jam kar deta hai.

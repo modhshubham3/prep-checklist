@@ -47,6 +47,7 @@ Design mein kya bolna hai:
 - **SSL termination** LB pe — backend servers pe load kam.
 
 ## Database replication aur sharding
+? Replication aur sharding mein farak kya hai? Kab kaunsa karoge?
 **Replication** — same data ki **copies** kai servers pe.
 - **Primary–replica (master–slave)**: saari **writes primary** pe, **reads replicas** se. Read-heavy apps ke liye (reports, dashboards replica pe). Primary gire to replica promote (failover).
 - **Replication lag** — async replication mein replica thoda peeche hota hai; user ne abhi update kiya aur replica se padha to purana data (**read-your-writes** problem → apna data primary se padho).
@@ -61,6 +62,7 @@ Design mein kya bolna hai:
 Order: pehle **indexes + query tuning** → **caching** → **read replicas** → **partitioning** → aakhir mein **sharding**.
 
 ## CAP theorem
+? CAP theorem kya hai? Apne system ke liye C ya A — kya chunoge?
 Distributed system mein jab **network partition** ho (servers ke beech connection toota), to tumhe chunna padta hai:
 
 - **C — Consistency**: har read ko latest write dikhe (sab nodes same data).
@@ -205,6 +207,7 @@ In-app ke liye SignalR/WebSocket + DB mein unread notifications.
 Aur: malicious URL check, rate limit on create, expired links cleanup job.
 
 ## Design: rate limiter
+? Ek distributed rate limiter design karo.
 **Requirements**: per user / IP / API key limit (e.g. 100 req/min); multiple API servers ke across sahi count; tez (har request pe chalta hai — ~1 ms); limit paar pe **429** + `Retry-After`; alag endpoints ke alag rules.
 
 **Kahan lagaayein**: API gateway / middleware (har service mein alag logic nahi).

@@ -95,6 +95,7 @@ git cherry-pick 9f8e7d6           # ek commit laao
 **Achha code review kya dekhta hai**: correctness, edge cases, security, performance (N+1), readability/naming, tests hain ya nahi. Review mein tone respectful — "ye aise karein to?" code pe comment, insaan pe nahi.
 
 ## Agile, Scrum aur SDLC
+? Agile aur Scrum kya hain? Scrum ke ceremonies batao.
 **SDLC** (Software Development Life Cycle) — requirement → design → development → testing → deployment → maintenance. **Waterfall** mein ye ek ke baad ek (badlav mushkil); **Agile** mein chhote cycles mein baar-baar.
 
 **Agile** — chhote iterations mein working software, customer feedback, badlav ko accept karna.
@@ -114,6 +115,7 @@ git cherry-pick 9f8e7d6           # ek commit laao
 # Docker aur containers
 
 ## Container vs Virtual Machine
+? Container aur VM mein farak kya hai?
 | | Virtual Machine | Container |
 | --- | --- | --- |
 | Kya virtualize | **Hardware** — har VM ka apna poora OS (kernel) | **OS** — host ka kernel share, sirf app + libraries |
@@ -152,6 +154,7 @@ ENTRYPOINT ["dotnet", "MyApi.dll"]
 ```
 
 ## Docker ke common commands
+? Docker ke woh commands batao jo roz use karte ho.
 ```bash
 docker build -t myapi:1.0 .             # image banao
 docker images                           # images list
@@ -169,6 +172,7 @@ Flags yaad rakho: `-d` background, `-p host:container` port map, `-e` env var, `
 Memory limit ke bina container host ki poori memory dekh sakta hai — .NET GC us hisaab se heap badhata hai; bahut saare containers ho to host OOM. Isliye production mein **`-m` / `mem_limit`** hamesha lagao.
 
 ## Docker Compose aur volumes
+? Docker Compose kya hai aur volumes kyun chahiye?
 **Docker Compose** — multi-container app ek YAML file (`docker-compose.yml`) mein define: API + PostgreSQL + Redis, networks, env vars, volumes. `docker compose up -d` se sab ek saath.
 
 Compose mein services ek network pe hoti hain aur **service naam se** ek doosre ko dhoondhti hain — connection string mein `Host=db`, `localhost` nahi (container ke andar localhost = wahi container).

@@ -45,6 +45,11 @@
   <span class="co-n">&rsaquo;</span>
 </button>
 
+<button class="cheat-open diary" id="diaryopen">
+  <span class="co-t"><strong>Interview diary</strong><span id="diarysub">Har interview ke sawaal likho — kya baar-baar aa raha hai, dikh jayega</span></span>
+  <span class="co-n">&rsaquo;</span>
+</button>
+
 <div class="main-head">
   <h2>Answers + examples</h2>
   <span class="ch-tally" id="ch2tally"></span>
@@ -100,56 +105,168 @@
   </div>
 </div>
 
+<div class="cheat" id="diary" role="dialog" aria-modal="true" aria-label="Interview diary">
+  <div class="cheat-bar">
+    <h2>Interview diary</h2>
+    <span class="ch-tally" id="dytally"></span>
+    <button class="cheat-close" id="diaryclose">Band karo</button>
+  </div>
+  <div class="cheat-body">
+    <div class="inner">
+      <div class="cheat-filters" role="tablist">
+        <button class="tab" role="tab" data-dytab="int" aria-selected="true">Interviews</button>
+        <button class="tab" role="tab" data-dytab="mine" aria-selected="false">Mere sawaal</button>
+        <button class="tab" role="tab" data-dytab="topics" aria-selected="false">Kya baar-baar aa raha hai</button>
+      </div>
+
+      <div id="dyint">
+        <details class="dy-form" id="dyintform">
+          <summary>+ Naya interview jodo</summary>
+          <div class="dy-grid">
+            <label>Company<input id="dycompany" class="cheat-search" maxlength="100" placeholder="Company ka naam"></label>
+            <label>Date<input id="dydate" class="cheat-search" type="date"></label>
+            <label>Round
+              <select id="dyround" class="cheat-search">
+                <option>Telephonic / screening</option><option>Technical 1</option><option>Technical 2</option>
+                <option>Machine coding</option><option>Managerial</option><option>HR</option><option>Client round</option>
+              </select>
+            </label>
+            <label>Result
+              <select id="dyres" class="cheat-search">
+                <option>Pending</option><option>Next round</option><option>Selected</option><option>Rejected</option>
+              </select>
+            </label>
+          </div>
+          <label class="dy-lab">Kya-kya poochha? <span>Har line ek sawaal — ye "Mere sawaal" mein jud jayenge aur practice mein aayenge</span>
+            <textarea id="dyqs" class="note-ta" rows="5" placeholder="Abstract class vs interface&#10;2nd highest salary ki query&#10;Apna project explain karo"></textarea>
+          </label>
+          <label class="dy-lab">Notes <span>Kya achha gaya, kahan atke, interviewer ka mood</span>
+            <textarea id="dynotes" class="note-ta" rows="3" maxlength="5000"></textarea>
+          </label>
+          <div class="ask-btns"><button id="dysave" type="button">Save karo</button></div>
+        </details>
+        <div id="dyintlist"></div>
+      </div>
+
+      <div id="dymine" hidden>
+        <details class="dy-form" id="dymineform">
+          <summary>+ Sawaal jodo (online / kahin se bhi)</summary>
+          <label class="dy-lab">Sawaal <span>Kai sawaal ek saath paste kar sakte ho — har line ek sawaal</span>
+            <textarea id="dymq" class="note-ta" rows="4" placeholder="What is middleware in ASP.NET Core?&#10;Difference between IEnumerable and IQueryable"></textarea>
+          </label>
+          <label class="dy-lab">Jawab <span>Optional — ek hi sawaal jod rahe ho to yahin likh do, warna baad mein</span>
+            <textarea id="dyma" class="note-ta" rows="3" maxlength="5000"></textarea>
+          </label>
+          <label class="dy-lab">Kahan se mila <input id="dysrc" class="cheat-search" maxlength="60" value="Online"></label>
+          <div class="ask-btns"><button id="dymadd" type="button">Jodo</button></div>
+        </details>
+        <input class="cheat-search" id="dymsearch" type="search" placeholder="Apne sawaalon mein search karo">
+        <div id="dyminelist"></div>
+      </div>
+
+      <div id="dytopics" hidden>
+        <p class="note">Tumhare interviews aur jode hue sawaalon mein kaunse topic kitni baar aaye — aur un topics mein site ke kitne sawaal abhi kamzor hain.</p>
+        <div id="dytopiclist"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="cheat" id="practice" role="dialog" aria-modal="true" aria-label="Practice">
   <div class="cheat-bar">
     <h2>Practice</h2>
     <span class="ch-tally" id="prprog"></span>
     <button class="cheat-close" id="practiceclose">Band karo</button>
   </div>
+  <div class="pr-bar" id="prbar" hidden><span id="prbarfill"></span></div>
   <div class="cheat-body">
     <div class="inner">
       <div id="prsetup">
-        <p class="note">Ek-ek sawaal aayega. Pehle khud socho (ya zor se bolo, jaise interview mein), phir jawab kholo aur imaandari se mark karo.</p>
-        <div class="pr-opts" role="radiogroup" aria-label="Kaunse sawaal">
-          <label><input type="radio" name="prsrc" value="weak" checked> Kamzor wale — Naa bhai, phir Thoda thoda, phir Baaki</label>
-          <label><input type="radio" name="prsrc" value="naa"> Sirf Naa bhai</label>
-          <label><input type="radio" name="prsrc" value="baaki"> Jo abhi tak mark nahi kiye</label>
-          <label><input type="radio" name="prsrc" value="all"> Sab, random</label>
+        <div class="pr-stats">
+          <div><b id="prtoday">0</b><span>aaj</span></div>
+          <div><b id="prstreak">0</b><span>din ka streak</span></div>
+          <div><b id="prweak">0</b><span>kamzor bache</span></div>
         </div>
-        <div class="pr-row">
-          <select id="prgroup" class="cheat-search" aria-label="Topic"><option value="">Saare topics</option></select>
-          <select id="prcount" class="cheat-search pr-count" aria-label="Kitne sawaal">
-            <option value="10">10 sawaal</option>
-            <option value="20" selected>20 sawaal</option>
-            <option value="50">50 sawaal</option>
-            <option value="0">Saare</option>
-          </select>
+
+        <div class="pr-modes">
+          <button class="pr-mode" data-mode="quick" type="button">
+            <strong>Quick round</strong>
+            <span>10 kamzor sawaal — jo "Naa bhai" hain aur jo sabse pehle dekhe the, wo pehle</span>
+          </button>
+          <button class="pr-mode" data-mode="mock" type="button">
+            <strong>Mock interview</strong>
+            <span>5 random sawaal, har ek pe 2 minute. Zor se bolke jawab do, jaise asli interview mein</span>
+          </button>
+          <button class="pr-mode" data-mode="topic" type="button">
+            <strong>Ek topic</strong>
+            <span>Topic chuno, uske kamzor sawaal pehle</span>
+          </button>
+          <button class="pr-mode" data-mode="mine" type="button" id="prmine">
+            <strong>Mere sawaal</strong>
+            <span id="prminesub">Diary / online se jode hue sawaal</span>
+          </button>
         </div>
-        <p class="sync-help" id="pravail"></p>
-        <div class="ask-btns"><button id="prstart" type="button">Shuru karo</button></div>
+
+        <details class="pr-custom" id="prcustom">
+          <summary>Apne hisaab se set karo</summary>
+          <div class="pr-opts" role="radiogroup" aria-label="Kaunse sawaal">
+            <label><input type="radio" name="prsrc" value="weak" checked> Kamzor wale — Naa bhai, phir Thoda thoda, phir Baaki</label>
+            <label><input type="radio" name="prsrc" value="naa"> Sirf Naa bhai</label>
+            <label><input type="radio" name="prsrc" value="baaki"> Jo abhi tak mark nahi kiye</label>
+            <label><input type="radio" name="prsrc" value="all"> Sab</label>
+          </div>
+          <div class="pr-row">
+            <select id="prgroup" class="cheat-search" aria-label="Topic"><option value="">Saare topics</option></select>
+            <select id="prcount" class="cheat-search pr-count" aria-label="Kitne sawaal">
+              <option value="10">10 sawaal</option>
+              <option value="20" selected>20 sawaal</option>
+              <option value="50">50 sawaal</option>
+              <option value="0">Saare</option>
+            </select>
+          </div>
+          <label class="pr-check"><input type="checkbox" id="prtimer"> Har sawaal pe 2 minute ka timer</label>
+          <p class="sync-help" id="pravail"></p>
+          <div class="ask-btns"><button id="prstart" type="button">Shuru karo</button></div>
+        </details>
       </div>
 
       <div id="prcard" hidden>
-        <div class="pr-grp" id="prgrp"></div>
+        <div class="pr-top">
+          <span class="pr-grp" id="prgrp"></span>
+          <span class="pr-timer" id="prclock" hidden></span>
+        </div>
         <h3 class="pr-q" id="prq"></h3>
         <code class="ch-ex c2-qc" id="prqc" hidden></code>
-        <div class="ask-btns pr-reveal"><button id="prreveal" type="button">Jawab dikhao</button></div>
-        <div class="c2-det pr-ans" id="prans" hidden></div>
-        <div id="prmark" hidden>
-          <p class="sync-help pr-how">Kaisa gaya?</p>
-          <div class="ask-btns">
-            <button class="b-haan" data-pr="haan" type="button"><span class="dot" style="background:var(--done)"></span>Haan bhai — sahi socha</button>
-            <button class="b-thoda" data-pr="thoda" type="button"><span class="dot" style="background:var(--flag)"></span>Thoda thoda — adhoora tha</button>
-            <button class="b-naa" data-pr="naa" type="button"><span class="dot" style="background:var(--miss)"></span>Naa bhai — nahi aaya</button>
+        <div id="prask">
+          <p class="pr-tip">Pehle zor se bolo — definition, ek example, aur kab use karte ho. Phir jawab kholo.</p>
+          <div class="ask-btns pr-reveal"><button id="prreveal" type="button">Jawab dikhao <kbd>Space</kbd></button></div>
+        </div>
+        <div id="prans" hidden>
+          <div class="c2-det pr-key" id="prkey"></div>
+          <button class="pr-more" id="prmore" type="button">Poora jawab padho</button>
+          <div class="c2-det pr-full" id="prfull" hidden></div>
+          <p class="sync-help pr-how">Kaisa gaya? Imaandari se — kamzor wale baar-baar aayenge.</p>
+          <div class="pr-marks">
+            <button class="b-haan" data-pr="haan" type="button"><span class="dot" style="background:var(--done)"></span>Aa gaya <kbd>1</kbd></button>
+            <button class="b-thoda" data-pr="thoda" type="button"><span class="dot" style="background:var(--flag)"></span>Adhoora <kbd>2</kbd></button>
+            <button class="b-naa" data-pr="naa" type="button"><span class="dot" style="background:var(--miss)"></span>Nahi aaya <kbd>3</kbd></button>
           </div>
         </div>
-        <button class="ask-cancel" id="prskip" type="button">Skip</button>
+        <div class="pr-foot">
+          <span class="pr-combo" id="prcombo"></span>
+          <button class="ask-cancel" id="prskip" type="button">Skip <kbd>S</kbd></button>
+        </div>
       </div>
 
       <div id="prdone" hidden>
-        <p class="ask-q">Round khatam</p>
+        <p class="ask-q" id="prdonetitle">Round khatam</p>
+        <div class="pr-result" id="prresult"></div>
         <p class="sync-help" id="prsummary"></p>
-        <div class="ask-btns"><button id="pragain" type="button">Naya round</button></div>
+        <div id="prreview"></div>
+        <div class="ask-btns">
+          <button id="prretry" type="button">Jo nahi aaye, wahi dobara</button>
+          <button id="pragain" type="button">Naya round</button>
+        </div>
       </div>
     </div>
   </div>

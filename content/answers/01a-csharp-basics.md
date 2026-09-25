@@ -67,6 +67,7 @@ Naye projects hamesha modern .NET ke LTS version (jaise .NET 8) pe banao. .NET F
 > Framework = purana Windows ghar. Core/.NET = naya, har jagah chalne wala ghar.
 
 ## CLR
+? CLR kya hai, aur C# code run hone mein iska kya role hai?
 **CLR (Common Language Runtime)** .NET ka engine hai — tumhara compiled IL code isi ke andar chalta hai. Java ke JVM ka .NET wala version samjho.
 
 CLR ke main kaam:
@@ -87,6 +88,7 @@ MyApp.dll   --(CLR + JIT)--->   native machine code  --> CPU
 > CLR = .NET ka engine. JIT + GC + type safety + exceptions.
 
 ## CTS
+? CTS kya hai — alag .NET languages ek doosre ke types kaise samajh paati hain?
 **CTS (Common Type System)** ek standard hai jo batata hai ki .NET mein types kaise define hote hain, memory mein kaise rehte hain aur kaise behave karte hain. Isi ki wajah se alag-alag .NET languages ek doosre ke types samajh paati hain.
 
 Example: C# ka `int` aur VB.NET ka `Integer` — dono asal mein ek hi CTS type `System.Int32` hain. Isliye ek C# library ko VB.NET project bina kisi conversion ke use kar sakta hai.
@@ -104,6 +106,7 @@ CTS types ko do family mein baantta hai — **value types** (struct, enum, int, 
 > C# ka `int` sirf ek alias (nickname) hai — asli naam `System.Int32` hai.
 
 ## CLS
+? CLS kya hai aur CTS se kaise alag hai?
 **CLS (Common Language Specification)** CTS ka ek subset hai — rules ki ek list jo batati hai ki library kaisi likho taaki **har** .NET language use use kar sake.
 
 Kuch features har language support nahi karti. Example: C# case-sensitive hai (`Name` aur `name` alag), par VB.NET nahi. Agar tumhari public class mein `Name` aur `name` dono public members hain, to VB.NET unhe alag nahi kar payega — ye CLS-compliant nahi hai. Isi tarah unsigned types (`uint`) bhi public API mein CLS-compliant nahi maane jaate.
@@ -122,6 +125,7 @@ public class Account
 > CTS = saare possible types. CLS = unka wo hissa jo har language samajhti hai.
 
 ## Managed Code
+? Managed code kya hota hai? Iske fayde batao.
 **Managed code** wo code hai jo CLR ke control mein chalta hai. C#, F#, VB.NET mein likha har normal code managed hota hai.
 
 "Managed" ka matlab: memory allocate aur free karna CLR (Garbage Collector) ka kaam hai, tumhara nahi. Array ke bahar access karoge to crash ki jagah `IndexOutOfRangeException` milega; galat type cast pe `InvalidCastException`. Yani runtime tumhe bahut saari khatarnak galtiyon se bachata hai.
@@ -138,6 +142,7 @@ var list = new List<int> { 1, 2, 3 };
 ```
 
 ## Unmanaged Code
+? Unmanaged code kya hai, aur C# se usko kaise call karte ho / uski memory kaun saaf karta hai?
 **Unmanaged code** CLR ke bahar chalta hai — seedha OS aur CPU pe. C/C++ ki native DLLs, Windows API (`kernel32.dll`, `user32.dll`), COM components — ye sab unmanaged hain.
 
 Yahan memory ka zimma programmer ka hai. Allocate kiya aur free nahi kiya to **memory leak**; galat pointer use kiya to crash. CLR inki memory track nahi karta.
@@ -157,6 +162,7 @@ class Native
 ! "Unmanaged code .NET se chal hi nahi sakta" — galat. P/Invoke se call kar sakte ho, bas uski memory GC nahi sambhalta.
 
 ## JIT
+? JIT compilation kya hai? C# code IL se machine code tak kaise pahunchta hai?
 **JIT (Just-In-Time) compiler** CLR ka wo hissa hai jo IL ko **runtime pe** native machine code mein badalta hai — aur wo bhi tab, jab koi method pehli baar call hota hai. Ek baar compile hone ke baad wo machine code memory mein cache rehta hai, agli call seedha chalti hai.
 
 Fayda: JIT us exact machine ke CPU ke hisaab se optimize kar sakta hai jispe code chal raha hai. Nuksaan: pehli call thodi slow hoti hai — isi ko "warm-up" ya startup cost kehte hain.
@@ -178,6 +184,7 @@ Next calls:               native code (cache) --> run
 > JIT = "zaroorat padne pe" compile. Pehli call ki keemat, baad mein free.
 
 ## OOP
+? OOP ke 4 pillars kya hain? Har ek ka ek real example do.
 **OOP (Object-Oriented Programming)** code ko **objects** ke around organize karne ka tareeka hai. Object mein data (fields/properties) aur us data pe kaam karne wala behaviour (methods) dono ek saath rehte hain — jaise asli duniya mein ek `Employee` ka naam bhi hota hai aur uski salary bhi calculate hoti hai.
 
 OOP ke **4 pillars**: **Encapsulation** (data chhupao, control se access do), **Abstraction** (kya karta hai dikhao, kaise chhupao), **Inheritance** (parent ka code child mein reuse), **Polymorphism** (ek naam, alag behaviour).
@@ -203,6 +210,7 @@ public class Employee
 > 4 pillars: **A PIE** — Abstraction, Polymorphism, Inheritance, Encapsulation.
 
 ## Encapsulation
+? Encapsulation kya hai? Apne project ki kisi class se example do.
 **Encapsulation** matlab data ko class ke andar band rakhna aur bahar walon ko sirf controlled tareeke se access dena. Field `private` rakhte hain aur access ke liye `public` property ya method dete hain, jisme validation likh sakte hain.
 
 Kyun zaroori hai? Agar balance public field hota, to koi bhi `account.Balance = -5000` kar deta aur object galat state mein chala jaata. Method mein check laga do, to object hamesha valid rahega. Saath hi, andar ka implementation baad mein badal sakte ho (jaise balance DB se lana) bina bahar ka code tode.
@@ -229,6 +237,7 @@ public class BankAccount
 > Bank ka locker: paisa andar, chaabi (method) se hi nikalta hai, aur chaabi rules follow karti hai.
 
 ## Inheritance
+? Inheritance kya hai, C# mein kaunse types support hote hain, aur kab inheritance avoid karoge?
 **Inheritance** mein ek class (child/derived) doosri class (parent/base) ki properties aur methods le leti hai, aur apni nayi cheezein jod sakti hai. Ye **is-a** relationship dikhata hai — `Dog` IS-A `Animal`.
 
 C# mein class sirf **ek** base class se inherit kar sakti hai (single inheritance), par kitne bhi interfaces implement kar sakti hai. Har class ultimately `System.Object` se inherit karti hai. `sealed` class se aage inherit nahi kar sakte. Child ka constructor pehle base constructor chalata hai (`: base(...)`).
@@ -259,6 +268,7 @@ public class Car
 > "is-a" bol sakte ho to inheritance, "has-a" bolna pade to composition.
 
 ## Polymorphism
+? Polymorphism kya hai? Compile-time aur runtime polymorphism ka farak example ke saath batao.
 **Polymorphism** ka matlab "ek naam, kai roop" — ek hi method call alag situation mein alag kaam karta hai. C# mein ye do tarah ka hota hai.
 
 **Compile-time (static) polymorphism** — method **overloading**: same naam, alag parameters. Compiler call dekh ke decide kar leta hai kaunsa method chalega.
@@ -285,6 +295,7 @@ foreach (var s in shapes)
 > Poly = bahut, morph = roop. Variable ka type nahi, **object ka asli type** decide karta hai.
 
 ## Abstraction
+? Abstraction kya hai aur encapsulation se kaise alag hai?
 **Abstraction** matlab user ko sirf **kya** karna hai wo dikhao, **kaise** hota hai wo chhupao. Tum car chalate ho steering aur brake se — engine ke andar kya ho raha hai jaanna zaroori nahi.
 
 C# mein abstraction ke do tools hain: **interface** aur **abstract class**. Code interface pe depend karta hai (`IPaymentGateway`), concrete class pe nahi (`RazorpayGateway`). Kal Razorpay ki jagah Stripe lagana ho, to sirf nayi class likho — baaki code nahi badlega. Testing mein fake implementation daal sakte ho.
@@ -323,6 +334,7 @@ public class CheckoutService(IPaymentGateway gateway)
 > Car ka steering: ghumao, gaadi mudti hai. Andar ka mechanism chhupa hai.
 
 ## Class
+? Class kya hai? Class aur struct mein kya farak hai?
 **Class** ek blueprint ya template hai — ye batati hai ki object mein kaunsa data (fields, properties) hoga aur wo kya kar sakta hai (methods). Class khud memory mein data nahi rakhti; jab `new` se object banta hai tab memory milti hai.
 
 Class ek **reference type** hai — object heap pe banta hai aur variable mein sirf uska reference (address) hota hai. Class mein ye sab ho sakta hai: fields, properties, methods, constructors, events, nested types, static members.
@@ -346,6 +358,7 @@ public record EmployeeDto(int Id, string Name);    // value equality, immutable
 > Class = naksha (blueprint). Object = us nakshe se bana asli ghar.
 
 ## Object
+? Object kya hai aur `new` karne pe memory mein kya hota hai?
 **Object** class ka ek asli, runtime **instance** hai. `new Employee()` likhte hi CLR heap pe memory allocate karta hai, constructor chalata hai, aur variable ko us memory ka reference deta hai.
 
 Ek class se kitne bhi objects ban sakte hain, aur har object ka apna alag data hota hai — `emp1.Name` badalne se `emp2.Name` pe asar nahi padta (jab tak dono alag objects hain). Static members object ke nahi, class ke hote hain, isliye saare objects mein shared hote hain.
@@ -364,6 +377,7 @@ Console.WriteLine(e1.Name);          // "Asha K" — e1 aur e3 ek hi object hain
 ! `var e3 = e1;` naya object banata hai — galat. Sirf reference copy hota hai, object ek hi rehta hai.
 
 ## Value Type
+? Value type kya hai? Examples do, aur ye memory mein kahan rehte hain?
 **Value type** mein variable ke andar **seedha value** rehti hai. Copy karoge to poori value ki alag copy banti hai — ek badalne se doosra nahi badalta.
 
 Value types: saare numeric types (`int`, `double`, `decimal`), `bool`, `char`, `struct`, `enum`, `DateTime`, `Guid`. Ye `System.ValueType` se derive hote hain.
@@ -388,6 +402,7 @@ Console.WriteLine(p1.X); // 1
 > int, float, bool, char, struct, enum, DateTime — copy karo to alag copy.
 
 ## Reference Type
+? Reference type kya hai? Ek reference type variable doosre mein assign karo to kya hota hai?
 **Reference type** mein object **heap** pe banta hai, aur variable ke andar sirf us object ka **reference (address)** hota hai. Ek variable ko doosre mein assign karo to sirf reference copy hota hai — dono ek hi object ko point karte hain. Ek se badlo, doosre mein bhi dikhega.
 
 Reference types: `class`, `interface`, `delegate`, `record` (class wala), `string`, arrays, `object`. Ye null ho sakte hain — isi se famous `NullReferenceException` aata hai.
@@ -416,6 +431,7 @@ Console.WriteLine(s1);        // "hi" — string immutable hai
 > class, interface, delegate, string, array, object — sab reference types.
 
 ## Struct
+? Struct kya hai aur class ki jagah struct kab use karoge?
 **Struct** ek user-defined **value type** hai. Class jaisa hi dikhta hai (fields, properties, methods, constructors), par copy hone pe poora data copy hota hai, aur ye inheritance support nahi karta (sirf interfaces implement kar sakta hai).
 
 Struct kab use karein? Jab data **chhota** ho (roughly 16 bytes ke aas-paas), **immutable** ho, aur logically ek "value" ho — jaise `Point`, `Money`, `Coordinate`, `DateRange`. Framework ke `DateTime`, `TimeSpan`, `Guid` sab structs hain. Fayda: local ho to heap allocation nahi, GC pe load kam.
@@ -443,6 +459,7 @@ var price = new Money(499, "INR");
 ! "Struct hamesha class se fast hota hai" — galat. Bade struct ki copying slow hai, aur boxing ki alag cost hai.
 
 ## Boxing
+? Boxing kya hai aur ye performance ko kaise affect karti hai?
 **Boxing** matlab value type ko `object` (ya kisi interface type) mein convert karna. Isme CLR **heap pe naya object** banata hai aur value ko us box mein copy karta hai.
 
 Ye implicitly (chupke se) hota hai, isliye khatarnak hai. Jaise purane non-generic collections (`ArrayList`) mein har `int` add karne pe boxing hoti thi. Loop mein lakhon baar ho to bahut saari heap allocations aur GC pressure — performance kha jaata hai. Generics (`List<int>`) isi problem ka ilaaj hain, kyunki wo value ko bina box kiye store karte hain.
@@ -464,6 +481,7 @@ var good = new List<int>(); good.Add(5);   // koi boxing nahi
 > Box mein saman daalna = heap pe jagah leni. Loop mein boxing performance kha jaati hai.
 
 ## Unboxing
+? Unboxing kya hai? Galat type mein unbox karo to kya hoga?
 **Unboxing** boxing ka ulta hai — boxed `object` se wapas value type nikalna. Ye hamesha **explicit cast** se hota hai, aur CLR check karta hai ki box ke andar exactly wahi type hai jisme tum cast kar rahe ho.
 
 Type match nahi hua to `InvalidCastException`. Dhyaan do: `int` ko box karke `long` mein unbox **nahi** kar sakte, bhale hi normally `int` → `long` conversion chal jaata hai. Pehle exact type mein unbox karo, phir convert karo.
@@ -483,6 +501,7 @@ if (o is int n)          // safe pattern matching
 > Unboxing mein type **exact** match hona chahiye, warna InvalidCastException.
 
 ## Nullable Type
+? Nullable type kya hai? `int?`, `??` aur `?.` kaise kaam karte hain?
 Value types normally null nahi ho sakte. **Nullable value type** (`int?`, jo asal mein `Nullable<int>` hai) ek value type ko null bhi rakhne deta hai. Ye database ke `NULL` columns ke liye bahut kaam aata hai — jaise `DateTime? DeletedAt`.
 
 `Nullable<T>` ke paas `HasValue` aur `Value` properties hoti hain. Null hone pe `.Value` padhoge to `InvalidOperationException`. Isliye null-safe operators use karo: `??` (default value), `?.` (null-conditional), `??=` (null ho to assign).

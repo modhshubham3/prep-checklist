@@ -23,6 +23,7 @@ static string Reverse(string s)
 ! Loop mein `result += s[i]` karke banana — har `+=` naya string banata hai, O(n²). `char[]` ya `StringBuilder` use karo.
 
 ## Palindrome check
+? Ek function likho jo check kare string palindrome hai ya nahi — case aur spaces ignore karke.
 **Palindrome** aage aur peeche se same padha jaaye: "madam", "racecar". **Approach:** do pointers — shuru aur end se compare karte hue beech tak aao; koi mismatch mila to false. Poora reverse string banane ki zaroorat nahi — O(1) extra space.
 
 Interviewer ka follow-up almost pakka: "**Case aur spaces/punctuation ignore karo**" — "A man, a plan, a canal: Panama" palindrome hai. Tab non-alphanumeric skip karo aur `char.ToLowerInvariant` se compare.
@@ -46,6 +47,7 @@ static bool IsPalindrome(string s)
 ```
 
 ## Anagram check
+? Do strings anagram hain ya nahi — function likho, O(n) mein.
 **Anagram** — same letters, same count, alag order: "listen" / "silent". 
 
 **Approach 1 (counting, best):** ek frequency array/Dictionary — pehli string ke har char pe +1, doosri ke har char pe −1; end mein sab zero hone chahiye. Length alag ho to turant false. Time **O(n)**.
@@ -136,6 +138,7 @@ var s = a.Distinct().OrderByDescending(x => x).Skip(1).FirstOrDefault();
 ```
 
 ## FizzBuzz aur uske variants
+? FizzBuzz likho, phir aisa banao ki naye rules (7 → Bazz) bina code badle jud sakein.
 1 se n tak print karo — 3 se divisible → "Fizz", 5 se → "Buzz", dono se → "FizzBuzz", warna number. **Trap:** 15 wala check **pehle** karo (ya dono conditions jodo), warna 15 pe sirf "Fizz" aayega.
 
 Variants jo poochhe jaate hain: rules configurable banao (7 → "Bazz" jodna ho to code na badle) — `Dictionary`/list of (divisor, word) pe loop, words jodo, khaali ho to number. Ye Open/Closed dikhata hai.
@@ -195,6 +198,7 @@ static long FibMemo(int n, Dictionary<int, long>? memo = null)   // recursion + 
 ! `Fib(n-1) + Fib(n-2)` bina memo ke — exponential time. Isko pakadna hi sawaal ka asli point hai.
 
 ## Prime number check
+? Number prime hai ya nahi — efficient function likho.
 **Prime** — 1 se bada, sirf 1 aur khud se divisible. **Approach:** 2 se **√n** tak check karo — agar n ka koi divisor √n se bada hai, to uska jodidaar √n se chhota hoga, jo pehle hi mil jaata. Isse O(n) se **O(√n)**.
 
 Optimizations: 2 ko alag handle karo, phir sirf **odd** numbers check karo. Loop condition `i * i <= n` (floating point `Math.Sqrt` se bachne ke liye; bade n pe `i <= n / i` overflow se bachata hai).
@@ -226,6 +230,7 @@ static List<int> PrimesUpTo(int n)              // Sieve
 ```
 
 ## Two sum
+? Array aur target diya hai — do numbers dhoondho jinka jod target ho, O(n) mein.
 Array aur target diya hai — do elements dhoondho jinka jod target ho (indices lautao). `[2, 7, 11, 15]`, target 9 → `[0, 1]`.
 
 **Brute force**: har pair check — O(n²). **Best**: ek **Dictionary** (value → index). Har element pe dekho ki `target - x` pehle dekha hai kya; haan to jawab mil gaya; nahi to `x` ko dictionary mein daalo. **Ek pass, O(n)**.
@@ -386,6 +391,7 @@ static string ReverseEachWord(string s) =>
 > Pehle poochho: order ulta karna hai ya har word? Clarifying question poochhna bhi score karta hai.
 
 ## Array rotate karna
+? Array ko k position right rotate karo, bina extra array ke.
 Array ko k position **right** rotate: `[1,2,3,4,5]`, k=2 → `[4,5,1,2,3]`. Pehle `k = k % n` karo (k array length se bada ho sakta hai, aur n=0 ka dhyan).
 
 **Approach 1 — extra array**: `result[(i + k) % n] = a[i]`. O(n) time, O(n) space. Simple.
@@ -556,6 +562,7 @@ static void SelectionSort(int[] a)
 ```
 
 ## Linked list reverse
+? Singly linked list ko reverse karo.
 **Approach (iterative, sabse common):** teen pointers — `prev` (null se shuru), `curr` (head), `next`. Har node pe: next save karo, `curr.Next = prev` (link ulta), phir `prev = curr`, `curr = next`. End mein `prev` naya head hai. **O(n)** time, **O(1)** space.
 
 Recursive version bhi poocha ja sakta hai — baaki list reverse karo, phir `head.Next.Next = head; head.Next = null`. O(n) stack space.
@@ -646,6 +653,7 @@ static int ReverseNumber(int n)
 ```
 
 ## Palindrome number check
+? Number palindrome hai ya nahi, string mein convert kiye bina.
 Number aage-peeche se same: 121, 1331. **Approach 1**: number reverse karo (upar wala tareeka) aur original se compare. **Approach 2 (overflow-free, better)**: sirf **aadha** number reverse karo — jab reversed half, bache hue number se bada ya barabar ho jaaye, ruk jao; phir compare (odd digits pe beech wala digit `/10` se hatao).
 
 Edge cases: **negative number palindrome nahi** (-121 ulta 121-), **10 ke multiples** (10, 100 — 0 pe khatam, 0 se shuru nahi ho sakte) palindrome nahi, 0 palindrome hai.

@@ -1,6 +1,7 @@
 # Angular aur RxJS
 
 ## Angular Fundamentals
+? Angular kya hai aur iske main building blocks kaunse hain?
 **Angular** Google ka **TypeScript-based frontend framework** hai single-page applications (SPA) ke liye. SPA mein browser ek hi HTML page load karta hai aur uske baad Angular page ke hisse badalta rehta hai — poora page reload nahi hota.
 
 Building blocks:
@@ -39,6 +40,7 @@ export class UserListComponent implements OnInit {
 ```
 
 ## Angular Directives
+? Angular mein directives kya hain aur kitne types ke hote hain?
 **Directive** ek class hai jo DOM element ko **extra behaviour** deti hai. Teen type:
 
 **Components** — asal mein template wale directives hi hain.
@@ -70,6 +72,7 @@ export class HighlightDirective {
 ```
 
 ## Angular Data Binding
+? Angular mein data binding ke types kaunse hain?
 **Data binding** component (TypeScript) aur template (HTML) ke beech data ka sync hai. Chaar tareeke:
 
 **Interpolation `{{ }}`** — component se value template mein **dikhana** (text). **Property binding `[prop]`** — component se DOM element ki **property set** karna (`[disabled]`, `[src]`, child ka `@Input`). **Event binding `(event)`** — DOM se component ko **event bhejna** (`(click)`, `(input)`, child ka `@Output`). **Two-way binding `[(ngModel)]`** — dono taraf: input mein type karo to property badle, property badlo to input badle. Ye asal mein property binding + event binding ka shortcut hai ("banana in a box" `[( )]`).
@@ -96,6 +99,7 @@ Interpolation aur property binding mein farak: `src="{{ url }}"` aur `[src]="url
 > Interpolation = dikhao, Property = set karo, Event = suno, Two-way = dono.
 
 ## Parent → Child
+? Angular mein parent component se child ko data kaise bhejte ho?
 Parent component child ko data **`@Input()`** se bhejta hai. Child mein property pe `@Input()` lagao, parent template mein property binding se value do.
 
 Child ko input change ka pata chahiye (jaise naya userId aaya to data dobara laao) to do tareeke: `ngOnChanges(changes: SimpleChanges)` lifecycle hook, ya input ko **setter** bana do. Angular 16+ mein `@Input({ required: true })` (value na di to compile error), aur 17+ mein **signal inputs** — `userId = input.required<number>()` jo `computed`/`effect` ke saath naturally react karte hain.
@@ -117,6 +121,7 @@ export class UserCardComponent implements OnChanges {
 ```
 
 ## Child → Parent
+? Child component se parent ko data/event kaise bhejte ho?
 Child parent ko **event** bhejta hai **`@Output()` + `EventEmitter`** se. Child mein `@Output() saved = new EventEmitter<Order>()`, aur jab kuch ho to `this.saved.emit(order)`. Parent template mein event binding se sunta hai — `(saved)="onSaved($event)"` — aur `$event` mein emit ki hui value aati hai.
 
 Isse child **reusable** rehta hai: use pata nahi ki parent us event ka kya karega — bas batata hai "kuch hua". Angular 17.3+ mein `output()` function bhi hai (`saved = output<Order>()`).
@@ -139,6 +144,7 @@ export class OrderFormComponent {
 > Input = data neeche aata hai. Output = event upar jaata hai.
 
 ## Sibling/shared
+? Do sibling components (jinka parent-child relation nahi) aapas mein data kaise share karenge?
 Do **siblings** (ek parent ke do child, ya bilkul alag components) ke beech seedha `@Input/@Output` nahi chalta. Options:
 
 **1. Parent ke through** — child A `@Output` se parent ko bataye, parent `@Input` se child B ko de. Chhote cases ke liye theek, par gehre tree mein "prop drilling" ho jaati hai.
@@ -191,6 +197,7 @@ forkJoin({ user: this.api.user(id), orders: this.api.orders(id) })
 ```
 
 ## switchMap
+? RxJS `switchMap` kya hai aur search box mein iska use kyun hota hai?
 `switchMap` har nayi outer value pe ek naya inner observable (usually API call) shuru karta hai, aur **pichhla inner observable cancel (unsubscribe)** kar deta hai. Yani hamesha sirf **latest** request ka result aata hai.
 
 Kyun zaroori hai? Search box mein user ne "an" type kiya (request 1), phir "ang" (request 2). Agar request 1 ka jawab request 2 ke baad aaye, to bina switchMap ke purana result naye ko overwrite kar dega — screen pe galat results. switchMap request 1 ko cancel kar deta hai (HttpClient mein actual HTTP request abort ho jaati hai), to ye race condition hoti hi nahi.
@@ -207,6 +214,7 @@ this.route.paramMap.pipe(
 > Search box ka default jawab — purana result aake naya overwrite nahi karega.
 
 ## mergeMap
+? `mergeMap` kya hai aur `switchMap` se kaise alag hai?
 `mergeMap` (alias `flatMap`) har outer value pe inner observable shuru karta hai aur **saare inner observables ko parallel chalne deta hai** — kuch cancel nahi hota, aur results jis order mein complete hon usi order mein aate hain (**order guaranteed nahi**).
 
 Use: **independent** operations jo ek saath chal sakte hain — jaise 10 files upload karna, list ke har item ki details laana, notifications bhejna. Bahut saari values ho to server pe load aa sakta hai — `mergeMap(fn, concurrency)` ka doosra argument parallel requests limit karta hai (jaise 3 ek saath).
@@ -220,6 +228,7 @@ from(fileList).pipe(
 > Independent parallel calls ke liye.
 
 ## concatMap
+? `concatMap` kya hai aur kab use karoge?
 `concatMap` inner observables ko **ek ke baad ek, queue mein** chalata hai. Naya inner tab shuru hota hai jab pichhla **complete** ho jaaye. Kuch cancel nahi hota, aur **order maintained** rehta hai.
 
 Use: jab **sequence important** ho — ordered saves, dependent updates, ek ke baad ek API steps, "auto-save" jahan har change order mein save hona chahiye. Nuksaan: agar ek request slow hai to baaki sab uske peeche wait karte hain.
@@ -264,6 +273,7 @@ searchInput.valueChanges.pipe(
 ```
 
 ## Angular HTTP
+? Angular mein HTTP call kaise karte ho aur errors kaise handle karte ho?
 Angular mein backend se baat karne ke liye **`HttpClient`** service hai. Setup: standalone apps mein `provideHttpClient()`, purane module style mein `HttpClientModule`. Methods `get`, `post`, `put`, `patch`, `delete` — sab **Observable** lautate hain, aur type bhi de sakte ho (`get<User[]>`).
 
 Important baatein: (1) HttpClient observable **lazy** hai — **subscribe (ya `async` pipe) ke bina request jaati hi nahi**. (2) Har subscribe = nayi HTTP request. (3) HTTP observable ek value deke **complete** ho jaata hai, isliye iska unsubscribe zaroori nahi (par component destroy hone pe chalti request cancel karna achha hai). (4) API calls hamesha **service** mein rakho, component mein nahi.
@@ -288,6 +298,7 @@ export class OrderService {
 ! "Maine `this.api.save(x)` call kiya par request gayi hi nahi" — subscribe nahi kiya. Observable lazy hai.
 
 ## Http Interceptor
+? HTTP interceptor kya hai? Token lagane ka interceptor kaise likhoge?
 **HTTP Interceptor** har outgoing HTTP request aur incoming response ke **beech mein baitha middleware** hai — ASP.NET Core middleware ka Angular wala version. Ek jagah likho, poori app ki har HTTP call pe lagega.
 
 Common uses: **JWT token jodna** (`Authorization: Bearer …` header), **global error handling** (401 pe login page, 500 pe toast), **loading spinner** (request start pe dikhao, finalize pe chhupao), **logging**, base URL jodna, retry.
@@ -314,6 +325,7 @@ provideHttpClient(withInterceptors([authInterceptor]));
 > JWT attach karne ki standard jagah.
 
 ## Angular Forms
+? Angular mein forms ke kitne types hain? Reactive aur template-driven mein farak batao.
 Angular mein forms banane ke do tareeke:
 
 **Template-driven forms** — form ka logic mostly **HTML** mein: `[(ngModel)]`, `required`, `#f="ngForm"`. `FormsModule` chahiye. Chhote, simple forms (login, contact) ke liye jaldi ban jaate hain. Par complex validation aur testing mushkil.
@@ -347,6 +359,7 @@ submit() { if (this.form.invalid) { this.form.markAllAsTouched(); return; } this
 ```
 
 ## Change Detection
+? Angular change detection kaise kaam karta hai?
 **Change detection** Angular ka wo process hai jo pata lagata hai ki component ka data badla hai aur **DOM update** karta hai. Default mein Angular **Zone.js** use karta hai: ye browser ke har async event (click, HTTP response, `setTimeout`, Promise) ko pakad leta hai aur uske baad **poore component tree** ko upar se neeche check karta hai — har template binding ki purani aur nayi value compare.
 
 Choti apps ke liye ye bilkul theek hai. Badi apps (bade tables, bahut saare components) mein har chhote event pe poora tree check karna slow ho sakta hai.
@@ -370,6 +383,7 @@ this.orders = [...this.orders, newOrder];
 ```
 
 ## ngIf VS hidden
+? `*ngIf` aur `[hidden]` mein kya farak hai?
 Dono element "chhupa" dete hain, par tareeka bilkul alag hai:
 
 **`*ngIf` (ya `@if`)** — condition false ho to element **DOM se hata deta hai**. Agar wo ek component hai, to wo **destroy** hota hai (`ngOnDestroy` chalta hai, state khatam), aur condition true hone pe **naya bana** (`ngOnInit` phir se, API call phir se). Memory aur DOM halka rehta hai.
@@ -391,6 +405,7 @@ Kab kaunsa? **Bhaari component jo kabhi-kabhi dikhta hai** (permission-based sec
 ```
 
 ## Angular Performance
+? Angular app slow hai — performance kaise improve karoge?
 Angular app slow ho to pehle **measure** karo (Chrome DevTools Performance tab, Angular DevTools profiler, Lighthouse), phir fix. Common techniques:
 
 - **Lazy loading** — routes/features tab load ho jab user wahan jaaye (`loadComponent`/`loadChildren`). Initial bundle chhota, pehla load tez. Angular 17 ka `@defer` block template ke hisse bhi lazy load karta hai.
@@ -412,6 +427,7 @@ trackById(_: number, item: Order) { return item.id; }
 ```
 
 ## Routing / Guards
+? Angular routing aur route guards kya hain? Login guard kaise banaoge?
 **Angular Router** URL ke hisaab se component dikhata hai — bina page reload ke. Routes array mein path → component mapping, `<router-outlet>` jahan component render ho, `routerLink` navigation ke liye, `ActivatedRoute` se URL parameters (`/users/:id`) aur query params.
 
 **Route Guards** decide karte hain ki navigation **allowed hai ya nahi**:
@@ -442,6 +458,7 @@ export const routes: Routes = [
 ! "Guard laga diya to admin page secure hai" — nahi. API pe authorization zaroori hai; guard sirf UI chhupata hai.
 
 ## NgRx
+? NgRx kya hai aur kab use karna chahiye?
 **NgRx** Angular ke liye **Redux pattern** ka state management library hai. Poori app ki shared state ek central **Store** mein rehti hai, aur ek tay flow se hi badalti hai — isse data flow predictable aur debug karne mein aasaan hota hai (Redux DevTools mein har action aur state change dikhta hai, "time travel" bhi).
 
 Flow: component **Action** dispatch karta hai (`loadUsers()`) → **Reducer** (pure function) purani state + action se **nayi state** banata hai → **Effects** side effects sambhalte hain (API call, phir success/failure action) → component **Selector** se state ka zaroori hissa padhta hai (memoized — sirf badalne pe recalculate).
@@ -470,6 +487,7 @@ loadUsers$ = createEffect(() => this.actions$.pipe(
 ```
 
 ## ngOnInit
+? `ngOnInit` kya hai aur constructor se kaise alag hai?
 `ngOnInit` lifecycle hook component bante hi, **pehli baar `@Input` values set hone ke baad**, **ek baar** chalta hai. Component ka initialization logic yahan — API se data laana, subscriptions shuru karna, form setup.
 
 **Constructor mein kyun nahi?** Constructor TypeScript class ka hissa hai aur Angular ise DI ke liye use karta hai. Us waqt `@Input` values **abhi set nahi hui** hoti (undefined), aur component DOM mein bhi nahi hota. Constructor ko sirf services lene tak rakho — halka aur testable.
@@ -496,6 +514,7 @@ export class OrderDetailComponent implements OnInit {
 > Constructor mein API call mat karo — wahan Input abhi set nahi hue hote.
 
 ## ngOnDestroy
+? `ngOnDestroy` kya hai aur isme kya karte ho?
 `ngOnDestroy` component **DOM se hatne se theek pehle** chalta hai (route change, `*ngIf` false). **Cleanup** ki jagah hai: subscriptions band karna, timers (`setInterval`) clear karna, event listeners hatana, WebSocket band karna.
 
 **Kyun zaroori?** Component destroy ho gaya par uski `interval` ya store/`valueChanges` subscription chalti rahi, to wo memory mein bana rehta hai (**memory leak**) aur background mein kaam karta rehta hai — kabhi-kabhi destroyed component pe data set karke errors bhi. User baar-baar page pe aaye-jaaye to subscriptions jama hoti jaati hain.
@@ -522,6 +541,7 @@ ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
 > takeUntil(this.destroy$) pattern sabse saaf hai — ya naya takeUntilDestroyed().
 
 ## Observable
+? Observable kya hai?
 **Observable** ek **stream** hai jo time ke saath **0, 1 ya kai values** de sakta hai, aur end mein complete ya error. RxJS ka core concept.
 
 Teen khaas baatein: (1) **Lazy** — Observable banane se kuch nahi chalta; `subscribe()` karne pe hi execution shuru hota hai. Isliye `http.get()` bina subscribe ke request nahi bhejta. (2) **Cancellable** — `unsubscribe()` se chalta kaam rok sakte ho (HttpClient request abort ho jaati hai). (3) **Operators** — `map`, `filter`, `debounceTime`, `switchMap` jaise powerful tools se streams ko jod-tod sakte ho.
@@ -542,6 +562,7 @@ const shared$ = users$.pipe(shareReplay(1));          // ek request, sab share
 > Subscribe nahi karoge to HTTP call hoti hi nahi — Observable lazy hai.
 
 ## Promise
+? Promise aur Observable mein farak kya hai?
 **Promise** JavaScript ka built-in async primitive hai jo **ek hi future value** (ya error) represent karta hai. Ye **eager** hai — banate hi turant chalna shuru, chahe koi `.then()` kare ya na kare. Aur ek baar shuru hone ke baad **cancel nahi** ho sakta. `async/await` syntax Promise pe hi chalta hai.
 
 Observable se farak: Promise = ek value, turant chalta hai, cancel nahi, operators nahi. Observable = kai values, lazy, cancellable, rich operators. Angular apne APIs (HttpClient, forms, router) mein Observable use karta hai. Observable ko Promise mein badalna ho to `firstValueFrom()` / `lastValueFrom()` (purana `toPromise()` deprecated). Promise ko Observable mein: `from(promise)`.
@@ -564,6 +585,7 @@ const user = await firstValueFrom(this.http.get<User>('/api/me'));   // Observab
 > Observable = stream + cancellable. Promise = single + non-cancellable.
 
 ## OnPush
+? `OnPush` change detection strategy kya hai aur kab use karoge?
 **OnPush** ek change detection strategy hai jisme component **tabhi check** hota hai jab:
 1. Uske kisi `@Input` ka **reference** badle (naya object/array)
 2. Component ya uske child mein koi **DOM event** ho (click, input)

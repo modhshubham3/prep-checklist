@@ -27,16 +27,26 @@ function rebuild(){
 // Personal notes per answer card, same key and same last-write-wins rule as
 // ticks. An emptied note is kept as {s:""} so the deletion syncs too.
 let notes = {};        // key -> { s: string, t: ms }
+// User-made records (own questions, diary entries, practice counts), same
+// merge rule. Shapes are documented in api/progress.js. Deleted = { del: true }.
+let recs = {};         // key -> { t: ms, ... }
+const onRecs = [];     // views that redraw when records change (after a sync)
 
 function save(){
   if(!storageOK) return;
-  try{ localStorage.setItem(STORE, JSON.stringify({ e: entries, n: notes })); }catch(e){ storageOK = false; }
+  try{ localStorage.setItem(STORE, JSON.stringify({ e: entries, n: notes, x: recs })); }catch(e){ storageOK = false; }
 }
 function put(key, v){
   entries[key] = { v: v || null, t: Date.now() };
   rebuild(); save();
   if(typeof sync !== "undefined") sync.soon();
 }
+function putRec(key, r){
+  recs[key] = Object.assign({}, r, { t: Date.now() });
+  save();
+  if(typeof sync !== "undefined") sync.soon();
+}
+const liveRecs = prefix => Object.keys(recs).filter(k => k.startsWith(prefix) && !recs[k].del).map(k => Object.assign({ key: k }, recs[k]));
 function putNote(key, s){
   notes[key] = { s: s, t: Date.now() };
   save();
@@ -61,7 +71,7 @@ function migrateV2(){
 
 try{
   const raw = localStorage.getItem(STORE);
-  if(raw){ const o = JSON.parse(raw) || {}; entries = o.e || {}; notes = o.n || {}; }
+  if(raw){ const o = JSON.parse(raw) || {}; entries = o.e || {}; notes = o.n || {}; recs = o.x || {}; }
   else migrateV2();
   rebuild();
 }catch(e){
@@ -497,7 +507,7 @@ function inl(t){
 // Shared by the main list and practice mode.
 function answerParts(it){
   const paras = Array.isArray(it.a) ? it.a : (it.a ? [it.a] : []);
-  let plain = it.q + (it.qc ? "\n\n" + it.qc : "") + "\n\n" + paras.join("\n\n");
+  let plain = it.q + (it.pq ? "\n" + it.pq : "") + (it.qc ? "\n\n" + it.qc : "") + "\n\n" + paras.join("\n\n");
   let html = paras.map(p => "<p>" + inl(p) + "</p>").join("");
   if(it.t){
     html += '<div class="tbl-wrap"><table class="ch-tbl"><tr>' + it.t.h.map(x => "<th>" + inl(x) + "</th>").join("") + "</tr>";
@@ -775,8 +785,8 @@ const sync = (() => {
     crypto.getRandomValues(a);
     return btoa(String.fromCharCode(...a)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   }
-  function merge(remote, remoteNotes){
-    let changed = false, notesChanged = false;
+  function merge(remote, remoteNotes, remoteRecs){
+    let changed = false, notesChanged = false, recsChanged = false;
     for(const k in remote){
       const r = remote[k];
       if(!r || typeof r.t !== "number") continue;
@@ -787,7 +797,13 @@ const sync = (() => {
       if(!r || typeof r.t !== "number" || typeof r.s !== "string") continue;
       if(!notes[k] || r.t > notes[k].t){ notes[k] = { s: r.s, t: r.t }; notesChanged = true; }
     }
-    if(changed || notesChanged){ rebuild(); save(); }
+    for(const k in remoteRecs){
+      const r = remoteRecs[k];
+      if(!r || typeof r.t !== "number") continue;
+      if(!recs[k] || r.t > recs[k].t){ recs[k] = r; recsChanged = true; }
+    }
+    if(changed || notesChanged || recsChanged){ rebuild(); save(); }
+    if(recsChanged) onRecs.forEach(f => f());
     if(changed) refreshAll();
     if(notesChanged) refreshNotes();
   }
@@ -799,7 +815,7 @@ const sync = (() => {
       const res = await fetch("/api/progress?key=" + encodeURIComponent(code), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ e: entries, n: notes })
+        body: JSON.stringify({ e: entries, n: notes, x: recs })
       });
       const j = await res.json().catch(() => ({}));
       if(!res.ok){
@@ -808,7 +824,7 @@ const sync = (() => {
                   : "Server ne mana kar diya (" + res.status + ").";
         throw new Error(why);
       }
-      merge(j.e || {}, j.n || {});
+      merge(j.e || {}, j.n || {}, j.x || {});
       status("ok");
     }catch(e){
       status("error", e.message && !/fetch/i.test(e.message) ? e.message : "Internet ya server se connect nahi ho paaya. Marks is device pe safe hain, baad mein sync ho jayenge.");
@@ -872,39 +888,93 @@ const sync = (() => {
 })();
 
 /* ================= PRACTICE MODE ================= */
-// One card at a time: question (and its code) first, answer on demand, then
-// an honest self-mark that goes into the same ticks the rest of the app uses.
+// One card at a time: the question as an interviewer would ask it, say the
+// answer out loud, then see the key points (full answer on demand) and mark
+// honestly. Marks go into the same ticks the rest of the app uses, so weak
+// questions keep coming back. Oldest-reviewed come first within each level.
 const practice = (() => {
   const $ = id => document.getElementById(id);
   const ov = $("practice");
-  const ALL = CHEAT2.flatMap(g => g.items.map(it => ({ it, g: g.g, key: kA(it.q) })));
-  const RANK = { naa: 0, thoda: 1 };           // weak-first ordering; unmarked last
-  let queue = [], i = 0, tally = null;
+  const BUILT = CHEAT2.flatMap(g => g.items.map(it => ({ it, g: g.g, key: kA(it.q) })));
+  const MINE = "Mere sawaal";
+  const RANK = { naa: 0, thoda: 1, haan: 3 };   // unmarked = 2
+  const MOCK_SECS = 120;
+  let queue = [], i = 0, tally = null, combo = 0, missed = [], timed = false, clock = null, left = 0;
+
+  // Own questions (from the diary / added by hand) look like built-in items.
+  function mine(){
+    return liveRecs("u:").map(r => ({
+      it: { q: r.q, a: r.a ? r.a.split(/\n{2,}/) : ["Abhi iska jawab nahi likha — Interview diary → Mere sawaal mein jaake likh do."] },
+      g: MINE, key: r.key,
+    }));
+  }
+  const all = () => BUILT.concat(mine());
+
+  // Practice counts: one record per day per device, summed for the view.
+  let device;
+  try{ device = localStorage.getItem("prep-device"); }catch(e){}
+  if(!device){ device = Math.random().toString(36).slice(2, 8); try{ localStorage.setItem("prep-device", device); }catch(e){} }
+  const dayKey = d => d.toLocaleDateString("en-CA");                   // yyyy-mm-dd, local time
+  const today = () => dayKey(new Date());
+  function dayCounts(){
+    const d = {};
+    liveRecs("p:").forEach(r => { const day = r.key.split(":")[1]; d[day] = (d[day] || 0) + (r.n || 0); });
+    return d;
+  }
+  function logOne(){
+    const k = "p:" + today() + ":" + device;
+    putRec(k, { n: ((recs[k] && recs[k].n) || 0) + 1 });
+  }
+  function streak(d){
+    let n = 0; const day = new Date();
+    if(!d[today()]) day.setDate(day.getDate() - 1);                     // today not started yet: count from yesterday
+    while(d[dayKey(day)]){ n++; day.setDate(day.getDate() - 1); }
+    return n;
+  }
+  function stats(){
+    const d = dayCounts();
+    $("prtoday").textContent = d[today()] || 0;
+    $("prstreak").textContent = streak(d);
+    $("prweak").textContent = BUILT.filter(x => state[x.key] === "naa" || state[x.key] === "thoda").length;
+    const m = mine().length;
+    $("prminesub").textContent = m ? m + " sawaal — diary / online se jode hue" : "Abhi koi nahi — Interview diary mein sawaal jodo";
+    $("prmine").disabled = !m;
+  }
 
   CHEAT2.forEach(g => {
     const o = document.createElement("option");
     o.value = g.g; o.textContent = g.g + " (" + g.items.length + ")";
     $("prgroup").appendChild(o);
   });
+  const mineOpt = document.createElement("option");
+  mineOpt.value = MINE; mineOpt.textContent = MINE;
+  $("prgroup").appendChild(mineOpt);
 
-  const src = () => document.querySelector('input[name="prsrc"]:checked').value;
-  function pool(){
-    const grp = $("prgroup").value, s = src();
-    return ALL.filter(x => {
-      if(grp && x.g !== grp) return false;
-      const st = state[x.key];
-      if(s === "weak")  return st !== "haan";
-      if(s === "naa")   return st === "naa";
-      if(s === "baaki") return !st;
-      return true;
-    });
-  }
+  const lastSeen = x => (entries[x.key] && entries[x.key].t) || 0;
   function shuffle(a){
     for(let j = a.length - 1; j > 0; j--){ const k = Math.floor(Math.random() * (j + 1)); [a[j], a[k]] = [a[k], a[j]]; }
     return a;
   }
+  // Weakest first; within a level, the one looked at longest ago first.
+  const order = list => shuffle(list).sort((a, b) =>
+    ((RANK[state[a.key]] ?? 2) - (RANK[state[b.key]] ?? 2)) || (lastSeen(a) - lastSeen(b)));
+
+  function pick({ src = "weak", grp = "", n = 20 }){
+    const list = all().filter(x => {
+      if(grp && x.g !== grp) return false;
+      const st = state[x.key];
+      if(src === "weak")  return st !== "haan";
+      if(src === "naa")   return st === "naa";
+      if(src === "baaki") return !st;
+      return true;
+    });
+    const q = src === "random" ? shuffle(list) : order(list);
+    return n ? q.slice(0, n) : q;
+  }
+
+  const src = () => document.querySelector('input[name="prsrc"]:checked').value;
   function avail(){
-    const n = pool().length;
+    const n = pick({ src: src(), grp: $("prgroup").value, n: 0 }).length;
     $("pravail").textContent = n ? n + " sawaal is filter mein hain." : "Is filter mein koi sawaal nahi — doosra chuno.";
     $("prstart").disabled = !n;
   }
@@ -912,68 +982,328 @@ const practice = (() => {
     $("prsetup").hidden = name !== "setup";
     $("prcard").hidden  = name !== "card";
     $("prdone").hidden  = name !== "done";
+    $("prbar").hidden = name !== "card";
     ov.querySelector(".cheat-body").scrollTop = 0;
   }
+
+  function stopClock(){ clearInterval(clock); clock = null; }
+  function paintClock(){
+    const m = Math.floor(Math.abs(left) / 60), s = String(Math.abs(left) % 60).padStart(2, "0");
+    $("prclock").textContent = (left < 0 ? "+" : "") + m + ":" + s;
+    $("prclock").classList.toggle("late", left <= 0);
+  }
+  function startClock(){
+    stopClock();
+    $("prclock").hidden = !timed;
+    if(!timed) return;
+    left = MOCK_SECS; paintClock();
+    clock = setInterval(() => { left--; paintClock(); }, 1000);
+  }
+
   function show(){
     if(i >= queue.length) return done();
     const x = queue[i];
     $("prprog").textContent = (i + 1) + " / " + queue.length;
+    $("prbarfill").style.width = (i / queue.length * 100) + "%";
     $("prgrp").textContent = x.g;
-    $("prq").textContent = x.it.q;
+    $("prq").innerHTML = inl(x.it.pq || x.it.q);
     $("prqc").hidden = !x.it.qc;
     $("prqc").textContent = x.it.qc || "";
-    $("prans").hidden = true; $("prans").innerHTML = "";
-    $("prmark").hidden = true;
-    $("prreveal").parentElement.hidden = false;
+    $("prask").hidden = false;
+    $("prans").hidden = true;
+    $("prfull").hidden = true; $("prfull").innerHTML = "";
+    $("prcombo").textContent = combo >= 3 ? combo + " lagatar sahi 🔥" : "";
     screen("card");
+    startClock();
+  }
+
+  // Quick check first: bullet points, hook and trap (or the opening paragraph
+  // when an answer has no bullets). The full answer is one tap away.
+  function keyPoints(it){
+    let h = "";
+    if(it.pts) h += '<ul class="ch-pts">' + it.pts.map(p => "<li>" + inl(p) + "</li>").join("") + "</ul>";
+    else if(it.a && it.a.length) h += "<p>" + inl(it.a[0]) + "</p>";
+    if(it.h) h += '<em class="ch-hook">' + inl(it.h) + "</em>";
+    if(it.trap) h += '<p class="ch-trap">' + inl(it.trap) + "</p>";
+    return h;
   }
   function reveal(){
-    $("prans").innerHTML = answerParts(queue[i].it).html;
+    stopClock();
+    const it = queue[i].it;
+    $("prkey").innerHTML = keyPoints(it);
+    const paras = it.a ? it.a.length : 0;
+    $("prmore").hidden = !(paras > 1 || (it.pts && paras) || it.t || it.ex);
+    $("prask").hidden = true;
     $("prans").hidden = false;
-    $("prmark").hidden = false;
-    $("prreveal").parentElement.hidden = true;
   }
-  function next(){ i++; show(); }
+  function more(){
+    $("prfull").innerHTML = answerParts(queue[i].it).html;
+    $("prfull").hidden = false;
+    $("prmore").hidden = true;
+  }
+  function mark(v){
+    const x = queue[i];
+    put(x.key, v);
+    logOne();
+    tally[v]++;
+    combo = v === "haan" ? combo + 1 : 0;
+    if(v !== "haan") missed.push(x);
+    refreshAll();
+    i++; show();
+  }
+  function skip(){ stopClock(); tally.skip++; combo = 0; i++; show(); }
+
   function done(){
+    stopClock();
     $("prprog").textContent = "";
-    const t = tally;
-    $("prsummary").textContent =
-      "Haan bhai: " + t.haan + " · Thoda thoda: " + t.thoda + " · Naa bhai: " + t.naa + (t.skip ? " · Skip: " + t.skip : "") +
-      (t.naa + t.thoda ? ". Jo nahi aaye wo ab \"Naa bhai\" / \"Thoda thoda\" mein hain — agle round mein pehle wahi aayenge." : ". Badhiya!");
+    const t = tally, marked = t.haan + t.thoda + t.naa;
+    const pct = marked ? Math.round(t.haan / marked * 100) : 0;
+    $("prdonetitle").textContent = !marked ? "Round khatam"
+      : pct >= 80 ? "Badhiya! " + pct + "% aa gaye"
+      : pct >= 50 ? pct + "% aa gaye — theek chal raha hai"
+      : pct + "% aaye — inhe dobara dekho";
+    $("prresult").innerHTML =
+      '<span style="flex:' + t.haan + ';background:var(--done)"></span>' +
+      '<span style="flex:' + t.thoda + ';background:var(--flag)"></span>' +
+      '<span style="flex:' + t.naa + ';background:var(--miss)"></span>';
+    $("prresult").hidden = !marked;
+    $("prsummary").textContent = "Aa gaya: " + t.haan + " · Adhoora: " + t.thoda + " · Nahi aaya: " + t.naa + (t.skip ? " · Skip: " + t.skip : "");
+    const rv = $("prreview"); rv.innerHTML = "";
+    if(missed.length){
+      const h = document.createElement("p"); h.className = "sync-help pr-how"; h.textContent = "In pe dobara nazar daalo:";
+      rv.appendChild(h);
+      missed.forEach(x => {
+        const d = document.createElement("details"); d.className = "pr-rv";
+        const s = document.createElement("summary"); s.innerHTML = inl(x.it.pq || x.it.q);
+        const body = document.createElement("div"); body.className = "c2-det";
+        d.addEventListener("toggle", () => { if(d.open && !body.innerHTML) body.innerHTML = answerParts(x.it).html; });
+        d.append(s, body); rv.appendChild(d);
+      });
+    }
+    $("prretry").hidden = !missed.length;
     screen("done");
+    stats();
   }
-  function start(){
-    const s = src(), n = +$("prcount").value;
-    let q = shuffle(pool());
-    if(s === "weak") q.sort((a, b) => (RANK[state[a.key]] ?? 2) - (RANK[state[b.key]] ?? 2));
-    queue = n ? q.slice(0, n) : q;
-    i = 0; tally = { haan: 0, thoda: 0, naa: 0, skip: 0 };
+  function begin(list, withTimer){
+    if(!list.length) return;
+    queue = list; i = 0; combo = 0; missed = []; timed = withTimer;
+    tally = { haan: 0, thoda: 0, naa: 0, skip: 0 };
     show();
   }
-  function open(){ avail(); screen("setup"); ov.classList.add("on"); document.body.style.overflow = "hidden"; }
-  function close(){ ov.classList.remove("on"); document.body.style.overflow = ""; $("prprog").textContent = ""; }
+
+  function mode(m){
+    if(m === "quick") begin(pick({ src: "weak", n: 10 }), false);
+    else if(m === "mock") begin(pick({ src: "random", n: 5 }), true);
+    else if(m === "mine") begin(pick({ grp: MINE, src: "all", n: 0 }), false);
+    else if(m === "topic"){ $("prcustom").open = true; avail(); $("prgroup").focus(); }
+  }
+  function open(){ stats(); avail(); screen("setup"); ov.classList.add("on"); document.body.style.overflow = "hidden"; }
+  function close(){ stopClock(); ov.classList.remove("on"); document.body.style.overflow = ""; $("prprog").textContent = ""; }
 
   $("practiceopen").addEventListener("click", open);
   $("practiceclose").addEventListener("click", close);
+  document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => mode(b.dataset.mode)));
   $("prgroup").addEventListener("change", avail);
   document.querySelectorAll('input[name="prsrc"]').forEach(r => r.addEventListener("change", avail));
-  $("prstart").addEventListener("click", start);
+  $("prstart").addEventListener("click", () => begin(pick({ src: src(), grp: $("prgroup").value, n: +$("prcount").value }), $("prtimer").checked));
   $("prreveal").addEventListener("click", reveal);
-  $("prskip").addEventListener("click", () => { tally.skip++; next(); });
-  $("pragain").addEventListener("click", () => { avail(); screen("setup"); });
-  document.querySelectorAll("[data-pr]").forEach(b => b.addEventListener("click", () => {
-    const v = b.dataset.pr;
-    put(queue[i].key, v);
-    tally[v]++;
-    refreshAll();
-    next();
-  }));
+  $("prmore").addEventListener("click", more);
+  $("prskip").addEventListener("click", skip);
+  $("pragain").addEventListener("click", () => { stats(); avail(); screen("setup"); });
+  $("prretry").addEventListener("click", () => begin(order(missed.slice()), timed));
+  document.querySelectorAll("[data-pr]").forEach(b => b.addEventListener("click", () => mark(b.dataset.pr)));
   document.addEventListener("keydown", e => {
-    if(!ov.classList.contains("on")) return;
-    if(e.key === "Escape") close();
-    else if(e.key === " " && !$("prcard").hidden && !$("prreveal").parentElement.hidden && document.activeElement.tagName !== "INPUT"){ e.preventDefault(); reveal(); }
+    if(!ov.classList.contains("on") || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    if(e.key === "Escape") return close();
+    if($("prcard").hidden) return;
+    if(e.key === " " && !$("prask").hidden){ e.preventDefault(); reveal(); }
+    else if(!$("prans").hidden && ["1", "2", "3"].includes(e.key)) mark(["haan", "thoda", "naa"][+e.key - 1]);
+    else if(e.key === "s" || e.key === "S") skip();
   });
-  return { open };
+  onRecs.push(() => { if(!$("prsetup").hidden) stats(); });
+  return { open, begin };
+})();
+
+/* ================= INTERVIEW DIARY ================= */
+// Interviews (d:) and own questions (u:) live in the synced records. Each
+// line typed under "Kya-kya poochha" becomes an own question linked to its
+// interview, so it shows up in practice and in the topic counts.
+const diary = (() => {
+  const $ = id => document.getElementById(id);
+  const ov = $("diary");
+  let seq = 0;   // keeps ids made in the same millisecond in typing order
+  const newId = () => Date.now().toString(36) + (seq++ % 1296).toString(36).padStart(2, "0") + Math.random().toString(36).slice(2, 5);
+
+  // Topic guess from question text; `grp` matches the site's group titles so
+  // the view can say how many built-in questions in that topic are still weak.
+  const TOPICS = [
+    { name: "C# / OOP",         re: /c#|\boop|class|interface|abstract|inherit|polymorph|encapsul|delegate|generic|linq|async|await|task|thread|garbage|\bgc\b|struct|boxing|static|sealed|solid|exception|string|collection|dictionary/i, grp: /^C#|Tricky — C#|C# —/ },
+    { name: "ASP.NET Core / API", re: /asp\.?net|middleware|web ?api|\bapi\b|controller|routing|filter|jwt|auth|dependency injection|\bdi\b|rest|status code|cors|swagger|minimal/i, grp: /ASP\.NET|REST|\.NET practical/ },
+    { name: "EF Core",          re: /iqueryable|ienumerable|\bef\b|entity framework|dbcontext|migration|tracking|include|lazy|n\+1|orm|dapper/i, grp: /Entity Framework|Tricky — EF/ },
+    { name: "SQL / DB",         re: /sql|query|join|index|salary|group by|having|transaction|acid|normali|procedure|trigger|view|postgres|database|\bdb\b|cte|window|duplicate/i, grp: /SQL|Database/ },
+    { name: "Angular / JS",     re: /angular|rxjs|observable|component|directive|pipe|ngonInit|lifecycle|signal|form|typescript|javascript|\bjs\b|promise|closure|hoist|react/i, grp: /Angular|JS/ },
+    { name: "System design / Architecture", re: /design|architect|microservice|monolith|scal|cache|redis|kafka|queue|load balanc|cap theorem|shard|replica|pattern|cqrs|clean/i, grp: /Architecture|System design|Design patterns|Resume deep-dive/ },
+    { name: "DevOps / Cloud",   re: /docker|kubernetes|k8s|ci\/?cd|pipeline|jenkins|azure|aws|gcp|cloud|git|linux|deploy|nginx/i, grp: /Docker|Git|Linux|Cloud|DevOps/ },
+    { name: "Coding round",     re: /reverse|palindrome|anagram|fibonacci|prime|factorial|array|largest|second|sort|binary search|linked list|fizzbuzz|program|code likho|write a/i, grp: /coding round/ },
+    { name: "Testing",          re: /test|xunit|nunit|moq|mock|tdd/i, grp: /testing/i },
+    { name: "Project / HR",     re: /project|yourself|introduce|role|team|challenge|leave|notice|ctc|salary expect|strength|weakness|why|goal/i, grp: /Project|HR|Templates/ },
+  ];
+  const topicOf = q => (TOPICS.find(t => t.re.test(q)) || { name: "Baaki" }).name;
+
+  const interviews = () => liveRecs("d:").sort((a, b) => (b.dt || "").localeCompare(a.dt || "") || b.t - a.t);
+  const questions = () => liveRecs("u:").sort((a, b) => b.t - a.t || (a.key < b.key ? 1 : -1));
+  const label = src => {
+    if(src && src.startsWith("d:")){ const d = recs[src]; return d && !d.del ? d.c + " · " + d.r : "Interview"; }
+    return src || "Online";
+  };
+
+  function addQuestions(text, extra){
+    const lines = text.split(/\r?\n/).map(s => s.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim()).filter(Boolean);
+    lines.forEach(q => putRec("u:" + newId(), Object.assign({ q: q.slice(0, 500), g: topicOf(q) }, extra)));
+    return lines.length;
+  }
+
+  function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+  function chip(text, kind){ return el("span", "dy-chip" + (kind ? " " + kind : ""), text); }
+  const RES_KIND = { Selected: "ok", Rejected: "bad", "Next round": "mid" };
+
+  function drawInterviews(){
+    const list = $("dyintlist"); list.innerHTML = "";
+    const all = interviews(), qs = questions();
+    if(!all.length){ list.appendChild(el("p", "note", "Abhi koi interview nahi joda. Upar \"Naya interview jodo\" se shuru karo — date, round aur jo poochha wo likh do.")); return; }
+    all.forEach(d => {
+      const card = el("div", "dy-card");
+      const head = el("div", "dy-head");
+      head.append(el("strong", null, d.c || "Company"), chip(d.dt || ""), chip(d.r || ""));
+      const res = el("select", "dy-res");
+      ["Pending", "Next round", "Selected", "Rejected"].forEach(v => { const o = el("option", null, v); if(v === d.res) o.selected = true; res.appendChild(o); });
+      res.className = "dy-res " + (RES_KIND[d.res] || "");
+      res.addEventListener("change", () => { putRec(d.key, Object.assign({}, recs[d.key], { res: res.value })); draw(); });
+      head.appendChild(res);
+      card.appendChild(head);
+      const mineQs = qs.filter(q => q.s === d.key).sort((a, b) => (a.key < b.key ? -1 : 1));
+      if(mineQs.length){
+        const ul = el("ul", "dy-qs");
+        mineQs.forEach(q => ul.appendChild(el("li", state[q.key] ? "st-" + state[q.key] : "", q.q)));
+        card.appendChild(ul);
+      }
+      if(d.no) card.appendChild(el("p", "dy-notes", d.no));
+      const del = el("button", "dy-del", "Interview hatao");
+      del.type = "button";
+      del.addEventListener("click", () => {
+        if(!confirm("Ye interview hata dein? Iske sawaal \"Mere sawaal\" mein rahenge.")) return;
+        putRec(d.key, { del: true }); draw();
+      });
+      card.appendChild(del);
+      list.appendChild(card);
+    });
+  }
+
+  function drawMine(){
+    const list = $("dyminelist"); list.innerHTML = "";
+    const q = $("dymsearch").value.trim().toLowerCase();
+    const all = questions().filter(x => !q || (x.q + " " + (x.a || "")).toLowerCase().includes(q));
+    if(!questions().length){ list.appendChild(el("p", "note", "Koi sawaal nahi. Online ya interview mein mila koi bhi sawaal upar se jodo — kai ek saath paste kar sakte ho.")); return; }
+    if(!all.length){ list.appendChild(el("p", "note", "Is search se kuch nahi mila.")); return; }
+    all.forEach(x => {
+      const card = el("div", "dy-card dy-q");
+      if(state[x.key]) card.dataset.state = state[x.key];
+      const top = el("div", "dy-head");
+      top.append(el("strong", null, x.q));
+      card.appendChild(top);
+      const meta = el("div", "dy-meta");
+      meta.append(chip(x.g || topicOf(x.q)), chip(label(x.s)));
+      const st = el("select", "dy-res");
+      [["", "Mark nahi kiya"], ["haan", "Aa gaya"], ["thoda", "Adhoora"], ["naa", "Nahi aata"]].forEach(([v, t]) => {
+        const o = el("option", null, t); o.value = v; if((state[x.key] || "") === v) o.selected = true; st.appendChild(o);
+      });
+      st.addEventListener("change", () => { put(x.key, st.value || null); draw(); });
+      meta.appendChild(st);
+      card.appendChild(meta);
+      const ta = el("textarea", "note-ta dy-ans");
+      ta.rows = 3; ta.maxLength = 5000; ta.placeholder = "Apna jawab yahan likho — practice mein yahi dikhega";
+      ta.value = x.a || "";
+      let timer;
+      ta.addEventListener("input", () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => putRec(x.key, Object.assign({}, recs[x.key], { a: ta.value })), 700);
+      });
+      card.appendChild(ta);
+      const del = el("button", "dy-del", "Hatao");
+      del.type = "button";
+      del.addEventListener("click", () => { if(confirm("Ye sawaal hata dein?")){ putRec(x.key, { del: true }); draw(); } });
+      card.appendChild(del);
+      list.appendChild(card);
+    });
+  }
+
+  function drawTopics(){
+    const list = $("dytopiclist"); list.innerHTML = "";
+    const qs = questions();
+    if(!qs.length){ list.appendChild(el("p", "note", "Pehle kuch interviews ya sawaal jodo — phir yahan dikhega kaunse topic sabse zyada poochhe ja rahe hain.")); return; }
+    const counts = {};
+    qs.forEach(x => { const t = x.g || topicOf(x.q); counts[t] = (counts[t] || 0) + 1; });
+    const max = Math.max(...Object.values(counts));
+    Object.entries(counts).sort((a, b) => b[1] - a[1]).forEach(([name, n]) => {
+      const t = TOPICS.find(x => x.name === name);
+      let weak = 0, total = 0;
+      if(t) CHEAT2.filter(g => t.grp.test(g.g)).forEach(g => g.items.forEach(it => {
+        total++; const v = state[kA(it.q)]; if(v !== "haan") weak++;
+      }));
+      const row = el("div", "dy-topic");
+      const top = el("div", "dy-head");
+      top.append(el("strong", null, name), chip(n + " baar poochha"));
+      const bar = el("div", "dy-bar"); const fill = el("span"); fill.style.width = (n / max * 100) + "%"; bar.appendChild(fill);
+      row.append(top, bar);
+      if(total) row.appendChild(el("p", "dy-notes", weak ? weak + " / " + total + " site ke sawaal is topic mein abhi pakke nahi — practice mein \"Ek topic\" se karo." : "Is topic ke site wale saare sawaal pakke hain."));
+      list.appendChild(row);
+    });
+  }
+
+  let tab = "int";
+  function draw(){
+    const ints = interviews().length, qs = questions().length;
+    $("dytally").textContent = ints + " interviews · " + qs + " sawaal";
+    $("diarysub").textContent = ints || qs ? ints + " interviews · " + qs + " apne sawaal" : "Har interview ke sawaal likho — kya baar-baar aa raha hai, dikh jayega";
+    if(!ov.classList.contains("on")) return;
+    if(tab === "int") drawInterviews(); else if(tab === "mine") drawMine(); else drawTopics();
+  }
+  function setTab(t){
+    tab = t;
+    document.querySelectorAll("[data-dytab]").forEach(b => b.setAttribute("aria-selected", b.dataset.dytab === t ? "true" : "false"));
+    $("dyint").hidden = t !== "int"; $("dymine").hidden = t !== "mine"; $("dytopics").hidden = t !== "topics";
+    draw();
+  }
+
+  $("dydate").value = new Date().toLocaleDateString("en-CA");
+  $("dysave").addEventListener("click", () => {
+    const c = $("dycompany").value.trim();
+    if(!c){ $("dycompany").focus(); return; }
+    const key = "d:" + newId();
+    putRec(key, { c, dt: $("dydate").value, r: $("dyround").value, res: $("dyres").value, no: $("dynotes").value.trim() });
+    addQuestions($("dyqs").value, { s: key });
+    $("dycompany").value = ""; $("dyqs").value = ""; $("dynotes").value = "";
+    $("dyintform").open = false;
+    draw();
+  });
+  $("dymadd").addEventListener("click", () => {
+    const text = $("dymq").value, ans = $("dyma").value.trim();
+    const lines = text.split(/\r?\n/).filter(s => s.trim());
+    if(!lines.length){ $("dymq").focus(); return; }
+    const extra = { s: $("dysrc").value.trim().slice(0, 60) || "Online" };
+    if(lines.length === 1 && ans) extra.a = ans;
+    addQuestions(text, extra);
+    $("dymq").value = ""; $("dyma").value = "";
+    draw();
+  });
+  $("dymsearch").addEventListener("input", drawMine);
+  document.querySelectorAll("[data-dytab]").forEach(b => b.addEventListener("click", () => setTab(b.dataset.dytab)));
+  $("diaryopen").addEventListener("click", () => { ov.classList.add("on"); document.body.style.overflow = "hidden"; setTab(tab); });
+  $("diaryclose").addEventListener("click", () => { ov.classList.remove("on"); document.body.style.overflow = ""; });
+  document.addEventListener("keydown", e => { if(e.key === "Escape" && ov.classList.contains("on")) $("diaryclose").click(); });
+  onRecs.push(() => { if(!ov.contains(document.activeElement) || document.activeElement.tagName !== "TEXTAREA") draw(); });
+  draw();
+  return { draw };
 })();
 
 /* ================= OFFLINE ================= */

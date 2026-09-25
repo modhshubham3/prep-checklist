@@ -194,6 +194,7 @@ public class ProductsApiTests(WebApplicationFactory<Program> factory)
 ```
 
 ## TDD kya hai
+? TDD kya hai? Kya tum TDD follow karte ho?
 **Test-Driven Development** — code likhne se **pehle** test likho. Cycle: **Red → Green → Refactor**:
 1. **Red** — ek chhota failing test likho (feature abhi hai hi nahi).
 2. **Green** — sirf itna code likho ki test pass ho jaaye (simplest).

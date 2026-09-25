@@ -61,6 +61,7 @@ Dekha jaata hai ki tum **professionally** disagree kar sakte ho ya nahi. Jawab m
 Example type: "Ek senior caching ke bina direct DB query chahte the; maine load test karke numbers dikhaye, phir hum dono ne milke ek hybrid approach li."
 
 ## Strengths aur weaknesses
+? Apni strengths aur weaknesses batao.
 **Strengths**: 2–3 jo **role se related** hon, aur har ek ke saath **ek chhota example**. "Main production issues debug karne mein achha hoon — jaise ek baar memory crash ka root cause container limits tak trace kiya." Bina example ke strength = khokhla.
 
 **Weakness**: **real** weakness batao jo **job ke core ko na maare**, aur saath mein bolo ki **tum us pe kya kar rahe ho**.

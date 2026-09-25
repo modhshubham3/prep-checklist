@@ -1,4 +1,5 @@
 ## Collections
+? C# ke main collections kaunse hain — List, Dictionary, HashSet, Queue, Stack — aur kab kaunsa use karoge?
 Collections data ke group ko store aur manage karne ke liye hain. Sahi collection chunna performance ka sabse aasaan jeet hai — galat chuna to 10 items pe farak nahi dikhega, 10 lakh pe app ruk jaayegi. Hamesha generic collections (`System.Collections.Generic`) use karo; purane `ArrayList`/`Hashtable` mein boxing aur type-safety ki problem hai.
 
 **Array** fixed size hai — ek baar bana to size nahi badalta. **List<T>** andar se array hi hai jo bharne pe double size ka naya array bana ke copy kar leta hai; index se access O(1), beech mein insert/remove O(n). **Dictionary<TKey,TValue>** hash table hai — key se lookup O(1), isliye "id se dhoondhna" ho to List pe loop ki jagah Dictionary. **HashSet<T>** sirf unique values rakhta hai aur `Contains` O(1) hai. **Queue<T>** FIFO, **Stack<T>** LIFO.
@@ -65,6 +66,7 @@ var bad = db.Orders.AsEnumerable()
 > IQueryable = DB pe kaam, IEnumerable = memory mein kaam, List = kaam ho chuka.
 
 ## Where()
+? LINQ `Where()` kya karta hai aur ye kab execute hota hai?
 `Where()` collection ko **filter** karta hai — sirf wo items rakhta hai jinpe condition (predicate) `true` ho. SQL ke `WHERE` jaisa.
 
 Ye **deferred** hai — `Where()` likhne se filtering nahi hoti, sirf "filter karna hai" ka plan banta hai; asli kaam tab hota hai jab result pe loop chale ya `ToList()` ho. IQueryable pe `Where` SQL `WHERE` mein translate hota hai. Kai `Where` chain kar sakte ho — EF Core unhe `AND` mein jod deta hai. Isse conditional filters (search screen) likhna aasaan hai.
@@ -82,6 +84,7 @@ var result = await q.ToListAsync();     // ek hi SQL, saare filters ke saath
 ! IQueryable ke `Where` mein apna C# method (jaise `IsValid(o)`) call karoge to EF use SQL mein translate nahi kar payega — exception aayega.
 
 ## Select()
+? LINQ `Select()` kya karta hai? Ek projection ka example do.
 `Select()` har item ko **transform (project)** karta hai — ek shape se doosre shape mein. Input mein 10 items, output mein bhi 10 items, bas har item badla hua. SQL ke `SELECT columns` jaisa.
 
 EF Core mein `Select` performance ke liye bahut important hai: poori entity load karne ki jagah sirf zaroori columns select karo. Isse kam data aata hai, change tracking nahi hoti, aur related tables ka data bhi ek hi query mein DTO mein aa sakta hai (bina `Include` ke).
@@ -100,6 +103,7 @@ var withIndex = items.Select((item, i) => $"{i + 1}. {item}");   // index bhi mi
 > Where = kaunse items (rows kam). Select = har item ka kaunsa hissa (shape badlo).
 
 ## SelectMany()
+? `SelectMany()` kya hai aur `Select()` se kaise alag hai?
 `SelectMany()` **nested collections ko flatten** karta hai — "list of lists" ko ek seedhi list bana deta hai. Har item se ek collection nikalta hai, phir saari collections ko jod deta hai.
 
 `Select` aur `SelectMany` ka farak: agar har order mein items ki list hai, to `orders.Select(o => o.Items)` tumhe `IEnumerable<List<Item>>` dega (list of lists), jabki `orders.SelectMany(o => o.Items)` seedha `IEnumerable<Item>` (saare items ek list mein). SQL mein ye ek `JOIN` jaisa kaam karta hai.
@@ -120,6 +124,7 @@ var pairs = orders.SelectMany(o => o.Items, (o, item) => $"{o.Id}:{item}");  // 
 > Select = har item ek result. SelectMany = har item se kai results, sab ek list mein.
 
 ## First()
+? `First()` kya karta hai aur kab exception deta hai?
 `First()` sequence ka **pehla item** return karta hai (ya condition wala pehla item). Agar sequence **khaali** hai ya koi item match nahi karta, to `InvalidOperationException` throw karta hai.
 
 Isliye `First()` tab use karo jab tumhe **pakka** pata ho ki kam se kam ek item hoga — aur agar na ho to wo bug hai jise exception se pakadna chahiye. Warna `FirstOrDefault()`. EF Core mein ye SQL mein `TOP 1`/`LIMIT 1` ban jaata hai — sirf ek row aati hai. Order matter karta ho to pehle `OrderBy` lagao, warna "pehla" kaunsa hoga ye guarantee nahi (database koi bhi order de sakta hai).
@@ -133,6 +138,7 @@ var empty = new List<int>();
 ```
 
 ## FirstOrDefault()
+? `FirstOrDefault()` aur `First()` mein farak kya hai?
 `FirstOrDefault()` bhi pehla item deta hai, par sequence khaali ho ya match na mile to exception ki jagah **default value** deta hai — reference types ke liye `null`, `int` ke liye `0`, `bool` ke liye `false`.
 
 Ye "shayad mile, shayad na mile" wale case ke liye hai — jaise id se user dhoondhna. Result ka **null check zaroor karo**, warna aage `NullReferenceException`. .NET 6+ mein apna default bhi de sakte ho: `FirstOrDefault(defaultValue)`.
@@ -153,6 +159,7 @@ int safe  = new List<int>().FirstOrDefault(-1);        // .NET 6+: -1
 | Jab item hona hi chahiye | Jab item optional ho |
 
 ## Single()
+? `Single()` kya karta hai aur `First()` se kaise alag hai?
 `Single()` kehta hai: "**exactly ek** item hona chahiye". Zero item ho to exception, **ek se zyada** item ho to bhi exception.
 
 Kab use karein? Jab business rule hai ki match unique hona chahiye — jaise primary key ya unique email se dhoondhna. Agar do records mil gaye to wo data corruption hai, aur `Single()` use chupke se nigalne ki jagah turant pakad leta hai. `First()` wahan pehla le lega aur galti chhup jaayegi.
@@ -167,6 +174,7 @@ var list = new[] { 5, 5 };
 ```
 
 ## SingleOrDefault()
+? `SingleOrDefault()` kab exception deta hai?
 `SingleOrDefault()`: **zero ya ek** item allowed hai. Zero mile to default (`null`), ek mile to wo item, aur **ek se zyada** mile to phir bhi **exception**.
 
 Ye unique lookup ke liye sabse sahi hai jahan record ho bhi sakta hai aur nahi bhi — jaise "is email ka user hai kya?" Duplicate mile to exception milna chahiye kyunki wo data bug hai.
@@ -188,6 +196,7 @@ if (existing != null) return Conflict("Email already registered");
 ! "SingleOrDefault kabhi throw nahi karta" — galat. 2+ matches pe throw karta hai.
 
 ## Any()
+? `Any()` kya hai aur `Count() > 0` ki jagah `Any()` kyun better hai?
 `Any()` check karta hai ki **kam se kam ek** item hai (ya condition match karta hai) — aur `bool` return karta hai. Pehla match milte hi ruk jaata hai, poori list nahi dekhta.
 
 Existence check ke liye hamesha `Any()` use karo, `Count() > 0` nahi. `Count()` ko sab items ginne padte hain (DB pe `COUNT(*)` poori table scan kar sakta hai), jabki `Any()` SQL mein `EXISTS` ban jaata hai jo pehli row milte hi ruk jaata hai. Ulta, `All()` check karta hai ki **saare** items condition match karte hain.
@@ -207,6 +216,7 @@ bool allPaid = invoices.All(i => i.IsPaid);   // empty list pe All() true deta h
 > Existence check = `Any()`. `Count() > 0` = bekaar ki ginti.
 
 ## Count()
+? `Count()` aur `.Count` property mein kya farak hai?
 `Count()` sequence mein items ki **ginti** deta hai. Condition bhi de sakte ho: `Count(x => x.IsActive)`. EF Core pe ye SQL `COUNT(*)` ban jaata hai.
 
 **`Count` property vs `Count()` method**: `List<T>`, arrays (`Length`), `Dictionary` ke paas `Count` **property** hai jo seedha stored number deti hai — O(1). `Count()` LINQ **method** hai; agar source collection hai to wo andar se property hi use kar leta hai, par pure `IEnumerable` (jaise `Where` ka result) pe use **saare items pe iterate** karna padta hai — O(n). Isliye loop mein baar-baar `.Count()` mat bulao.
@@ -222,6 +232,7 @@ long big = await db.Logs.LongCountAsync();        // int limit (2.1 arab) se bad
 ```
 
 ## OrderBy()
+? `OrderBy()` aur `ThenBy()` se multi-column sorting kaise karte ho?
 `OrderBy()` items ko kisi key ke hisaab se **ascending** (chhote se bada, A se Z) sort karta hai. Second level sort ke liye `ThenBy()` / `ThenByDescending()` use karte hain.
 
 **Trap**: do baar `OrderBy` likhoge to doosra pehle wale ko **replace** kar deta hai, jodta nahi. "Pehle city se, phir naam se" ke liye `OrderBy(City).ThenBy(Name)` chahiye, `OrderBy(City).OrderBy(Name)` nahi.
@@ -239,6 +250,7 @@ var wrong = employees
 ```
 
 ## OrderByDescending()
+? `OrderByDescending()` ka example do — jaise top 3 highest salary.
 `OrderByDescending()` **descending** (bade se chhota, Z se A, naye se purane) order mein sort karta hai. "Latest pehle" wali har list mein ye lagta hai — recent orders, top salaries, newest posts.
 
 Secondary sort ke liye `ThenByDescending()` ya `ThenBy()`. SQL mein `ORDER BY column DESC`. Agar column pe index hai to database sorted data jaldi de sakta hai; bade tables pe `ORDER BY` + `LIMIT` ke liye index zaroori hai, warna poori table sort hoti hai.
@@ -254,6 +266,7 @@ var latest = posts.OrderByDescending(p => p.CreatedAt).FirstOrDefault();
 ```
 
 ## GroupBy()
+? LINQ `GroupBy()` kaise kaam karta hai? Department-wise count ka example likho.
 `GroupBy()` items ko ek key ke hisaab se **groups** mein baantta hai. Har group ek `IGrouping<TKey, TElement>` hota hai — uske paas `Key` hoti hai aur wo khud us group ke items ki list hai. Aksar iske baad `Select` se har group ka summary (count, sum, max) nikalte hain — SQL ke `GROUP BY` jaisa.
 
 EF Core mein `GroupBy` ke baad aggregate (`Count`, `Sum`, `Max`, `Average`) lagaoge to wo SQL `GROUP BY` mein translate hota hai. Par agar group ke saare items as-is maangoge, to kai cases mein EF translate nahi kar pata aur error deta hai (ya purane versions mein data memory mein laata tha).
@@ -274,6 +287,7 @@ var byDept = employees
 > GroupBy ke baad lagbhag hamesha Select + aggregate aata hai.
 
 ## ToList()
+? `ToList()` kya karta hai aur isse query ka execution kaise badalta hai?
 `ToList()` query ko **turant execute** karke result ko ek `List<T>` mein memory mein le aata hai — ise **materialization** kehte hain. EF Core mein isi pal SQL database pe jaata hai.
 
 Kab zaroori hai? (1) Jab tumhe result pe **kai baar** iterate karna ho — bina `ToList()` ke har `foreach` query **dobara chalayega**. (2) Jab DbContext band hone se pehle data chahiye. (3) Jab list ko modify karna ho.

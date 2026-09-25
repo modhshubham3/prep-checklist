@@ -25,6 +25,7 @@ Consumer group "processor": C1←P0, C2←P1, C3←P2
 > Apne note mein likho: tumhare system mein kaunse topics the, kitne partitions, replication factor kya tha.
 
 ## Consumer group aur rebalancing
+? Kafka consumer group kya hai aur rebalancing kab aur kyun hoti hai?
 **Consumer group** ek logical consumer hai jiske kai instances hote hain. Kafka ek topic ke partitions group ke members mein **baant** deta hai — **har partition group ke andar exactly ek consumer ko** milta hai. Isse kaam parallel hota hai aur har message group mein ek hi baar process hota hai. Alag group (jaise "analytics") same topic ko apne aap poora independently padh sakta hai.
 
 Isliye **consumers ki ginti ka faayda partitions ki ginti tak hi hai**: 6 partitions aur 8 consumers → 2 consumers khaali baithe rahenge. Scale karna hai to pehle partitions badhao.
@@ -136,6 +137,7 @@ kafka-consumer-groups.sh --bootstrap-server kafka:9092 --describe --group locati
 ```
 
 ## Retention aur log compaction
+? Kafka mein retention aur log compaction kya hain?
 Kafka messages consume hone ke baad delete nahi karta — **retention policy** tay karti hai kab hatenge:
 
 **Time/size based retention** (`cleanup.policy=delete`) — `retention.ms` (jaise 7 din) ya `retention.bytes` cross hone pe purane **segments** (log files) delete. Isse consumer down ho ke wapas aaye to 7 din ka data abhi bhi padh sakta hai, aur naya consumer purana data **replay** kar sakta hai. Disk usage = produce rate × retention.
@@ -266,6 +268,7 @@ Interview structure: "Live data (positions) har update pe overwrite hota tha, TT
 ! "Cache kabhi invalidate nahi karna padta" ya "TTL laga diya bas" — dono adhoore. Batao **stale data kitni der chalega** aur kyun.
 
 ## Pub/Sub vs Streams
+? Redis Pub/Sub aur Redis Streams mein farak kya hai?
 Dono Redis mein messaging ke liye hain, par guarantees bilkul alag:
 
 **Pub/Sub** — **fire-and-forget**. Publisher channel pe message bhejta hai, us waqt jo subscribers connected hain unhe milta hai. **Koi storage nahi** — subscriber offline tha to message **gaya**. Koi ack nahi, koi replay nahi. Bahut halka aur tez. Use: live notifications jahan ek-do miss chalega — jaise SignalR backplane, "cache invalidate karo" broadcast.
@@ -289,6 +292,7 @@ XACK events workers 1726900000000-0
 ```
 
 ## Persistence: RDB vs AOF
+? Redis persistence — RDB aur AOF mein farak kya hai?
 Redis in-memory hai, par disk pe data bacha ke rakh sakta hai taaki restart pe sab na jaaye:
 
 **RDB (snapshot)** — har kuch minute (ya N writes ke baad) poore dataset ka **point-in-time snapshot** ek compact file mein (`dump.rdb`). Fork karke background mein likhta hai. Fayde: chhoti file, tez restart, backups ke liye achha. Nuksaan: crash pe **aakhri snapshot ke baad ka data kho jaata hai** (minutes ka).

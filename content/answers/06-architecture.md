@@ -1,6 +1,7 @@
 # Architecture, Docker, CI/CD
 
 ## Monolith vs Microservices
+? Monolith aur microservices mein farak kya hai, aur kab kaunsa chunoge?
 **Monolith** mein poori application **ek hi deployable unit** hai — saare modules (users, orders, payments, reports) ek codebase, ek process, aur aam taur pe ek database. **Microservices** mein application chhoti, **independently deployable services** mein bati hoti hai — har service ek business capability ki maalik, apna database, aur doosri services se API ya messages se baat karti hai.
 
 Monolith ke fayde: shuru mein **simple** — ek project, ek deployment, local debugging aasaan, transactions seedhe (ek DB), network calls nahi. Nuksaan: badhne pe codebase bhaari, ek chhote change ke liye poori app deploy, ek module ka bug ya memory leak poori app gira de, poori app ko ek saath scale karna padta hai.
@@ -21,6 +22,7 @@ Microservices ke fayde: har service **alag deploy** aur **alag scale**, teams in
 > Microservices ek tool hai, goal nahi. Pehle modular monolith.
 
 ## Microservices
+? Microservices kya hain? Inke challenges kya hain?
 **Microservices architecture** mein system chhoti services mein bata hota hai, jahan har service ek **business capability** (User, Order, Payment, Notification) ki poori maalik hai. Typical setup: client → **API Gateway** → services → har service ka apna database.
 
 Core principles:
@@ -43,6 +45,7 @@ Angular → API Gateway → Order Service ─(REST)→ Inventory Service
 ! "Saari services ek hi database share karengi" — ye microservices nahi, distributed monolith hai: saari services DB schema se bandh jaati hain.
 
 ## Synchronous
+? Microservices mein synchronous communication kya hai? Iske risks kya hain?
 **Synchronous communication** mein caller request bhejta hai aur **jawab aane tak wait karta hai** — REST/HTTP ya gRPC call. Order service ne inventory service ko call kiya "stock hai?", aur jawab ke bina aage nahi badh sakti.
 
 Kab sahi hai: jab **turant jawab chahiye** user ko dikhane ke liye ya aage ka faisla lene ke liye — login validate karna, price check, stock check before checkout.
@@ -57,6 +60,7 @@ var inStock = await inventory.CheckAsync(productId);   // jawab tak wait
 ```
 
 ## Asynchronous
+? Asynchronous (message-based) communication kya hai aur kab better hai?
 **Asynchronous communication** mein caller **message/event bhej ke aage badh jaata hai** — jawab ka wait nahi karta. Message broker (**Kafka**, **RabbitMQ**, Azure Service Bus) message ko rakhta hai, aur jo services interested hain wo apni speed se consume karti hain.
 
 Fayde: **loose coupling** — publisher ko pata bhi nahi ki kaun consume karega; nayi service jodni ho (analytics) to publisher nahi badalta. **Resilience** — consumer down hai to messages queue mein wait karte hain, baad mein process. **Load leveling** — traffic spike ko queue absorb kar leti hai. Ek event kai services ko.
@@ -86,6 +90,7 @@ Asli systems mein **dono mix** hote hain. Example — order placement: stock che
 | Stock check, login, price | Email, notifications, analytics |
 
 ## API Gateway
+? API Gateway kya hai aur microservices mein kyun chahiye?
 **API Gateway** clients (Angular, mobile) aur backend microservices ke beech ek **single entry point** hai. Client ko 10 services ke alag URLs nahi jaanne padte — sirf gateway ko call karta hai, aur gateway request ko sahi service tak route karta hai.
 
 Common responsibilities (cross-cutting concerns jo har service mein dohrane na padein):
@@ -107,6 +112,7 @@ Common responsibilities (cross-cutting concerns jo har service mein dohrane na p
 ```
 
 ## CQRS
+? CQRS pattern kya hai aur kab use karna chahiye?
 **CQRS (Command Query Responsibility Segregation)** ka matlab: data **badalne** (Commands) aur data **padhne** (Queries) ke liye **alag models/raaste** rakhna.
 
 - **Command** — kuch badalta hai, kuch lautata nahi (ya sirf id): `CreateOrderCommand`, `CancelOrderCommand`. Validation aur business rules yahan.
@@ -134,6 +140,7 @@ public class CreateOrderHandler(AppDbContext db) : IRequestHandler<CreateOrderCo
 ```
 
 ## Clean Architecture
+? Clean Architecture kya hai? Layers aur dependency rule samjhao.
 **Clean Architecture** code ko **layers** mein organize karti hai taaki **business logic database, framework aur UI se independent** rahe. Golden rule — **Dependency Rule**: dependencies hamesha **andar ki taraf** jaati hain. Andar ki layer ko bahar ki layer ka kuch pata nahi hota.
 
 Layers (andar se bahar):
@@ -160,6 +167,7 @@ Domain kisi pe depend nahi karta.
 ```
 
 ## Caching
+? Caching kya hai? In-memory aur distributed caching mein farak batao.
 **Caching** matlab baar-baar maange jaane wale data ko **tez jagah** (memory, Redis) pe rakhna taaki har baar database ya slow API tak na jaana pade. Sahi jagah lagaya to response time aur DB load dono kaafi girte hain.
 
 Types:
@@ -192,6 +200,7 @@ public async Task UpdateCityAsync(City c)
 > Cache mein do mushkil cheezein hain: invalidation aur naming.
 
 ## gRPC
+? gRPC kya hai aur REST se kab behtar hai?
 **gRPC** Google ka high-performance **RPC (Remote Procedure Call)** framework hai. Tum ek `.proto` file mein service aur messages define karte ho, aur usse client aur server ka code **generate** hota hai — doosri service ka method aise call karo jaise local method ho.
 
 Tez kyun hai: **HTTP/2** (ek connection pe kai requests multiplex, header compression) aur **Protocol Buffers** (compact binary format — JSON se chhota aur parse karne mein tez). **Strongly typed contract** — dono taraf ek hi `.proto`, to field ka naam/type galat hone ki galti compile time pe. **Streaming** support — server streaming, client streaming, bidirectional (live updates).
@@ -218,6 +227,7 @@ message StockReply   { int32 available = 1; }
 ```
 
 ## Docker
+? Docker kya hai aur .NET app ko containerize kaise karoge?
 **Docker** application ko uski saari dependencies (runtime, libraries, config) ke saath ek **container** mein pack karta hai, taaki wo har jagah — developer laptop, test server, production — **bilkul ek jaisa** chale. "Mere machine pe to chal raha tha" wali problem khatam.
 
 Concepts:
@@ -261,6 +271,7 @@ ENTRYPOINT ["dotnet", "MyApi.dll"]
 > "Mere machine pe to chal raha tha" ka ilaaj.
 
 ## Exit Code 137
+? Container exit code 137 ke saath band ho gaya — iska matlab kya hai aur kaise debug karoge?
 **Exit code 137** ka matlab: process ko **SIGKILL (signal 9)** se maara gaya (128 + 9 = 137). Process ne khud exit nahi kiya — use bahar se zabardasti khatam kiya gaya, aur SIGKILL ko process pakad ya handle nahi kar sakta.
 
 Sabse common wajah: **OOM (Out of Memory) kill**. Container ne apni memory limit (`--memory` / Kubernetes limit) cross ki, ya host ki memory khatam hui, aur Linux kernel ke **OOM killer** ne process maar diya. Doosri wajahein: `docker kill`, ya Kubernetes ne liveness probe fail hone pe container restart kiya.
@@ -279,6 +290,7 @@ docker run -d --memory=512m --memory-swap=512m api:1.0      # limit lagao
 ! "137 matlab app crash hua" — nahi. App ko bahar se maara gaya, aksar memory limit ki wajah se. App logs mein aksar kuch nahi milta.
 
 ## Nginx
+? Nginx kya hai aur .NET app ke aage reverse proxy kyun lagaate hain?
 **Nginx** ek high-performance web server hai jo aksar in roles mein use hota hai:
 
 - **Reverse proxy** — client Nginx se baat karta hai, Nginx request peeche .NET API (Kestrel) ko bhejta hai. Backend seedha internet pe expose nahi hota.
@@ -317,6 +329,7 @@ server {
 ```
 
 ## CI/CD / Jenkins
+? CI/CD kya hai? Apne project ki pipeline explain karo.
 **CI (Continuous Integration)**: har code push pe automatically **build aur test** chalana, taaki galtiyan jaldi pakdi jaayein aur main branch hamesha working rahe. **CD (Continuous Delivery/Deployment)**: tested build ko automatically environments (dev → UAT → prod) pe **deploy** karna. Delivery mein prod deploy ek manual approval ke baad; Deployment mein wo bhi automatic.
 
 **Jenkins** ek open-source automation server hai jo ye pipelines chalata hai. Pipeline ek **Jenkinsfile** (code mein, Git mein version-controlled) mein stages ke roop mein likhi jaati hai. Alternatives: GitHub Actions, GitLab CI, Azure DevOps.
@@ -346,6 +359,7 @@ pipeline {
 # Production scenarios — kya poocha jata hai
 
 ## Production: API Slow
+? Production mein ek API achanak slow ho gayi — kaise debug karoge?
 Interviewer yahan dekhna chahta hai ki tum **andaaze se nahi, data se** debug karte ho. "Server restart kar dunga" ya "RAM badha dunga" sabse kharab jawab hai — bina root cause ke.
 
 Structured approach:
@@ -374,6 +388,7 @@ Slow API
 ! "Server restart kar dunga" — temporary relief ho sakta hai, par root cause wahin hai aur problem wapas aayegi.
 
 ## Production: Database Full
+? Production DB ki disk full ho gayi — kya karoge?
 Disk full hone pe PostgreSQL naye writes band kar deta hai (aur WAL ke liye jagah na mile to crash bhi ho sakta hai) — ye emergency hai. Pehle **andhadhund delete mat karo** — pehle pata karo jagah kaun kha raha hai.
 
 Investigation order:
@@ -439,6 +454,7 @@ Answer structure: "Pehle pattern dhoondhta hoon — kya failing requests ek hi i
 ! "Sabke liye restart kar dete hain" — agar ek instance ki config galat hai to restart ke baad bhi wahi rahega.
 
 ## API 500
+? API 500 error de rahi hai — step by step kaise debug karoge?
 **500 Internal Server Error** ka matlab server pe koi **unhandled exception** hua — client ki galti nahi. Debug karne ka structured tareeka:
 
 1. **Logs mein exception dhoondho** — request ke time/endpoint/correlation ID se. Stack trace batayega exact line aur exception type.
@@ -459,6 +475,7 @@ Saath mein prevention: **global exception handler** jo log kare aur client ko Pr
 ! Har error ko 500 lautana — validation ya "not found" 4xx hone chahiye; warna asli server bugs shor mein chhup jaate hain.
 
 ## Angular Slow
+? Angular page bahut slow load ho raha hai — kya-kya check karoge?
 Angular app slow hai — pehle pata karo **kya slow hai**: pehla load, navigation, ya ek specific screen pe interaction? Phir **measure** karo — Chrome DevTools (Network, Performance tab), Lighthouse, Angular DevTools profiler.
 
 Check list:
@@ -483,6 +500,7 @@ Time ke saath slow?  → subscription/memory leak
 ```
 
 ## Search API Every Keystroke
+? Search box har keystroke pe API call kar raha hai — kaise fix karoge?
 Problem: search box mein har keystroke pe API call — "A" → call, "An" → call, "Ang" → call… "Angular" type karne mein 7 calls, server pe bekaar load, aur **race condition**: purani request ka jawab baad mein aaya to wo naye results ko overwrite kar dega.
 
 Solution — RxJS ka ek chhota pipeline:
@@ -512,6 +530,7 @@ CREATE INDEX idx_products_name_trgm ON products USING gin (name gin_trgm_ops);  
 ```
 
 ## Large API Response
+? API bahut bada response bhej rahi hai (lakhs rows) — kaise handle karoge?
 Bada API response (hazaaron records, MBs ka JSON) har jagah nuksaan karta hai: DB pe load, server memory, network time, browser mein parse aur render — aur mobile pe aur bura.
 
 Solutions:

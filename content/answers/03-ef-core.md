@@ -1,6 +1,7 @@
 # Entity Framework Core
 
 ## EF Core
+? Entity Framework Core kya hai? Iske fayde aur nuksaan batao.
 **Entity Framework Core** .NET ka **ORM (Object-Relational Mapper)** hai. ORM ka kaam: database tables ko C# classes (**entities**) se jodna, taaki tum SQL likhne ki jagah LINQ likho aur objects ke saath kaam karo. EF Core LINQ ko SQL mein translate karta hai, results ko objects mein bharta hai, aur objects mein kiye changes ko track karke `INSERT/UPDATE/DELETE` generate karta hai.
 
 Ye kai databases support karta hai **providers** ke through — PostgreSQL (Npgsql), SQL Server, MySQL, SQLite. Main features: LINQ queries, change tracking, migrations (schema versioning), relationships (one-to-many, many-to-many), transactions, concurrency tokens.
@@ -24,6 +25,7 @@ var orders = await db.Orders
 | Complex writes ke liye achha | Heavy reads/reports ke liye achha |
 
 ## DbContext
+? `DbContext` kya hai aur uski lifetime kya honi chahiye?
 **DbContext** EF Core ka **central class** hai — database ke saath ek session. Ye: connection sambhalta hai, `DbSet<T>` properties se tables expose karta hai, queries chalata hai, **change tracker** rakhta hai (kaunse objects load hue aur kya badla), aur `SaveChanges()` pe saare changes ek transaction mein save karta hai. Ye **Unit of Work** pattern ka implementation hai.
 
 Configuration `OnModelCreating` (Fluent API) mein ya attributes se hoti hai — table names, keys, relationships, indexes, column types.
@@ -49,6 +51,7 @@ builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(cs));   // Scoped
 ! Ek DbContext pe do queries ek saath (`Task.WhenAll`) — exception. DbContext thread-safe nahi hai.
 
 ## DbSet
+? `DbSet` kya hai?
 `DbSet<T>` DbContext ki ek property hai jo ek **table (entity collection)** ko represent karti hai. Isse do kaam hote hain: **query** (ye `IQueryable<T>` hai, to LINQ chalta hai) aur **changes register** karna — `Add`, `AddRange`, `Update`, `Remove`, `Attach`.
 
 `Add`/`Remove` database ko turant nahi chhoote — wo sirf change tracker mein entity ki state badalte hain (`Added`, `Deleted`). Database tab update hota hai jab `SaveChanges()` call ho. `Find(id)` pehle change tracker mein dekhta hai (already loaded ho to DB call nahi karta), phir DB mein.
@@ -67,6 +70,7 @@ await db.Orders.Where(x => x.CreatedAt < cutoff)
 ```
 
 ## Migration
+? EF Core migration kya hai? Production pe migration kaise apply karte ho?
 **Migrations** database **schema ko version control** mein rakhne ka tareeka hain. Jab tum entity badalte ho (nayi property, naya table, index), `Add-Migration` EF Core ek C# file banata hai jisme `Up()` (change lagao) aur `Down()` (change wapas lo) hote hain. `Update-Database` ye migrations database pe lagata hai. Database ek `__EFMigrationsHistory` table mein yaad rakhta hai ki kaunsi migrations lag chuki hain.
 
 Fayda: har developer aur har environment (dev, UAT, prod) ka schema same rehta hai, aur changes code review mein dikhte hain.
@@ -92,6 +96,7 @@ public partial class AddOrderStatus : Migration
 ! Rename ko EF drop + add bana sakta hai — generated migration padhe bina prod pe mat lagao.
 
 ## Code First
+? Code First approach kya hai?
 **Code First** approach mein tum pehle **C# entity classes** likhte ho, aur EF Core unse **database schema banata hai** (migrations ke through). Schema ka "source of truth" tumhara code hai.
 
 Workflow: entity class banao/badlo → `Add-Migration` → `Update-Database`. Relationships, keys, lengths, indexes Fluent API ya attributes se define karte ho.
@@ -111,6 +116,7 @@ public class Product
 ```
 
 ## Database First
+? Database First approach kya hai aur Code First se kab behtar hai?
 **Database First** mein database **pehle se maujood** hota hai (legacy system, DBA-managed schema, ya kisi doosri team ka DB), aur EF Core us database se **C# entities aur DbContext generate** (scaffold) karta hai.
 
 Command: `dotnet ef dbcontext scaffold "<connection>" Npgsql.EntityFrameworkCore.PostgreSQL -o Models`. Ye har table ki class aur relationships bana deta hai. Schema badle to dobara scaffold karo (`--force`).
@@ -130,6 +136,7 @@ dotnet ef dbcontext scaffold "Host=db;Database=app;Username=u;Password=p" \
 ```
 
 ## Change Tracking
+? EF Core change tracking kaise kaam karti hai?
 **Change tracking** EF Core ka wo system hai jo yaad rakhta hai ki DbContext ne kaunse entities load kiye aur unme kya badla. Query se entity aate hi uska ek **snapshot** (original values) ban jaata hai. `SaveChanges()` pe EF current values ko snapshot se compare karta hai aur sirf **badle hue columns** ka `UPDATE` bhejta hai.
 
 Har tracked entity ki ek **state** hoti hai: `Unchanged`, `Modified`, `Added`, `Deleted`, `Detached` (track nahi ho rahi). `db.Entry(entity).State` se dekh/badal sakte ho.
@@ -147,6 +154,7 @@ await db.SaveChangesAsync();
 ```
 
 ## AsNoTracking
+? `AsNoTracking()` kya hai aur kab use karoge?
 `AsNoTracking()` query ke results ko **change tracker mein register nahi karta**. EF entities bhar ke de deta hai, par unka snapshot nahi rakhta aur unhe yaad nahi rakhta.
 
 Fayda: **kam memory, kam CPU, tez queries** — khaas kar bade result sets pe. Isliye sirf padhne wali jagahon pe hamesha lagao: GET APIs, reports, dashboards, lists. Dhyan: no-tracking entities ko badal ke `SaveChanges()` karoge to kuch save nahi hoga, kyunki EF ko pata hi nahi. Aur ek hi row do jagah aaye to do alag objects banenge (identity resolution nahi) — zaroorat ho to `AsNoTrackingWithIdentityResolution()`.
@@ -168,6 +176,7 @@ await db.SaveChangesAsync();              // kuch save nahi hoga — tracked hi 
 > Reports aur GET APIs mein hamesha lagao. Update karna ho to mat lagao.
 
 ## Include
+? `Include()` kya karta hai aur N+1 problem se kaise bachata hai?
 `Include()` **eager loading** karta hai — main entity ke saath uski related entities (navigation properties) **usi query mein** le aata hai, SQL `JOIN` ke through. `ThenInclude()` se aur gehrai tak (Order → Items → Product).
 
 Bina `Include` ke navigation property `null` (ya khaali collection) rahegi, jab tak lazy loading on na ho. `Include` se N+1 problem khatam hota hai — 100 orders aur unke customers ek hi query mein.
@@ -185,6 +194,7 @@ var orders = await db.Orders
 ```
 
 ## Lazy Loading
+? Lazy loading kya hai aur isko production mein kyun avoid karte hain?
 **Lazy loading** mein related data **tab load hota hai jab tum pehli baar us navigation property ko access karte ho** — chupke se, ek alag SQL query se. `order.Customer.Name` likha aur tabhi DB call hui.
 
 EF Core mein ye by default **off** hai. On karne ke liye `Microsoft.EntityFrameworkCore.Proxies` package, `UseLazyLoadingProxies()`, aur navigation properties `virtual` banani padti hain (EF runtime pe proxy class banata hai jo property override karti hai).
@@ -200,6 +210,7 @@ foreach (var o in orders)
 > Lazy loading loop mein chala to N+1 problem ban jaati hai.
 
 ## Explicit Loading
+? Explicit loading kya hai?
 **Explicit loading** mein entity pehle load karte ho, phir **baad mein, khud ke decide karne pe**, uska related data alag se load karte ho — `db.Entry(entity).Reference(...).LoadAsync()` (single navigation) ya `.Collection(...).LoadAsync()` (collection).
 
 Kab kaam aata hai? Jab related data **har baar nahi, sirf kisi condition pe** chahiye — jaise order ke items sirf tab load karo jab status "Pending" ho. Isse lazy loading jaisi flexibility milti hai par **control tumhare haath** mein — koi chupi hui query nahi. Collection load karte waqt filter bhi laga sakte ho (`.Query().Where(...)`).
@@ -217,6 +228,7 @@ var count = await db.Entry(order).Collection(o => o.Items).Query().CountAsync();
 ```
 
 ## SaveChanges
+? `SaveChanges()` call karne pe kya hota hai? Kya ye transaction mein hota hai?
 `SaveChanges()` / `SaveChangesAsync()` change tracker mein jitne bhi changes hain (Added, Modified, Deleted) — un sabke liye SQL generate karke database pe bhejta hai, aur **by default ek transaction mein**. Yani sab save honge ya koi nahi; beech mein ek fail hua to poora rollback.
 
 Return value: kitni rows affect hui. Naye entities ke generated IDs (identity/serial) save ke baad entity pe apne aap aa jaate hain. EF Core commands ko **batch** karta hai — kai inserts ek round-trip mein.
@@ -261,6 +273,7 @@ var projected = await db.Orders
 > Predictable API performance ke liye: projection > eager > explicit > lazy.
 
 ## N+1 Problem
+? N+1 problem kya hai? Isko detect aur fix kaise karoge?
 **N+1 problem**: 1 query se N parent records aaye, aur phir **har parent ke liye 1 aur query** chali related data laane ke liye — total **N+1 queries**. 100 orders ke customers = 101 queries; 1000 orders = 1001. Har query chhoti hai par network round-trip ka overhead jud-jud ke API ko seconds mein le jaata hai.
 
 Kahan se aata hai? Lazy loading wale loop se, ya aise code se jo loop ke andar repository/DB call karta hai (`foreach (var o in orders) o.Customer = await repo.GetCustomer(o.CustomerId)`). Development mein 10 rows pe pata nahi chalta, production mein data badhte hi dikhta hai.

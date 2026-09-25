@@ -24,9 +24,12 @@ node tools/build-answers.js
 ```
 
 That regenerates `js/answers.js` — commit both. The markdown format (tables,
-bullets, code blocks, `! interview trap`, `> memory hook`) is described at the
+bullets, code blocks, `? practice prompt`, `! interview trap`, `> memory hook`) is described at the
 top of `tools/build-answers.js`. The build fails on a question with no answer
 or a duplicated question.
+
+Give a question a `? ...` line when its title is just a term ("CLR") — practice
+mode shows that line instead, phrased the way an interviewer would ask.
 
 The **checklist** (`DATA`) and **Cheatsheet 1** (`CHEAT`) are still plain
 arrays in `js/data.js`.
@@ -39,7 +42,9 @@ only an answer keeps it.
 
 `api/progress.js` is a Vercel function that stores progress in Redis.
 No accounts: one device creates a random sync code, other devices enter it.
-Marks merge per item by timestamp, and clearing a mark wins over an older mark.
+Marks, notes and user records (interview diary entries, own questions, daily
+practice counts) merge per item by timestamp; a clear or delete wins over an
+older copy. Record shapes are documented in `api/progress.js`.
 
 Needs a Redis store connected to the Vercel project (Storage). Either works:
 - Redis Cloud (`REDIS_URL`, a redis:// connection string) — uses the `redis` package in package.json

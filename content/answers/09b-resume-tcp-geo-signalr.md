@@ -233,6 +233,7 @@ SELECT id FROM stops WHERE ST_DWithin(geom::geography, ST_MakePoint(72.87, 19.07
 ```
 
 ## Stop-arrival detection ka logic
+? GPS data se kaise pata karoge ki vehicle stop pe pahunch gaya?
 "Bus stop pe pahunchi" detect karna simple lagta hai ("point stop ke circle mein aaya") par GPS ki asliyat usse mushkil banati hai: **GPS drift** (khadi gaadi bhi 10–30 m hilti dikhti hai), gaadi stop ke paas se **bina ruke nikal** jaaye, signal loss, points late/out-of-order aayein.
 
 Robust logic ke hisse:

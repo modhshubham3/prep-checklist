@@ -1,6 +1,7 @@
 # Database aur SQL
 
 ## Primary Key
+? Primary key kya hai? Primary key aur unique key mein farak batao.
 **Primary key** wo column (ya columns ka combination) hai jo table ki **har row ko uniquely pehchaanta** hai. Do rules: value **unique** honi chahiye aur **NULL nahi** ho sakti. Ek table mein sirf ek primary key hoti hai.
 
 Database primary key pe apne aap ek **unique index** bana deta hai, isliye id se lookup bahut tez hota hai. Foreign keys isi ko refer karti hain.
@@ -23,6 +24,7 @@ CREATE TABLE order_item (                       -- composite key
 ```
 
 ## Foreign Key
+? Foreign key kya hai aur `ON DELETE CASCADE` kya karta hai?
 **Foreign key** ek table ka column hai jo **doosri table ki primary key ko refer** karta hai — do tables ke beech relationship banata hai aur **referential integrity** enforce karta hai. Yani tum aisa `order` insert nahi kar sakte jiska `customer_id` customers table mein exist hi nahi karta, aur aisa customer delete nahi kar sakte jiske orders abhi bhi pade hain (jab tak rule na batao).
 
 `ON DELETE` rules batate hain parent delete hone pe child ka kya ho: `RESTRICT`/`NO ACTION` (default — delete roko), `CASCADE` (children bhi delete), `SET NULL` (child ka FK null karo). `CASCADE` sochke lagao — ek delete se hazaaron rows gayab ho sakti hain.
@@ -44,6 +46,7 @@ INSERT INTO orders (customer_id, amount) VALUES (99999, 500);
 ! "Foreign key pe index automatically banta hai" — PostgreSQL mein nahi. Khud banao.
 
 ## Unique
+? UNIQUE constraint kya hai? Kya isme NULL allowed hai?
 **UNIQUE constraint** ensure karta hai ki column (ya columns ka combination) mein **koi duplicate value** na ho — jaise email, username, mobile number. Primary key se farak: ek table mein kai unique constraints ho sakte hain, aur unique column mein **NULL allowed** hai.
 
 NULL ka behaviour: SQL mein NULL = "pata nahi", aur do NULL barabar nahi maane jaate — isliye PostgreSQL mein unique column mein **kai NULLs** aa sakte hain. PostgreSQL 15+ mein `UNIQUE NULLS NOT DISTINCT` se ek hi NULL allow kar sakte ho.
@@ -60,6 +63,7 @@ CREATE UNIQUE INDEX uq_active_email ON users(email) WHERE deleted_at IS NULL;
 ```
 
 ## Not Null
+? NOT NULL constraint kya hai?
 **NOT NULL** constraint kehta hai ki column mein **value hona zaroori** hai — NULL allowed nahi. Required fields (naam, email, amount, created_at) pe lagao.
 
 Kyun important? NULL ek teesri state hai ("pata nahi") jo logic ko ajeeb bana deti hai: `NULL = NULL` true nahi, balki NULL hota hai; `amount > 100` NULL rows ko chhod deta hai; `COUNT(column)` NULLs nahi ginta; `SUM` NULL ignore karta hai; `NOT IN` list mein ek NULL ho to poori query kuch nahi lautati. Jitne kam NULL, utne kam surprise.
@@ -79,6 +83,7 @@ ALTER TABLE product ALTER COLUMN notes SET NOT NULL;
 ```
 
 ## Default
+? DEFAULT constraint kya hai?
 **DEFAULT** constraint column ki **value batata hai jab insert mein wo column diya hi na jaaye**. Jaise `created_at DEFAULT now()`, `is_active DEFAULT true`, `status DEFAULT 'New'`.
 
 Dhyan: default sirf tab lagta hai jab column **omit** kiya jaaye. Agar tumne explicitly `NULL` bheja, to NULL hi jaayega (default nahi). Default koi function bhi ho sakta hai — `now()`, `gen_random_uuid()`, sequence.
@@ -98,6 +103,7 @@ INSERT INTO orders (status) VALUES (NULL);   -- ERROR — NULL bheja, default na
 ```
 
 ## Check
+? CHECK constraint kya hai? Example do.
 **CHECK constraint** ek **condition** lagata hai jo har row ko satisfy karni hi padegi, warna insert/update fail. Jaise `salary > 0`, `end_date >= start_date`, `status IN ('New','Paid','Cancelled')`, `age BETWEEN 18 AND 120`.
 
 Ye **database level pe business rules** ki aakhri deewar hai — chahe data API se aaye, script se, ya kisi ne seedha SQL chalaya, galat data andar nahi jaa sakta. Application validation user ko achha error dikhane ke liye hai; CHECK data ki guarantee ke liye.
@@ -116,6 +122,7 @@ CREATE TABLE leave_request (
 ```
 
 ## View
+? View kya hai aur kab use karte ho?
 **View** ek **saved query** hai jo virtual table ki tarah use hoti hai. View khud **data store nahi karta** — jab bhi tum view se SELECT karte ho, uski underlying query har baar chalti hai aur fresh data aata hai.
 
 Use cases: (1) complex JOIN/logic ek jagah rakhna taaki har jagah dohrana na pade; (2) **security** — user ko sirf view ka access do jisme sensitive columns (salary, password) nahi hain; (3) purane table structure ko badalte waqt backward compatibility.
@@ -134,6 +141,7 @@ SELECT * FROM active_customer_orders WHERE total > 10000;   -- har baar fresh
 ```
 
 ## Materialized View
+? Materialized view kya hai aur normal view se kaise alag hai?
 **Materialized view** bhi ek saved query hai, par ye query ka **result physically disk pe store** kar leta hai. Isliye isse padhna bahut tez hai — bhaari JOIN/aggregate dobara nahi chalta. Par data **stale** ho sakta hai: underlying tables badlein to materialized view apne aap update nahi hota, tumhe `REFRESH MATERIALIZED VIEW` chalana padta hai.
 
 Kab use karein: dashboards, reports, analytics — jahan query bhaari hai aur thoda purana data (5 min, 1 ghanta) chalega. Refresh cron job, pg_cron, ya app scheduler se.
@@ -158,6 +166,7 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY daily_sales;   -- reads block nahi hote
 ```
 
 ## Inner Join
+? INNER JOIN kya return karta hai? Example ke saath batao.
 **INNER JOIN** dono tables se sirf wo rows lautata hai jinka **match dono taraf mile**. Jis customer ka koi order nahi, ya jis order ka customer nahi mila — wo result mein nahi aayenge. `JOIN` likhna matlab `INNER JOIN`.
 
 Match `ON` condition se hota hai, usually foreign key = primary key. Ek taraf ki ek row doosri taraf ki kai rows se match ho sakti hai (one-to-many) — to result mein wo row kai baar dikhegi. Isliye JOIN ke baad `SUM`/`COUNT` karte waqt dhyan rakho ki rows multiply to nahi ho gayi.
@@ -175,6 +184,7 @@ WHERE o.created_at >= '2026-01-01';
 > Bina match wali rows gayab ho jaati hain — yahi LEFT JOIN se farak hai.
 
 ## Left Join
+? LEFT JOIN kya hai? Aise customers nikaalo jinka koi order nahi.
 **LEFT JOIN** (LEFT OUTER JOIN) left table ki **saari rows** lautata hai, aur right table ki matching rows. Jahan right mein match nahi mila, wahan right ke columns **NULL** aa jaate hain.
 
 Use cases: "saare customers aur unke orders (agar hain)", "har product ki sales, chahe zero ho". Aur famous trick — **anti-join**: LEFT JOIN karke `WHERE right.id IS NULL` lagao to wo rows milti hain jinka **koi match nahi** (jinhone kabhi order nahi kiya). `NOT EXISTS` bhi yahi karta hai aur aksar utna hi tez hai.
@@ -203,6 +213,7 @@ LEFT JOIN orders o ON o.customer_id = c.id AND o.status = 'Paid';
 > WHERE o.id IS NULL laga do to "jinhone kabhi order nahi kiya" mil jaayenge.
 
 ## Right Join
+? RIGHT JOIN kya hai?
 **RIGHT JOIN** LEFT JOIN ka ulta hai — **right table ki saari rows**, aur left ki matching rows; match nahi to left ke columns NULL.
 
 Practically ise bahut kam use karte hain, kyunki tables ka order ulta karke wahi kaam LEFT JOIN se ho jaata hai, aur zyada tar log LEFT JOIN padhne ke aadi hain. `A RIGHT JOIN B` = `B LEFT JOIN A`. Code mein consistency ke liye aksar sirf LEFT JOIN use karne ka rule hota hai.
@@ -219,6 +230,7 @@ LEFT JOIN employee e ON e.department_id = d.id;
 ```
 
 ## Full Join
+? FULL OUTER JOIN kya hai?
 **FULL OUTER JOIN** dono tables ki **saari rows** lautata hai — match mila to jodi, left mein extra hai to right NULL, right mein extra hai to left NULL. Ye LEFT aur RIGHT ka union jaisa hai.
 
 Kab kaam aata hai? **Data reconciliation** — do systems ka data compare karna: kaunse records dono mein hain, kaunse sirf system A mein, kaunse sirf B mein. Jaise bank statement vs internal payments, ya purana vs naya table migration ke baad.
@@ -243,6 +255,7 @@ FULL OUTER JOIN payments p ON p.txn_id = b.txn_id;
 ```
 
 ## Where vs Having
+? WHERE aur HAVING mein farak kya hai?
 Dono filter karte hain, par **alag stage** pe:
 
 **WHERE** — rows ko **grouping se pehle** filter karta hai. Aggregate functions (`COUNT`, `SUM`) yahan use nahi ho sakte, kyunki groups abhi bane hi nahi.
@@ -272,6 +285,7 @@ ORDER BY avg_salary DESC;
 > WHERE rows chhaanta hai, HAVING groups chhaanta hai.
 
 ## Indexes
+? Index kya hai, kaise kaam karta hai, aur zyada indexes ka nuksaan kya hai?
 **Index** ek alag data structure hai jo database ko rows **jaldi dhoondhne** mein madad karta hai — kitaab ke peeche wali index jaisa. Bina index ke PostgreSQL ko poori table scan karni padti hai (**Seq Scan**); index ke saath wo seedha sahi rows pe pahunchta hai (**Index Scan**).
 
 PostgreSQL mein default **B-tree** index hai — equality (`=`), range (`<`, `>`, `BETWEEN`), `ORDER BY` aur prefix `LIKE 'abc%'` ke liye. Aur bhi types: **GIN** (JSONB, arrays, full-text search), **GiST** (geo data, PostGIS), **BRIN** (bahut badi, time-ordered tables jaise logs), **Hash**.
@@ -292,6 +306,7 @@ CREATE INDEX CONCURRENTLY idx_orders_customer ON orders(customer_id);    -- prod
 > Trade-off: SELECT fast, INSERT/UPDATE slow, extra disk. Har column pe index lagana galat hai.
 
 ## Explain Analyze
+? `EXPLAIN ANALYZE` kya hai aur slow query debug karne mein isko kaise padhte ho?
 `EXPLAIN` batata hai PostgreSQL query **kaise chalane ka plan** bana raha hai. `EXPLAIN ANALYZE` query ko **sach mein chalata hai** aur plan ke saath **asli numbers** deta hai — har step ka actual time, actual rows, loops. Slow query debug karne ka ye pehla aur sabse zaroori tool hai.
 
 Kya dekhna hai:
@@ -318,6 +333,7 @@ SELECT * FROM vehicle_log WHERE vehicle_id = 100 AND created_at >= now() - inter
 > EXPLAIN = plan. EXPLAIN ANALYZE = plan + sach mein chala ke asli time.
 
 ## Transactions
+? Transaction kya hai? SQL mein kaise likhte ho?
 **Transaction** kai SQL operations ka ek group hai jo **ek unit** ki tarah chalta hai — ya to **saare** successful (COMMIT), ya **koi nahi** (ROLLBACK). Beech mein kuch fail hua to database pehle wali state mein wapas.
 
 Classic example: bank transfer. Account A se 100 kato, account B mein 100 jodo. Agar pehla hua aur doosra fail — paisa gayab. Transaction dono ko jod deta hai.
@@ -347,6 +363,7 @@ catch { await tx.RollbackAsync(); throw; }
 > Stored proc mein 10 dependent insert ho to poora block transaction mein daalo.
 
 ## Atomicity
+? Atomicity kya hai? Example do.
 **Atomicity** (ACID ka A): transaction **"all or nothing"** hai. Uske andar ke saare operations ek atom ki tarah hain — aadha kaam kabhi save nahi hoga. Power cut ho, query error aaye, constraint toote — transaction poora rollback.
 
 PostgreSQL ise **WAL (Write-Ahead Log)** aur MVCC se implement karta hai: changes pehle log mein likhe jaate hain; commit record likhne se pehle crash hua to wo changes kabhi dikhenge hi nahi.
@@ -363,6 +380,7 @@ COMMIT;                                             -- asal mein ROLLBACK hoga �
 > Paisa A se kata aur B mein nahi pahuncha = Atomicity toot gayi.
 
 ## Consistency
+? Consistency (ACID ka C) kya hai?
 **Consistency** (ACID ka C): transaction database ko **ek valid state se doosri valid state** mein le jaata hai. Saare rules — PRIMARY KEY, FOREIGN KEY, UNIQUE, CHECK, NOT NULL constraints — transaction ke baad bhi sach rehne chahiye. Koi rule toota to transaction reject.
 
 Jaise rule "balance kabhi negative nahi" (`CHECK (balance >= 0)`) — agar transfer ke baad balance -50 hota, to poori transaction fail. Database kabhi aisi state commit nahi karega jo uske constraints todti ho.
@@ -378,6 +396,7 @@ UPDATE account SET balance = balance - 1000 WHERE id = 1;   -- balance 200 tha
 ```
 
 ## Isolation
+? Isolation kya hai? Isolation levels kaunse hain?
 **Isolation** (ACID ka I): ek saath chal rahi transactions **ek doosre ke beech ke adhoore kaam ko galat tareeke se na dekhein**. Har transaction aisa behave kare jaise wo akeli chal rahi ho — kitna strictly, ye **isolation level** decide karta hai.
 
 Problems jo isolation rokti hai: **Dirty read** (doosri transaction ka uncommitted data padhna), **Non-repeatable read** (ek hi row do baar padhi, beech mein kisi ne badal di), **Phantom read** (same query do baar chalayi, beech mein nayi rows aa gayi), **Lost update** (do log ek saath padh ke update karein, ek ka change mit jaaye).
@@ -404,6 +423,7 @@ COMMIT;
 ```
 
 ## Durability
+? Durability kya hai?
 **Durability** (ACID ka D): ek baar transaction **COMMIT ho gaya, to wo data permanent hai** — turant baad server crash ho, power jaaye, OS restart ho, phir bhi data bachega.
 
 PostgreSQL ise **WAL (Write-Ahead Log)** se karta hai: commit ke waqt pehle change WAL file mein likha jaata hai aur disk pe **fsync** (sach mein disk tak flush) hota hai, tabhi client ko "COMMIT successful" milta hai. Asli table files baad mein (checkpoint pe) update hoti hain. Crash ke baad restart pe PostgreSQL WAL replay karke saara committed data wapas le aata hai. Replication aur point-in-time recovery bhi isi WAL se hoti hai.
@@ -418,6 +438,7 @@ PostgreSQL ise **WAL (Write-Ahead Log)** se karta hai: commit ke waqt pehle chan
 | D — Durability | Commit = permanent | Crash ke baad bhi payment record bacha |
 
 ## Delete
+? DELETE command kya karta hai? Isko rollback kar sakte hain?
 **DELETE** table se **specific rows** hatata hai — `WHERE` condition ke saath (bina WHERE ke saari rows). Ye **DML** command hai: transaction mein hota hai, **ROLLBACK** ho sakta hai, har row ke liye triggers chalte hain, aur foreign key rules (CASCADE/RESTRICT) check hote hain.
 
 Bade tables pe slow ho sakta hai kyunki har row alag se process hoti hai, aur PostgreSQL mein row **turant physically nahi hat-ti** — wo "dead tuple" ban jaati hai jise baad mein VACUUM saaf karta hai (isliye disk space turant kam nahi hota).
@@ -437,6 +458,7 @@ DELETE FROM logs WHERE id IN (
 ! `DELETE FROM users;` — WHERE bhool gaye to saari rows gayi. Transaction mein chalao, pehle SELECT se check karo.
 
 ## Truncate
+? TRUNCATE kya hai aur DELETE se kaise alag hai?
 **TRUNCATE** table ki **saari rows ek jhatke mein** hata deta hai — table ko khaali kar deta hai, par **table ka structure** (columns, indexes, constraints) bacha rehta hai.
 
 DELETE se bahut **tez** hai kyunki row-by-row kaam nahi karta — seedha table ki data files chhod ke nayi khaali file bana deta hai, aur disk space **turant** wapas milta hai. `WHERE` nahi laga sakta. Row-level triggers nahi chalte. `RESTART IDENTITY` se auto-increment counter bhi reset.
@@ -450,6 +472,7 @@ TRUNCATE TABLE customers CASCADE;        -- orders bhi khaali! sochke
 ```
 
 ## Drop
+? DROP, TRUNCATE aur DELETE mein farak kya hai?
 **DROP** poore **object ko hi hata** deta hai — table ka data, structure, indexes, constraints, triggers — sab. `DROP TABLE`, `DROP INDEX`, `DROP VIEW`, `DROP DATABASE`. Ye **DDL** command hai.
 
 PostgreSQL mein ye bhi transaction ke andar rollback ho sakta hai, par commit ke baad data sirf **backup** se wapas aayega. Agar doosre objects (views, foreign keys) is table pe depend karte hain to DROP fail hoga; `CASCADE` unhe bhi hata dega. Scripts mein `DROP TABLE IF EXISTS` taaki error na aaye.
@@ -473,6 +496,7 @@ DROP INDEX CONCURRENTLY IF EXISTS idx_old;
 > DELETE = kuch rows. TRUNCATE = saari rows, dabba bacha. DROP = dabba hi gaya.
 
 ## PostgreSQL MVCC / VACUUM
+? PostgreSQL mein MVCC kya hai aur VACUUM kyun zaroori hai?
 **MVCC (Multi-Version Concurrency Control)** PostgreSQL ka tareeka hai ek saath kai transactions chalane ka **bina readers aur writers ko ek doosre ke liye block kiye**. Jab tum row UPDATE karte ho, PostgreSQL purani row ko badalta nahi — **nayi version (tuple) banata hai** aur purani ko "dead" mark karta hai. DELETE bhi row ko hatata nahi, sirf dead mark karta hai. Har transaction apne snapshot ke hisaab se sahi version dekhta hai. Isliye "readers don't block writers, writers don't block readers".
 
 Iski keemat: **dead tuples** jama hote jaate hain. Yahi wajah hai ki DELETE ke baad disk space kam nahi hota, aur baar-baar update hone wali table phool jaati hai (**bloat**) — scans slow ho jaate hain.
@@ -499,6 +523,7 @@ VACUUM FULL →  table rewrite, file chhoti (exclusive lock)
 > Isliye DELETE ke baad disk kam nahi hoti. VACUUM FULL OS ko jagah wapas deta hai par table lock karta hai.
 
 ## 2nd Highest Salary
+? Employee table se 2nd highest salary nikaalne ki query likho.
 Classic interview SQL. Teen tareeke, aur interviewer aksar **duplicates** aur **Nth** wala follow-up poochta hai.
 
 **Tareeka 1 — Subquery**: jo salary sabse badi se kam hai, unme sabse badi. Duplicate highest salaries ho to bhi sahi chalta hai. Koi 2nd salary na ho to NULL.
@@ -534,6 +559,7 @@ SELECT * FROM (
 ! `ORDER BY salary DESC LIMIT 1 OFFSET 1` bina DISTINCT ke — agar do log highest salary pe hain to "2nd highest" bhi wahi highest aa jaayegi.
 
 ## Duplicate Records
+? Table mein duplicate records kaise dhoondhoge?
 Duplicate dhoondhne ka standard tareeka: jin columns se duplicate decide hota hai, unpe `GROUP BY` karo aur `HAVING COUNT(*) > 1` se sirf wo groups rakho jinme ek se zyada rows hain.
 
 Kai columns milkar duplicate bante hain to sabko GROUP BY mein daalo (jaise `first_name, last_name, dob`). Kaunsi-kaunsi rows duplicate hain (ids ke saath) dekhni ho to `STRING_AGG`/`ARRAY_AGG` ya window function `COUNT(*) OVER (PARTITION BY ...)`.
@@ -560,6 +586,7 @@ SELECT * FROM (
 ```
 
 ## Department Employee Count
+? Har department mein kitne employees hain — query likho.
 Har department mein kitne employees hain — `GROUP BY department_id` aur `COUNT(*)`.
 
 Follow-ups jo aksar aate hain: (1) **Department ka naam** chahiye → department table se JOIN. (2) **Zero employees wale departments bhi** dikhne chahiye → department table se **LEFT JOIN** karo aur `COUNT(e.id)` (na ki `COUNT(*)`) — kyunki `COUNT(*)` NULL wali row ko bhi 1 ginega, jabki `COUNT(e.id)` NULL ko skip karke 0 dega. (3) Sirf bade departments → `HAVING`.
@@ -581,6 +608,7 @@ ORDER BY emp_count DESC;
 ! LEFT JOIN ke saath `COUNT(*)` — khaali department ko 0 ki jagah 1 dikhayega.
 
 ## Department Highest Salary
+? Har department ki highest salary aur us employee ka naam nikaalo.
 Har department ki **highest salary** — `GROUP BY` + `MAX()`. Par asli follow-up hota hai: "**us employee ka naam bhi batao** jiski salary sabse zyada hai" — aur wahan simple GROUP BY kaam nahi karta, kyunki GROUP BY mein `name` daaloge to har employee alag group ban jaayega.
 
 Solutions: **window function** (`RANK()`/`DENSE_RANK()` with `PARTITION BY department`) — ties ho to sab dikhayega; ya **JOIN with subquery** (department + max salary pe join); ya PostgreSQL ka `DISTINCT ON` (har department ki pehli row, ek hi employee).
@@ -604,6 +632,7 @@ ORDER BY department_id, salary DESC;
 ```
 
 ## Last 5 Days
+? Pichhle 5 din ke records nikaalne ki query likho.
 Pichhle 5 din ka data: `created_at >= CURRENT_DATE - INTERVAL '5 days'`.
 
 Samajhne wali baat: **"5 din" ka matlab kya hai?** `CURRENT_DATE - 5 days` aaj ki **midnight** se 5 din peeche se shuru hota hai (poore calendar days). `now() - INTERVAL '5 days'` abhi ke **time** se theek 120 ghante peeche. Requirement ke hisaab se chuno.
@@ -628,6 +657,7 @@ WHERE created_at >= CURRENT_DATE - INTERVAL '5 days'
 ```
 
 ## Find NULL
+? Kisi column mein NULL wali rows kaise nikaaloge? `= NULL` kyun nahi chalta?
 NULL dhoondhne ke liye **`IS NULL`** (aur ulta `IS NOT NULL`). `= NULL` kabhi kaam nahi karta.
 
 Kyun? SQL mein NULL ka matlab "value pata nahi". "Pata nahi" kisi bhi cheez ke barabar hai ya nahi — ye bhi pata nahi. Isliye `manager_id = NULL` ka result TRUE nahi, balki NULL hota hai, aur WHERE sirf TRUE wali rows rakhta hai — result khaali.
@@ -646,6 +676,7 @@ SELECT * FROM a WHERE a.x IS DISTINCT FROM a.y;         -- NULL-safe "not equal"
 ! `WHERE col = NULL` — sabse common SQL galti. Hamesha `IS NULL`.
 
 ## Duplicate rows with ROW_NUMBER
+? `ROW_NUMBER()` se duplicate rows kaise delete karoge, ek copy rakh ke?
 `ROW_NUMBER()` window function har **partition (group)** ke andar rows ko 1, 2, 3… number deta hai. Duplicates ke liye: jin columns se duplicate bante hain unpe `PARTITION BY`, aur `ORDER BY` se decide karo kaunsi row "rakhni" hai (jaise sabse purani id). Phir `rn > 1` wali rows **duplicates** hain — inhe dekh ya delete kar sakte ho, aur har group ki ek row bachi rehti hai.
 
 `GROUP BY + HAVING` sirf batata hai ki kaunse **values** duplicate hain; `ROW_NUMBER` batata hai kaunsi **exact rows** extra hain — delete ke liye yahi chahiye.
@@ -676,6 +707,7 @@ ALTER TABLE employee ADD CONSTRAINT uq_employee_email UNIQUE (email);
 ```
 
 ## Acid
+? ACID properties kya hain? Har ek ka example do.
 **ACID** chaar properties hain jo database transaction ko **bharosemand** banati hain — khaas kar paisa, orders, inventory jaise critical data ke liye.
 
 **A — Atomicity**: sab ya kuch nahi. Transfer mein kato aur jodo — dono honge ya koi nahi. **C — Consistency**: transaction ke baad saare rules (constraints) sach rahein — balance negative nahi, foreign key toote nahi. **I — Isolation**: ek saath chal rahi transactions ek doosre ke adhoore kaam ko galat na dekhein — do log ek saath aakhri seat book na kar sakein. **D — Durability**: commit ho gaya to permanent — crash ke baad bhi.

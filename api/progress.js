@@ -74,6 +74,31 @@ function cleanNotes(n) {
   return out;
 }
 
+// User-made records, one flat map so they share the per-key merge:
+//   u:<id>  own question   { q, a, g (topic), s (source: diary id or "online") }
+//   d:<id>  diary entry    { c (company), dt (yyyy-mm-dd), r (round), res (result), no (notes) }
+//   p:<day>:<device>  practice count for a day on one device { n }
+// Deleting keeps { del: true } so the delete wins over older copies.
+const REC_KEY = /^[udp]:[A-Za-z0-9_:.-]{1,60}$/;
+const REC_STR = { q: 500, a: 5000, g: 80, s: 60, c: 100, dt: 10, r: 40, res: 20, no: 5000 };
+const MAX_RECS = 3000;
+function cleanRecs(x) {
+  const out = {};
+  if (!x || typeof x !== "object") return out;
+  let c = 0;
+  for (const k of Object.keys(x)) {
+    if (++c > MAX_RECS) break;
+    const r = x[k];
+    if (!REC_KEY.test(k) || !r || typeof r.t !== "number") continue;
+    const o = { t: r.t };
+    if (r.del === true) o.del = true;
+    for (const f in REC_STR) if (typeof r[f] === "string") o[f] = r[f].slice(0, REC_STR[f]);
+    if (typeof r.n === "number" && r.n >= 0 && r.n < 1e6) o.n = Math.floor(r.n);
+    out[k] = o;
+  }
+  return out;
+}
+
 // Last write wins, per key. A clear is a {v:null} tombstone, so it can beat
 // an older mark instead of being resurrected by it.
 function merge(a, b) {
@@ -91,14 +116,15 @@ module.exports = async (req, res) => {
 
   const rk = "prep:" + key;
   try {
-    // Stored shape is { e: marks, n: notes }. Records written before notes
+    // Stored shape is { e: marks, n: notes, x: records }. Records written before notes
     // existed are a bare marks map; read those as marks with no notes.
     const raw = JSON.parse((await redis(["GET", rk])) || "{}");
     const isNew = raw && typeof raw.e === "object" && !Array.isArray(raw.e);
     const stored = clean(isNew ? raw.e : raw);
     const storedNotes = cleanNotes(isNew ? raw.n : null);
+    const storedRecs = cleanRecs(isNew ? raw.x : null);
 
-    if (req.method === "GET") return res.status(200).json({ e: stored, n: storedNotes });
+    if (req.method === "GET") return res.status(200).json({ e: stored, n: storedNotes, x: storedRecs });
 
     if (req.method === "PUT") {
       let body = req.body;
@@ -110,8 +136,10 @@ module.exports = async (req, res) => {
       }
       const merged = merge(stored, clean(body && body.e));
       const mergedNotes = merge(storedNotes, cleanNotes(body && body.n));
-      await redis(["SET", rk, JSON.stringify({ e: merged, n: mergedNotes })]);
-      return res.status(200).json({ e: merged, n: mergedNotes });
+      const mergedRecs = merge(storedRecs, cleanRecs(body && body.x));
+      const rec = { e: merged, n: mergedNotes, x: mergedRecs };
+      await redis(["SET", rk, JSON.stringify(rec)]);
+      return res.status(200).json(rec);
     }
 
     res.setHeader("Allow", "GET, PUT");

