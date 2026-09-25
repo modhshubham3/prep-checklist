@@ -328,3 +328,21 @@ section.hidden,.group.hidden,.row.hidden{display:none;}
 .ch-card.hidden{display:none;}
 .ch-grp.hidden{display:none;}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+
+/* ---- theme toggle ---- */
+.toprow{display:flex;justify-content:flex-end;margin-bottom:6px;}
+.theme-btn{
+  font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  background:var(--card);color:var(--ink);border:1px solid var(--rule);
+  border-radius:20px;padding:6px 13px;
+}
+.theme-btn:hover{border-color:var(--pen);color:var(--pen);}
+.theme-btn:focus-visible{outline:2px solid var(--pen);outline-offset:2px;}
+
+/* ---- main page: Cheatsheet 2 inline ---- */
+.main-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:26px 0 12px;}
+.main-head h2{margin:0;font-size:21px;font-weight:800;letter-spacing:-0.02em;}
+/* Filters stay reachable while scrolling a 229-card list. */
+.sticky-filters{position:sticky;top:0;z-index:5;background:var(--paper);padding:10px 0;margin-bottom:10px;}
+#allq .note{margin-top:2px;}
+#allq .sheet{margin-top:6px;}

@@ -156,7 +156,7 @@ function openAsk(row, label){
 function closeAsk(){
   pending = null;
   scrim.classList.remove("on");
-  if(!cheat.classList.contains("on") && !cheat2.classList.contains("on")) document.body.style.overflow = "";
+  if(!cheat.classList.contains("on") && !allq.classList.contains("on")) document.body.style.overflow = "";
 }
 function setState(val){
   if(!pending) return;
@@ -175,8 +175,8 @@ document.addEventListener("keydown", e => {
   else if(cheat.classList.contains("on")){
     cheat.classList.remove("on"); document.body.style.overflow = "";
   }
-  else if(cheat2.classList.contains("on")){
-    cheat2.classList.remove("on"); document.body.style.overflow = "";
+  else if(allq.classList.contains("on")){
+    allq.classList.remove("on"); document.body.style.overflow = "";
   }
 });
 
@@ -254,6 +254,8 @@ function refresh(){
   });
   document.getElementById("tally").innerHTML =
     haan + "<span> / " + total + " pakka</span>";
+  document.getElementById("allqsub").textContent =
+    haan + "/" + total + " pakka · " + thoda + " thoda thoda · checklist, progress ke saath";
   document.getElementById("key").textContent =
     thoda + " thoda thoda · " + naa + " naa bhai · " +
     (total - haan - thoda - naa) + " baaki";
@@ -369,7 +371,6 @@ document.querySelectorAll("[data-cfilter]").forEach(t => t.addEventListener("cli
 }));
 
 /* ================= CHEATSHEET 2 ================= */
-const cheat2 = document.getElementById("cheat2");
 const cheat2List = document.getElementById("cheat2list");
 const cheat2Search = document.getElementById("cheat2search");
 const ch2Tally = document.getElementById("ch2tally");
@@ -490,14 +491,37 @@ document.querySelectorAll("[data-c2filter]").forEach(t => t.addEventListener("cl
 }));
 document.getElementById("c2expand").addEventListener("click", () => cheat2Toggle(true));
 document.getElementById("c2collapse").addEventListener("click", () => cheat2Toggle(false));
-document.getElementById("cheat2open").addEventListener("click", () => {
-  cheat2.classList.add("on");
+/* ================= ALL QUESTIONS (the checklist, now an overlay) ================= */
+const allq = document.getElementById("allq");
+document.getElementById("allqopen").addEventListener("click", () => {
+  allq.classList.add("on");
   document.body.style.overflow = "hidden";
 });
-document.getElementById("cheat2close").addEventListener("click", () => {
-  cheat2.classList.remove("on");
+document.getElementById("allqclose").addEventListener("click", () => {
+  allq.classList.remove("on");
   document.body.style.overflow = "";
 });
+
+/* ================= THEME ================= */
+// Follows the system setting until the user picks one; the choice is stored
+// and re-applied by the inline script in <head> before first paint.
+const themeBtn = document.getElementById("themebtn");
+const darkMQ = window.matchMedia("(prefers-color-scheme: dark)");
+function isDark(){
+  const t = document.documentElement.dataset.theme;
+  return t ? t === "dark" : darkMQ.matches;
+}
+function paintThemeBtn(){
+  themeBtn.textContent = isDark() ? "☀︎ Light" : "☾ Dark";
+}
+themeBtn.addEventListener("click", () => {
+  const next = isDark() ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try{ localStorage.setItem("prep-theme", next); }catch(e){}
+  paintThemeBtn();
+});
+darkMQ.addEventListener("change", paintThemeBtn);
+paintThemeBtn();
 cheat2Refresh();
 
 refresh();

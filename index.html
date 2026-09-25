@@ -12,51 +12,82 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<script>try{var t=localStorage.getItem("prep-theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 </head>
 <body>
 <div class="wrap">
 
 <header class="top">
-  <h1>Interview prep checklist</h1>
-  <p class="sub">C#, ASP.NET Core, Angular aur PostgreSQL ke wo topics jo 2–3 saal experience pe actually poochhe jaate hain. Checkbox pe tap karke batao samajh aaya ya nahi. Topic ke naam pe tap karo to woh copy ho jayega — seedha Google ya ChatGPT mein paste kar sako.</p>
+  <div class="toprow">
+    <button class="theme-btn" id="themebtn" type="button" aria-label="Theme badlo"></button>
+  </div>
+  <h1>Interview prep</h1>
+  <p class="sub">C#, ASP.NET Core, Angular aur PostgreSQL — 2–3 saal experience pe jo actually poochha jaata hai. Neeche har sawaal ka jawab, code example aur yaad rakhne ka trick hai. Box pe tap karke mark karo ki kitna aata hai.</p>
 </header>
 
-<div class="sheet">
-  <div class="sheet-head">
-    <div class="tally" id="tally">0<span> / 0 pakka</span></div>
-  </div>
-  <div class="marks" id="marks"></div>
-  <p class="marks-key" id="key">Box pe tap = mark karo. Topic ke naam pe tap = copy ho jayega.</p>
-</div>
+<button class="cheat-open" id="allqopen">
+  <span class="co-t"><strong>All questions</strong><span id="allqsub">444 topics ki checklist — progress ke saath</span></span>
+  <span class="co-n">&rsaquo;</span>
+</button>
 
-<button class="cheat-open" id="cheatopen">
+<button class="cheat-open alt" id="cheatopen">
   <span class="co-t"><strong>Cheatsheet kholo</strong><span>226 ek-line answers — tick bhi kar sakte ho</span></span>
   <span class="co-n">&rsaquo;</span>
 </button>
 
-<button class="cheat-open alt" id="cheat2open">
-  <span class="co-t"><strong>Cheatsheet 2 — answers + examples</strong><span>229 questions, poore jawab, code examples aur yaad rakhne ke tricks</span></span>
-  <span class="co-n">&rsaquo;</span>
-</button>
-
-<div class="tabs" role="tablist">
-  <button class="tab" role="tab" data-filter="all" aria-selected="true">Sab</button>
-  <button class="tab" role="tab" data-filter="haan" aria-selected="false">Haan bhai</button>
-  <button class="tab" role="tab" data-filter="thoda" aria-selected="false">Thoda thoda</button>
-  <button class="tab" role="tab" data-filter="naa" aria-selected="false">Naa bhai</button>
-  <button class="tab" role="tab" data-filter="baaki" aria-selected="false">Baaki hai</button>
+<div class="main-head">
+  <h2>Answers + examples</h2>
+  <span class="ch-tally" id="ch2tally"></span>
 </div>
-
-<main id="list"></main>
-<p class="empty hidden" id="empty"></p>
+<input class="cheat-search" id="cheat2search" type="search" placeholder="Search karo — jaise boxing, switchMap, N+1, MVCC">
+<div class="cheat-filters sticky-filters" role="tablist">
+  <button class="tab" role="tab" data-c2filter="all" aria-selected="true">Sab</button>
+  <button class="tab" role="tab" data-c2filter="haan" aria-selected="false">Haan bhai</button>
+  <button class="tab" role="tab" data-c2filter="thoda" aria-selected="false">Thoda thoda</button>
+  <button class="tab" role="tab" data-c2filter="naa" aria-selected="false">Naa bhai</button>
+  <button class="tab" role="tab" data-c2filter="baaki" aria-selected="false">Baaki hai</button>
+  <button class="tab" id="c2expand" type="button">Sab kholo</button>
+  <button class="tab" id="c2collapse" type="button">Sab band</button>
+</div>
+<div id="cheat2list"></div>
 
 <div class="tools">
-  <button id="expand">Sab kholo</button>
-  <button id="collapse">Sab band karo</button>
   <button id="reset">Sab clear karo</button>
 </div>
 <p class="warn" id="warn"></p>
 
+</div>
+
+<div class="cheat" id="allq" role="dialog" aria-modal="true" aria-label="All questions">
+  <div class="cheat-bar">
+    <h2>All questions</h2>
+    <button class="cheat-close" id="allqclose">Band karo</button>
+  </div>
+  <div class="cheat-body">
+    <div class="inner">
+      <p class="note">Checkbox pe tap karke batao samajh aaya ya nahi. Topic ke naam pe tap karo to woh copy ho jayega — seedha Google ya ChatGPT mein paste kar sako.</p>
+      <div class="sheet">
+        <div class="sheet-head">
+          <div class="tally" id="tally">0<span> / 0 pakka</span></div>
+        </div>
+        <div class="marks" id="marks"></div>
+        <p class="marks-key" id="key">Box pe tap = mark karo. Topic ke naam pe tap = copy ho jayega.</p>
+      </div>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" data-filter="all" aria-selected="true">Sab</button>
+        <button class="tab" role="tab" data-filter="haan" aria-selected="false">Haan bhai</button>
+        <button class="tab" role="tab" data-filter="thoda" aria-selected="false">Thoda thoda</button>
+        <button class="tab" role="tab" data-filter="naa" aria-selected="false">Naa bhai</button>
+        <button class="tab" role="tab" data-filter="baaki" aria-selected="false">Baaki hai</button>
+      </div>
+      <main id="list"></main>
+      <p class="empty hidden" id="empty"></p>
+      <div class="tools">
+        <button id="expand">Sab kholo</button>
+        <button id="collapse">Sab band karo</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="cheat" id="cheat" role="dialog" aria-modal="true" aria-label="Cheatsheet">
@@ -76,29 +107,6 @@
         <button class="tab" role="tab" data-cfilter="baaki" aria-selected="false">Baaki hai</button>
       </div>
       <div id="cheatlist"></div>
-    </div>
-  </div>
-</div>
-
-<div class="cheat" id="cheat2" role="dialog" aria-modal="true" aria-label="Cheatsheet 2">
-  <div class="cheat-bar">
-    <h2>Cheatsheet 2</h2>
-    <span class="ch-tally" id="ch2tally"></span>
-    <button class="cheat-close" id="cheat2close">Band karo</button>
-  </div>
-  <div class="cheat-body">
-    <div class="inner">
-      <input class="cheat-search" id="cheat2search" type="search" placeholder="Search karo — jaise boxing, switchMap, N+1, MVCC">
-      <div class="cheat-filters" role="tablist">
-        <button class="tab" role="tab" data-c2filter="all" aria-selected="true">Sab</button>
-        <button class="tab" role="tab" data-c2filter="haan" aria-selected="false">Haan bhai</button>
-        <button class="tab" role="tab" data-c2filter="thoda" aria-selected="false">Thoda thoda</button>
-        <button class="tab" role="tab" data-c2filter="naa" aria-selected="false">Naa bhai</button>
-        <button class="tab" role="tab" data-c2filter="baaki" aria-selected="false">Baaki hai</button>
-        <button class="tab" id="c2expand" type="button">Sab kholo</button>
-        <button class="tab" id="c2collapse" type="button">Sab band</button>
-      </div>
-      <div id="cheat2list"></div>
     </div>
   </div>
 </div>
