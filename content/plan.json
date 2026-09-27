@@ -66,6 +66,18 @@
     "farak": ["DELETE vs TRUNCATE vs DROP — kya-kya mitta hai?", "UNION vs UNION ALL — duplicate hatane hain ya nahi?"]
   },
   {
+    "t": "SQL — functions, procedures aur triggers",
+    "why": "Function vs procedure, refcursor, triggers — DB round mein aur purane projects mein bahut aate hain",
+    "learn": ["Function vs stored procedure — PostgreSQL mein farak", "Refcursor kya hai — function se result set lautana aur .NET se padhna", "Stored procedure / function ke andar exception handling", "Trigger kya hai — kab use karein aur kab nahi", ".NET se stored procedure aur function call karna — EF Core, Dapper, ADO.NET", "Cursor kya hai aur set-based query kyun better hai"],
+    "farak": ["EF Core vs Dapper vs ADO.NET — kab kaunsa?"]
+  },
+  {
+    "t": "SQL — window functions, CTE aur advanced queries",
+    "why": "Rank, running total, hierarchy, upsert — machine round ki \"thodi mushkil\" wali queries",
+    "learn": ["Window functions — PARTITION BY, running total, LAG/LEAD, NTILE", "CTE, recursive CTE aur temp table vs subquery", "Self join — employee aur uska manager", "CASE WHEN se conditional aggregation", "INSERT ... ON CONFLICT (upsert) aur RETURNING", "Normalization (1NF, 2NF, 3NF) vs denormalization"],
+    "farak": []
+  },
+  {
     "t": "Angular — components aur communication",
     "why": "Binding, directives, parent-child data — Angular round ki shuruaat",
     "learn": ["Angular Fundamentals", "Angular Data Binding", "Angular Directives", "Parent → Child", "Child → Parent", "Sibling/shared", "ngOnInit", "ngOnDestroy"],

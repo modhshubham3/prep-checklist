@@ -107,6 +107,8 @@ const seen = new Map(), problems = [];
 out.forEach(gr => gr.items.forEach(x => {
   if (!x.a && !x.t && !x.pts) problems.push("no answer: " + x.q);
   if (seen.has(x.q)) problems.push("duplicate question: " + x.q);
+  // One table per card; a stray pipe in a cell or a second table shifts columns.
+  if (x.t && x.t.r.some(r => r.length !== x.t.h.length)) problems.push("table columns don't line up (pipe in a cell, or two tables?): " + x.q);
   seen.set(x.q, true);
 }));
 // Diagrams: every `@viz name` must exist in js/viz.js.

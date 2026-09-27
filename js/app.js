@@ -1397,7 +1397,7 @@ const plan = (() => {
     $("plantally").textContent = done + " / " + PLAN.length + " session";
     $("plansub").textContent = done
       ? done + " / " + PLAN.length + " session ho gaye — agla: " + PLAN[nextIndex()].t
-      : "16 session × 30 min — sirf sabse zaroori topics, sahi order mein";
+      : PLAN.length + " session × 30 min — sirf sabse zaroori topics, sahi order mein";
     const ni = nextIndex(), n = PLAN[ni];
     $("plannext").innerHTML = "";
     const go = document.createElement("button");
