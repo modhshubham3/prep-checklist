@@ -27,7 +27,14 @@ const lines = fs.readdirSync(dir).filter(f => f.endsWith(".md")).sort()
 
 const groups = [];
 let g = null, it = null, para = [], code = null, codeBuf = [];
-const flushPara = () => { if (para.length && it) it.a.push(para.join(" ")); para = []; };
+// it.o records the reading order of paragraphs ("p"), the table ("t") and runs
+// of bullets (["u", n]) so the page can show them as written.
+const flushPara = () => { if (para.length && it) { it.a.push(para.join(" ")); it.o.push("p"); } para = []; };
+const markTable = () => { if (it.o[it.o.length - 1] !== "t" && !it.o.includes("t")) it.o.push("t"); };
+const markBullet = () => {
+  const last = it.o[it.o.length - 1];
+  if (Array.isArray(last)) last[1]++; else it.o.push(["u", 1]);
+};
 
 for (const raw of lines) {
   const line = raw.replace(/\s+$/, "");
@@ -44,7 +51,7 @@ for (const raw of lines) {
   if (/^## /.test(line)) {
     flushPara();
     if (!g) throw new Error("question before any group: " + line);
-    it = { q: line.slice(3).trim(), a: [], pts: [], ex: [], rows: [] };
+    it = { q: line.slice(3).trim(), a: [], pts: [], ex: [], rows: [], o: [] };
     g.items.push(it);
     continue;
   }
@@ -54,9 +61,10 @@ for (const raw of lines) {
     flushPara();
     const cells = line.replace(/^\||\|$/g, "").split("|").map(s => s.trim());
     if (!cells.every(c => /^:?-+:?$/.test(c))) it.rows.push(cells);
+    markTable();
     continue;
   }
-  if (/^- /.test(line)) { flushPara(); it.pts.push(line.slice(2).trim()); continue; }
+  if (/^- /.test(line)) { flushPara(); it.pts.push(line.slice(2).trim()); markBullet(); continue; }
   if (/^\? /.test(line)) { flushPara(); it.pq = line.slice(2).trim(); continue; }
   if (/^! /.test(line)) { flushPara(); it.trap = line.slice(2).trim(); continue; }
   if (/^> /.test(line)) { flushPara(); it.h = line.slice(2).trim(); continue; }
@@ -83,6 +91,9 @@ const out = groups.map(gr => ({
     if (x.ex.length) o.ex = x.ex.join("\n\n");
     if (x.trap) o.trap = x.trap;
     if (x.h) o.h = x.h;
+    // Only ship the order when it isn't the default (paragraphs, table, bullets).
+    const kinds = x.o.map(k => (Array.isArray(k) ? "u" : k)).join("");
+    if (!/^p*t?u?$/.test(kinds)) o.o = x.o;
     return o;
   }),
 }));

@@ -406,9 +406,13 @@ section.hidden,.group.hidden,.row.hidden{display:none;}
 .ch-trap::before{content:"Interview trap: ";font-weight:700;}
 .tbl-wrap{overflow-x:auto;margin-top:10px;}
 .tbl-wrap .ch-tbl{margin-top:0;}
+/* Break between words, never inside a keyword like `readonly`; a table that
+   still doesn't fit scrolls sideways inside its own box. */
+.ch-tbl th,.ch-tbl td{overflow-wrap:break-word;}
+.ch-tbl code{white-space:normal;}
 @media (max-width:520px){
   .tbl-wrap .ch-tbl{font-size:12.5px;}
-  .tbl-wrap .ch-tbl th,.tbl-wrap .ch-tbl td{padding:5px 6px;overflow-wrap:anywhere;}
+  .tbl-wrap .ch-tbl th,.tbl-wrap .ch-tbl td{padding:5px 6px;}
 }
 
 /* ---- tricky cards: question code always visible ---- */

@@ -357,9 +357,12 @@ function refreshAll(){
 // A group heading folds its cards away. Which groups are open is remembered
 // per list on this device only (a view preference, so it doesn't sync).
 // Nothing stored yet = every group folded, so a long list opens as an index.
-function folds(store){
+function folds(store, firstOpen = []){
   let open;
-  try{ open = new Set(JSON.parse(localStorage.getItem(store) || "[]")); }catch(e){ open = new Set(); }
+  try{
+    const saved = localStorage.getItem(store);
+    open = new Set(saved ? JSON.parse(saved) : firstOpen);
+  }catch(e){ open = new Set(firstOpen); }
   const keep = () => { try{ localStorage.setItem(store, JSON.stringify([...open])); }catch(e){} };
   return {
     isOpen: name => open.has(name),
@@ -507,18 +510,32 @@ function inl(t){
 // Shared by the main list and practice mode.
 function answerParts(it){
   const paras = Array.isArray(it.a) ? it.a : (it.a ? [it.a] : []);
-  let plain = it.q + (it.pq ? "\n" + it.pq : "") + (it.qc ? "\n\n" + it.qc : "") + "\n\n" + paras.join("\n\n");
-  let html = paras.map(p => "<p>" + inl(p) + "</p>").join("");
-  if(it.t){
+  let plain = it.q + (it.pq ? "\n" + it.pq : "") + (it.qc ? "\n\n" + it.qc : "");
+  let html = "";
+  const para = p => { html += "<p>" + inl(p) + "</p>"; plain += "\n\n" + p; };
+  const table = () => {
     html += '<div class="tbl-wrap"><table class="ch-tbl"><tr>' + it.t.h.map(x => "<th>" + inl(x) + "</th>").join("") + "</tr>";
     plain += "\n\n" + it.t.h.join(" | ");
     it.t.r.forEach(r => { html += "<tr>" + r.map(x => "<td>" + inl(x) + "</td>").join("") + "</tr>";
       plain += "\n" + r.join(" | "); });
     html += "</table></div>";
-  }
-  if(it.pts){
-    html += '<ul class="ch-pts">' + it.pts.map(p => "<li>" + inl(p) + "</li>").join("") + "</ul>";
-    plain += "\n\n" + it.pts.map(p => "- " + p).join("\n");
+  };
+  const bullets = list => {
+    html += '<ul class="ch-pts">' + list.map(p => "<li>" + inl(p) + "</li>").join("") + "</ul>";
+    plain += "\n\n" + list.map(p => "- " + p).join("\n");
+  };
+  if(it.o){
+    // Written order: paragraphs, the table and bullet runs interleaved.
+    let pi = 0, bi = 0;
+    it.o.forEach(k => {
+      if(k === "p") para(paras[pi++]);
+      else if(k === "t") table();
+      else { bullets(it.pts.slice(bi, bi + k[1])); bi += k[1]; }
+    });
+  } else {
+    paras.forEach(para);
+    if(it.t) table();
+    if(it.pts) bullets(it.pts);
   }
   if(it.ex){ html += '<code class="ch-ex">' + esc(it.ex) + "</code>"; plain += "\n\n" + it.ex; }
   if(it.trap){ html += '<p class="ch-trap">' + inl(it.trap) + "</p>"; plain += "\n\nInterview trap: " + it.trap; }
@@ -566,7 +583,8 @@ function refreshNotes(){
   });
 }
 
-const cheat2Fold = folds("prep-folds-main");
+// First visit: the "Farak samjho" comparisons start open — the easiest way in.
+const cheat2Fold = folds("prep-folds-main", CHEAT2.filter(g => g.g.startsWith("Farak samjho")).slice(0, 1).map(g => g.g));
 CHEAT2.forEach((grp, gi) => {
   cheat2List.appendChild(grpHead(grp.g, cheat2Fold, () => cheat2Filter()));
 
@@ -1095,6 +1113,11 @@ const practice = (() => {
     if(m === "quick") begin(pick({ src: "weak", n: 10 }), false);
     else if(m === "mock") begin(pick({ src: "random", n: 5 }), true);
     else if(m === "mine") begin(pick({ grp: MINE, src: "all", n: 0 }), false);
+    else if(m === "farak"){
+      const pairs = all().filter(x => x.g.startsWith("Farak samjho"));
+      const weak = pairs.filter(x => state[x.key] !== "haan");
+      begin(order(weak.length ? weak : pairs).slice(0, 10), false);   // sab pakke ho gaye to bhi revision chale
+    }
     else if(m === "topic"){ $("prcustom").open = true; avail(); $("prgroup").focus(); }
   }
   function open(){ stats(); avail(); screen("setup"); ov.classList.add("on"); document.body.style.overflow = "hidden"; }
