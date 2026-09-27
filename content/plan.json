@@ -1,0 +1,98 @@
+[
+  {
+    "t": "OOP ki neev",
+    "why": "Har .NET interview yahin se shuru hota hai — 4 pillars aur class ke types",
+    "learn": ["OOP", "Encapsulation", "Inheritance", "Polymorphism", "Abstraction", "Class", "Object"],
+    "farak": ["Normal vs abstract vs sealed vs static class — sirf 2 sawaal poochho", "Method overloading vs overriding — naam same, kaam kab alag?"]
+  },
+  {
+    "t": "Interface, abstract aur types",
+    "why": "\"Abstract class vs interface\" aur \"value vs reference\" — top 10 sawaalon mein",
+    "learn": ["Interface", "Abstract Class", "Value Type", "Reference Type", "Boxing", "Struct"],
+    "farak": ["Abstract class vs interface — ek line mein farak", "Value type vs reference type — copy jaati hai ya address?", "class vs struct vs record — kab kaunsa?"]
+  },
+  {
+    "t": "Keywords jo confuse karte hain",
+    "why": "var, const, readonly, static, ref, out — ek saath padho tabhi farak yaad rehta hai",
+    "learn": ["var", "dynamic", "const", "readonly", "static", "sealed", "ref", "out"],
+    "farak": ["var vs dynamic vs object — type kab decide hota hai?", "const vs readonly vs static — value kab fix hoti hai?", "ref vs out vs in — parameter mein kya jaata hai?"]
+  },
+  {
+    "t": "LINQ aur collections",
+    "why": "Coding round aur EF dono mein LINQ chahiye",
+    "learn": ["Collections", "Where()", "Select()", "GroupBy()", "First()", "Deferred execution kya hai?"],
+    "farak": ["IEnumerable vs IQueryable vs List — filter kahan chalta hai?", "First vs FirstOrDefault vs Single vs SingleOrDefault — kab exception aayegi?", "== vs Equals() vs ReferenceEquals() — kya compare ho raha hai?"]
+  },
+  {
+    "t": "Memory, GC aur async",
+    "why": "\"async naya thread banata hai?\" — sabse zyada galat jawab yahin hote hain",
+    "learn": ["Garbage Collection", "IDisposable", "using", "async", "await", "Task", "Does async create a new thread?"],
+    "farak": ["Dispose vs Finalize vs using — cleanup kaun karta hai?", "async/await vs Task vs Thread — kaun kya hai?", "throw vs throw ex — stack trace kyun kho jaata hai?"]
+  },
+  {
+    "t": "Dependency Injection aur SOLID",
+    "why": "ASP.NET Core poora DI pe chalta hai; SOLID har design sawaal ka base",
+    "learn": ["Dependency Injection kya hai aur kyun?", "S — Srp", "O — Ocp", "L — Lsp", "I — Isp", "D — Dip"],
+    "farak": ["Transient vs Scoped vs Singleton — object kitni baar banta hai?"]
+  },
+  {
+    "t": "ASP.NET Core — request ka safar",
+    "why": "Middleware, routing, validation — Web API round ka core",
+    "learn": ["Middleware", "Middleware Pipeline", "Routing", "Model Binding", "Model Validation", "Global Exception Handling", "HTTP Status Codes"],
+    "farak": ["Middleware vs Filter — dono request ke beech mein, farak kya?"]
+  },
+  {
+    "t": "Auth aur API design",
+    "why": "JWT, 401 vs 403, DTO, pagination — practical API sawaal",
+    "learn": ["Jwt Authentication", "Action Filters", "DTO", "Web API", "Pagination", "Security"],
+    "farak": ["Authentication vs Authorization — 401 vs 403"]
+  },
+  {
+    "t": "Entity Framework Core",
+    "why": "N+1 aur tracking — EF ke sabse common performance sawaal",
+    "learn": ["EF Core", "DbContext", "Change Tracking", "Include", "N+1 Problem", "Migration"],
+    "farak": ["Eager vs Lazy vs Explicit loading — related data kab aata hai?", "Tracking vs AsNoTracking — EF data ko yaad rakhe ya nahi?"]
+  },
+  {
+    "t": "SQL — concepts",
+    "why": "Keys, joins, index, transaction — har DB round mein",
+    "learn": ["Primary Key", "Foreign Key", "Inner Join", "Left Join", "Where vs Having", "Indexes", "Transactions", "Acid"],
+    "farak": ["Primary key vs unique key vs foreign key", "INNER vs LEFT vs RIGHT vs FULL JOIN — kaunsi rows bachti hain?", "WHERE vs HAVING — filter kab lagta hai?", "Clustered vs non-clustered index"]
+  },
+  {
+    "t": "SQL — queries jo likhwayi jaati hain",
+    "why": "2nd highest salary aur department wise — almost har interview mein likhwate hain",
+    "learn": ["2nd Highest Salary", "Department Highest Salary", "Department Employee Count", "Duplicate Records", "Delete", "Truncate"],
+    "farak": ["DELETE vs TRUNCATE vs DROP — kya-kya mitta hai?", "UNION vs UNION ALL — duplicate hatane hain ya nahi?"]
+  },
+  {
+    "t": "Angular — components aur communication",
+    "why": "Binding, directives, parent-child data — Angular round ki shuruaat",
+    "learn": ["Angular Fundamentals", "Angular Data Binding", "Angular Directives", "Parent → Child", "Child → Parent", "Sibling/shared", "ngOnInit", "ngOnDestroy"],
+    "farak": ["constructor vs ngOnInit — kaunsa code kahan?", "ngOnChanges vs ngOnInit vs ngOnDestroy — lifecycle ka order", "*ngIf vs [hidden] — element hatta hai ya chhupta hai?"]
+  },
+  {
+    "t": "Angular — RxJS, HTTP aur forms",
+    "why": "Observable vs Promise aur switchMap — Angular ke sabse tricky sawaal",
+    "learn": ["Observable", "Promise", "switchMap", "Angular HTTP", "Http Interceptor", "Angular Forms", "Routing / Guards"],
+    "farak": ["Promise vs Observable", "switchMap vs mergeMap vs concatMap vs exhaustMap — naya aaye to purane ka kya?", "Subject vs BehaviorSubject vs ReplaySubject — der se aane wale ko kya milega?"]
+  },
+  {
+    "t": "Coding round — top 6 programs",
+    "why": "Machine round mein inme se 2–3 pakka aate hain — ek baar khud likh ke dekho",
+    "learn": ["String reverse — built-in ke bina", "Palindrome check", "Array mein second largest number", "Array mein duplicates find karna", "Factorial aur Fibonacci — loop aur recursion dono", "Employee list se department-wise max salary — LINQ mein"],
+    "farak": []
+  },
+  {
+    "t": "Apna project aur HR",
+    "why": "Pehla sawaal \"tell me about yourself\" aur aakhri notice period — dono tayyar rakho",
+    "learn": ["Tell me about yourself — 60–90 second intro", "Explain Your Project Template", "Project Architecture", "Explain One API", "Difficult Production Issue", "Why are you leaving your current company?", "90 din ka notice period — kaise handle karein"],
+    "farak": []
+  },
+  {
+    "t": "Production scenarios aur trick sawaal",
+    "why": "\"API slow hai, kya karoge?\" — experience wale candidate se yahi poochte hain",
+    "learn": ["Production: API Slow", "API 500", "Angular Slow", "Search API Every Keystroke", "Is JWT encrypted?", "Is POST idempotent?"],
+    "farak": ["var vs let vs const — JavaScript mein", "== vs === aur null vs undefined — JavaScript"]
+  }
+]

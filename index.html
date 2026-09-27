@@ -31,6 +31,11 @@
 </header>
 
 <div class="launch">
+<button class="cheat-open plan" id="planopen">
+  <span class="co-t"><strong>Study plan — time kam hai? yahan se</strong><span id="plansub">16 session × 30 min — sirf sabse zaroori topics, sahi order mein</span></span>
+  <span class="co-n">&rsaquo;</span>
+</button>
+
 <button class="cheat-open" id="allqopen">
   <span class="co-t"><strong>All questions</strong><span id="allqsub">444 topics ki checklist — progress ke saath</span></span>
   <span class="co-n">&rsaquo;</span>
@@ -65,6 +70,7 @@
   <button class="tab" role="tab" data-c2filter="baaki" aria-selected="false">Baaki hai</button>
   <button class="tab" id="c2expand" type="button">Sab kholo</button>
   <button class="tab" id="c2collapse" type="button">Sab band</button>
+  <button class="tab" id="c2short" type="button" aria-pressed="true">Chhota version</button>
 </div>
 <div id="cheat2list"></div>
 
@@ -102,6 +108,35 @@
       <div class="tools">
         <button id="expand">Sab kholo</button>
         <button id="collapse">Sab band karo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="cheat" id="plan" role="dialog" aria-modal="true" aria-label="Study plan">
+  <div class="cheat-bar">
+    <h2 id="plantitle">Study plan</h2>
+    <span class="ch-tally" id="plantally"></span>
+    <button class="cheat-close" id="planclose">Band karo</button>
+  </div>
+  <div class="cheat-body">
+    <div class="inner">
+      <div id="planlist">
+        <p class="note">Har session ~30 minute: pehle <b>topics padho</b> (chhota version), phir unka <b>farak samjho</b>, aakhir mein <b>5 min practice</b>. Roz 2 session = 8 din mein sabse zaroori sab ho jaayega. Topic padh ke imaandari se mark karo — practice mein kamzor wale pehle aayenge.</p>
+        <div class="plan-next" id="plannext"></div>
+        <div id="plansessions"></div>
+      </div>
+      <div id="planview" hidden>
+        <button class="plan-back" id="planback" type="button">‹ Saare sessions</button>
+        <p class="plan-why" id="planwhy"></p>
+        <h3 class="plan-step">1. Padho <span id="plancnt1"></span></h3>
+        <div id="planlearn"></div>
+        <h3 class="plan-step" id="planstep2">2. Farak samjho <span id="plancnt2"></span></h3>
+        <div id="planfarak"></div>
+        <h3 class="plan-step">3. 5 min practice</h3>
+        <p class="sync-help">Isi session ke sawaal — pehle socho, phir jawab dekho. Jo nahi aaye wo baar-baar aayenge.</p>
+        <div class="ask-btns"><button id="planpractice" type="button">Practice shuru karo</button></div>
+        <div class="ask-btns plan-nav"><button id="plannextbtn" type="button">Agla session ›</button></div>
       </div>
     </div>
   </div>

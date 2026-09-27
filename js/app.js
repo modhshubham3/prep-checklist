@@ -508,7 +508,7 @@ function inl(t){
 
 // One answer → its HTML and a plain-text version (for copy and search).
 // Shared by the main list and practice mode.
-function answerParts(it){
+function answerParts(it, short = false){
   const paras = Array.isArray(it.a) ? it.a : (it.a ? [it.a] : []);
   let plain = it.q + (it.pq ? "\n" + it.pq : "") + (it.qc ? "\n\n" + it.qc : "");
   let html = "";
@@ -524,7 +524,16 @@ function answerParts(it){
     html += '<ul class="ch-pts">' + list.map(p => "<li>" + inl(p) + "</li>").join("") + "</ul>";
     plain += "\n\n" + list.map(p => "- " + p).join("\n");
   };
-  if(it.o){
+  if(short){
+    // Quick revision: the core line, then the table (or the first bullet run),
+    // then trap and hook. No code examples — "Poora padho" has those.
+    if(paras.length) para(paras[0]);
+    if(it.t) table();
+    else if(it.pts){
+      const run = it.o && it.o.find(k => Array.isArray(k));
+      bullets(run ? it.pts.slice(0, run[1]) : it.pts);
+    }
+  } else if(it.o){
     // Written order: paragraphs, the table and bullet runs interleaved.
     let pi = 0, bi = 0;
     it.o.forEach(k => {
@@ -537,11 +546,37 @@ function answerParts(it){
     if(it.t) table();
     if(it.pts) bullets(it.pts);
   }
-  if(it.ex){ html += '<code class="ch-ex">' + esc(it.ex) + "</code>"; plain += "\n\n" + it.ex; }
+  if(it.ex && !short){ html += '<code class="ch-ex">' + esc(it.ex) + "</code>"; plain += "\n\n" + it.ex; }
   if(it.trap){ html += '<p class="ch-trap">' + inl(it.trap) + "</p>"; plain += "\n\nInterview trap: " + it.trap; }
   if(it.h){ html += '<em class="ch-hook">' + inl(it.h) + "</em>"; plain += "\n\nYaad rakho: " + it.h; }
   return { html, plain };
 }
+
+// An answer with a short and a full version. Which one shows is decided by
+// CSS: the page-wide "Chhota version" switch (body.short-mode), or
+// alwaysShort for the study plan; "Poora jawab padho" opens the full one.
+function answerBox(it, fullHtml, alwaysShort = false){
+  const box = document.createElement("div");
+  box.className = "ans-box" + (alwaysShort ? " always-short" : "");
+  const shortHtml = answerParts(it, true).html;
+  const full = fullHtml || answerParts(it).html;
+  if(shortHtml === full){ box.innerHTML = full; return box; }
+  const s = document.createElement("div"); s.className = "ans-short"; s.innerHTML = shortHtml;
+  const f = document.createElement("div"); f.className = "ans-full"; f.innerHTML = full;
+  const more = document.createElement("button");
+  more.type = "button"; more.className = "ans-more"; more.textContent = "Poora jawab padho ↓";
+  more.addEventListener("click", () => {
+    const on = box.classList.toggle("full");
+    more.textContent = on ? "Chhota karo ↑" : "Poora jawab padho ↓";
+  });
+  box.append(s, f, more);
+  return box;
+}
+
+// Page-wide switch: short answers everywhere (default on — time is short).
+let shortMode = true;
+try{ shortMode = localStorage.getItem("prep-short") !== "0"; }catch(e){}
+document.body.classList.toggle("short-mode", shortMode);
 
 // "My note" box under an answer. Saves as you type (debounced) and syncs.
 function noteBox(key){
@@ -619,7 +654,7 @@ CHEAT2.forEach((grp, gi) => {
 
     const det = document.createElement("div");
     det.className = "c2-det";
-    det.innerHTML = html;
+    det.appendChild(answerBox(it, html));
     const cp = document.createElement("button");
     cp.className = "c2-copy";
     cp.textContent = "Copy karo";
@@ -689,6 +724,17 @@ document.querySelectorAll("[data-c2filter]").forEach(t => t.addEventListener("cl
 }));
 document.getElementById("c2expand").addEventListener("click", () => cheat2Toggle(true));
 document.getElementById("c2collapse").addEventListener("click", () => cheat2Toggle(false));
+(() => {
+  const b = document.getElementById("c2short");
+  const paint = () => { b.setAttribute("aria-pressed", shortMode ? "true" : "false"); b.textContent = shortMode ? "Chhota version ✓" : "Chhota version"; };
+  paint();
+  b.addEventListener("click", () => {
+    shortMode = !shortMode;
+    document.body.classList.toggle("short-mode", shortMode);
+    try{ localStorage.setItem("prep-short", shortMode ? "1" : "0"); }catch(e){}
+    paint();
+  });
+})();
 /* ================= ALL QUESTIONS (the checklist, now an overlay) ================= */
 const allq = document.getElementById("allq");
 document.getElementById("allqopen").addEventListener("click", () => {
@@ -1035,22 +1081,14 @@ const practice = (() => {
     startClock();
   }
 
-  // Quick check first: bullet points, hook and trap (or the opening paragraph
-  // when an answer has no bullets). The full answer is one tap away.
-  function keyPoints(it){
-    let h = "";
-    if(it.pts) h += '<ul class="ch-pts">' + it.pts.map(p => "<li>" + inl(p) + "</li>").join("") + "</ul>";
-    else if(it.a && it.a.length) h += "<p>" + inl(it.a[0]) + "</p>";
-    if(it.h) h += '<em class="ch-hook">' + inl(it.h) + "</em>";
-    if(it.trap) h += '<p class="ch-trap">' + inl(it.trap) + "</p>";
-    return h;
-  }
+  // Quick check first: the short version (core line, table or points, trap,
+  // hook). The full answer is one tap away.
   function reveal(){
     stopClock();
     const it = queue[i].it;
-    $("prkey").innerHTML = keyPoints(it);
-    const paras = it.a ? it.a.length : 0;
-    $("prmore").hidden = !(paras > 1 || (it.pts && paras) || it.t || it.ex);
+    const short = answerParts(it, true).html;
+    $("prkey").innerHTML = short;
+    $("prmore").hidden = short === answerParts(it).html;
     $("prask").hidden = true;
     $("prans").hidden = false;
   }
@@ -1144,7 +1182,9 @@ const practice = (() => {
     else if(e.key === "s" || e.key === "S") skip();
   });
   onRecs.push(() => { if(!$("prsetup").hidden) stats(); });
-  return { open, begin };
+  // Start a round straight from elsewhere (the study plan), weakest first.
+  function run(list){ stats(); ov.classList.add("on"); document.body.style.overflow = "hidden"; begin(order(list.slice()), false); }
+  return { open, begin, run };
 })();
 
 /* ================= INTERVIEW DIARY ================= */
@@ -1327,6 +1367,135 @@ const diary = (() => {
   onRecs.push(() => { if(!ov.contains(document.activeElement) || document.activeElement.tagName !== "TEXTAREA") draw(); });
   draw();
   return { draw };
+})();
+
+/* ================= STUDY PLAN ================= */
+// Sessions from content/plan.json: read a few core topics (short version),
+// then the comparisons that tie them together, then a practice round on
+// exactly those. A session counts as done once every item in it is marked.
+const plan = (() => {
+  const $ = id => document.getElementById(id);
+  const ov = $("plan");
+  const BY_Q = {};
+  CHEAT2.forEach(g => g.items.forEach(it => { BY_Q[it.q] = { it, g: g.g, key: kA(it.q) }; }));
+  const items = s => [...s.learn, ...s.farak].map(q => BY_Q[q]);
+  const status = s => {
+    const all = items(s);
+    return { total: all.length, marked: all.filter(x => state[x.key]).length, haan: all.filter(x => state[x.key] === "haan").length };
+  };
+  const nextIndex = () => { const i = PLAN.findIndex(s => { const st = status(s); return st.marked < st.total; }); return i < 0 ? 0 : i; };
+  let current = -1;
+
+  function drawList(){
+    const done = PLAN.filter(s => { const st = status(s); return st.marked === st.total; }).length;
+    $("plantally").textContent = done + " / " + PLAN.length + " session";
+    $("plansub").textContent = done
+      ? done + " / " + PLAN.length + " session ho gaye — agla: " + PLAN[nextIndex()].t
+      : "16 session × 30 min — sirf sabse zaroori topics, sahi order mein";
+    const ni = nextIndex(), n = PLAN[ni];
+    $("plannext").innerHTML = "";
+    const go = document.createElement("button");
+    go.type = "button"; go.className = "cheat-open plan";
+    go.innerHTML = '<span class="co-t"><strong></strong><span></span></span><span class="co-n">&rsaquo;</span>';
+    go.querySelector("strong").textContent = (done ? "Aage badho — " : "Yahan se shuru karo — ") + "Session " + (ni + 1) + ": " + n.t;
+    go.querySelector(".co-t span").textContent = n.why;
+    go.addEventListener("click", () => openSession(ni));
+    $("plannext").appendChild(go);
+
+    const list = $("plansessions"); list.innerHTML = "";
+    PLAN.forEach((s, i) => {
+      const st = status(s);
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "plan-sess" + (st.marked === st.total ? " done" : st.marked ? " doing" : "");
+      b.innerHTML = '<span class="plan-num"></span><span class="plan-body"><strong></strong><span></span></span><span class="plan-st"></span>';
+      b.querySelector(".plan-num").textContent = st.marked === st.total ? "✓" : i + 1;
+      b.querySelector("strong").textContent = s.t;
+      b.querySelector(".plan-body span").textContent = s.learn.length + " topics" + (s.farak.length ? " + " + s.farak.length + " farak" : "") + " · ~30 min";
+      b.querySelector(".plan-st").textContent = st.marked ? st.haan + "/" + st.total + " pakke" : "";
+      b.addEventListener("click", () => openSession(i));
+      list.appendChild(b);
+    });
+  }
+
+  function itemCard(x){
+    const card = document.createElement("div");
+    card.className = "plan-item";
+    card.dataset.key = x.key;
+    if(state[x.key]) card.dataset.state = state[x.key];
+    const h = document.createElement("h4"); h.innerHTML = inl(x.it.q);
+    card.appendChild(h);
+    if(x.it.pq && x.it.pq !== x.it.q){
+      const p = document.createElement("p"); p.className = "plan-ask"; p.innerHTML = "Interview mein aise: " + inl(x.it.pq);
+      card.appendChild(p);
+    }
+    const det = document.createElement("div"); det.className = "c2-det plan-ans";
+    det.appendChild(answerBox(x.it, null, true));
+    card.appendChild(det);
+    const marks = document.createElement("div"); marks.className = "plan-marks";
+    [["haan", "Samajh aa gaya"], ["thoda", "Thoda"], ["naa", "Nahi aaya"]].forEach(([v, t]) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.dataset.v = v; b.textContent = t;
+      b.setAttribute("aria-pressed", state[x.key] === v ? "true" : "false");
+      b.addEventListener("click", () => {
+        put(x.key, state[x.key] === v ? null : v);
+        refreshAll();
+        paintCounts();
+      });
+      marks.appendChild(b);
+    });
+    card.appendChild(marks);
+    return card;
+  }
+  function paintCounts(){
+    ov.querySelectorAll(".plan-item").forEach(c => {
+      const v = state[c.dataset.key];
+      if(v) c.dataset.state = v; else delete c.dataset.state;
+      c.querySelectorAll(".plan-marks button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v ? "true" : "false"));
+    });
+    if(current < 0) return;
+    const s = PLAN[current];
+    const cnt = list => list.filter(q => state[BY_Q[q].key]).length + " / " + list.length;
+    $("plancnt1").textContent = "(" + cnt(s.learn) + ")";
+    $("plancnt2").textContent = "(" + cnt(s.farak) + ")";
+    const st = status(s);
+    $("plantally").textContent = st.marked + " / " + st.total + " mark kiye";
+  }
+
+  function openSession(i){
+    current = i;
+    const s = PLAN[i];
+    $("plantitle").textContent = "Session " + (i + 1) + ": " + s.t;
+    $("planwhy").textContent = s.why;
+    $("planlearn").innerHTML = ""; s.learn.forEach(q => $("planlearn").appendChild(itemCard(BY_Q[q])));
+    $("planfarak").innerHTML = ""; s.farak.forEach(q => $("planfarak").appendChild(itemCard(BY_Q[q])));
+    $("planstep2").hidden = !s.farak.length;
+    $("plannextbtn").hidden = i >= PLAN.length - 1;
+    $("planlist").hidden = true; $("planview").hidden = false;
+    ov.querySelector(".cheat-body").scrollTop = 0;
+    paintCounts();
+  }
+  function showList(){
+    current = -1;
+    $("plantitle").textContent = "Study plan";
+    $("planlist").hidden = false; $("planview").hidden = true;
+    drawList();
+    ov.querySelector(".cheat-body").scrollTop = 0;
+  }
+
+  $("planopen").addEventListener("click", () => { ov.classList.add("on"); document.body.style.overflow = "hidden"; showList(); });
+  $("planclose").addEventListener("click", () => { ov.classList.remove("on"); document.body.style.overflow = ""; });
+  $("planback").addEventListener("click", showList);
+  $("plannextbtn").addEventListener("click", () => openSession(current + 1));
+  $("planpractice").addEventListener("click", () => practice.run(items(PLAN[current])));
+  // Practice marks change ticks; when it closes, the plan behind it is up to date.
+  $("practiceclose").addEventListener("click", () => { if(ov.classList.contains("on")){ document.body.style.overflow = "hidden"; current >= 0 ? paintCounts() : drawList(); } });
+  document.addEventListener("keydown", e => {
+    if(e.key !== "Escape" || !ov.classList.contains("on") || document.getElementById("practice").classList.contains("on")) return;
+    current >= 0 ? showList() : $("planclose").click();
+  }, true);   // capture: runs before practice's own Escape handler closes it
+  onRecs.push(() => { if(ov.classList.contains("on")) current >= 0 ? paintCounts() : drawList(); });
+  drawList();
+  return { drawList };
 })();
 
 /* ================= OFFLINE ================= */
