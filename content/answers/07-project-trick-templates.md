@@ -220,6 +220,7 @@ EXPLAIN (ANALYZE, BUFFERS) SELECT ... ;
 # Trick questions — yahan log fisalte hain
 
 ## Does async create a new thread?
+@viz async-waiter
 **Nahi, apne aap nahi.** `async` keyword sirf method ko state machine mein badalta hai taaki usme `await` ho sake. Method caller ke thread pe hi synchronously shuru hota hai, aur pehle `await` tak wahin chalta hai.
 
 Jab `await` kisi **I/O** operation (DB, HTTP, file) pe aata hai, to wait ke dauraan **koi thread use nahi hota** — thread wapas pool mein chala jaata hai, aur OS jawab aane pe notify karta hai. Continuation baad mein kisi pool thread pe chal sakti hai. Naya thread (pool se) tab use hota hai jab tum explicitly `Task.Run()` karo — jo CPU-bound kaam ke liye hai.

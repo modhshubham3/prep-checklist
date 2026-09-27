@@ -166,6 +166,7 @@ int.TryParse("42", out int num);      // out ka sabse common use
 
 ## Value type vs reference type — copy jaati hai ya address?
 ? Ek object doosre variable mein assign kiya aur doosre mein badlav kiya — pehle wala bhi badlega ya nahi? int aur class dono ke liye batao.
+@viz value-ref
 **Ek line:** value type assign karo to **poori value ki copy** banti hai; reference type assign karo to sirf **address (pata) copy** hota hai — dono variable same object ko dekhte hain.
 
 | | Value type | Reference type |
@@ -255,6 +256,7 @@ Console.WriteLine(x.Sound());   // "Bhow" — variable Animal hai, par object Do
 
 ## IEnumerable vs IQueryable vs List — filter kahan chalta hai?
 ? 10 lakh rows ki table se sirf 10 active users chahiye — EF query ko IEnumerable mein loge ya IQueryable mein, aur kyun?
+@viz iqueryable
 **Ek line:** `IQueryable` filter ko **SQL mein badal ke DB pe** chalata hai; `IEnumerable` pehle data **memory mein laata hai, phir C# mein** filter karta hai; `List` data **already memory mein** hai.
 
 | | Filter kahan chalta hai | Kab use | Extra |
@@ -351,6 +353,7 @@ using var file = File.OpenRead("data.csv");    // C# 8 — method khatam hote hi
 
 ## async/await vs Task vs Thread — kaun kya hai?
 ? Ek API call hai jo DB se data laati hai — isko naye Thread pe chalaoge ya async/await? Kyun?
+@viz async-waiter
 **Ek line:** `Thread` = asli **worker (mazdoor)**. `Task` = ek **kaam ka parcha** — "ye kaam hoga, result milega". `async/await` = parcha dekar **intezaar mein khade na rehna**, worker ko doosra kaam karne dena.
 
 | | Kya hai | Kab use |

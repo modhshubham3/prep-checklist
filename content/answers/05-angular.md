@@ -198,6 +198,7 @@ forkJoin({ user: this.api.user(id), orders: this.api.orders(id) })
 
 ## switchMap
 ? RxJS `switchMap` kya hai aur search box mein iska use kyun hota hai?
+@viz rx-maps
 `switchMap` har nayi outer value pe ek naya inner observable (usually API call) shuru karta hai, aur **pichhla inner observable cancel (unsubscribe)** kar deta hai. Yani hamesha sirf **latest** request ka result aata hai.
 
 Kyun zaroori hai? Search box mein user ne "an" type kiya (request 1), phir "ang" (request 2). Agar request 1 ka jawab request 2 ke baad aaye, to bina switchMap ke purana result naye ko overwrite kar dega — screen pe galat results. switchMap request 1 ko cancel kar deta hai (HttpClient mein actual HTTP request abort ho jaati hai), to ye race condition hoti hi nahi.

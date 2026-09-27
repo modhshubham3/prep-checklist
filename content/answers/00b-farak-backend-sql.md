@@ -2,6 +2,7 @@
 
 ## Transient vs Scoped vs Singleton — object kitni baar banta hai?
 ? DbContext ko kis lifetime mein register karoge, aur Singleton mein kyun nahi?
+@viz di-lifetimes
 **Ek line:** **Transient** = har baar maango, **naya** object. **Scoped** = ek **request** mein ek object (poori request mein wahi). **Singleton** = poori **app mein ek** object, jab tak app chal rahi hai.
 
 | | Kitni baar banta hai | Example |
@@ -27,6 +28,7 @@ builder.Services.AddSingleton<ICache, MemoryCacheService>();
 
 ## Middleware vs Filter — dono request ke beech mein, farak kya?
 ? Har request ka time log karna hai, static files samet — middleware likhoge ya action filter?
+@viz middleware
 **Ek line:** **Middleware** har request pe chalta hai (poori app ka gate). **Filter** sirf **controller action** ke aas-paas chalta hai, aur use pata hota hai kaunsa action, kaunsa model.
 
 | | Middleware | Filter |
@@ -84,6 +86,7 @@ app.UseAuthorization();       // phir — kya kar sakte ho
 
 ## Eager vs Lazy vs Explicit loading — related data kab aata hai?
 ? Order list ke saath har order ke customer ka naam dikhana hai — kaunsi loading, aur galat chunne pe kya hoga?
+@viz n-plus-one
 **Ek line:** **Eager** = main data ke **saath hi** related data (`Include`). **Lazy** = related data tab aata hai jab **property chhuo** (har baar alag query). **Explicit** = tum **khud bolo** kab laana hai.
 
 | | Kab load hota | Queries | Kab use |
@@ -180,6 +183,7 @@ DROP TABLE old_logs;                             -- table hi gayi
 
 ## INNER vs LEFT vs RIGHT vs FULL JOIN — kaunsi rows bachti hain?
 ? Saare customers chahiye, chahe unka koi order ho ya na ho — kaunsa join?
+@viz joins
 **Ek line:** `INNER` = sirf **dono taraf match** wali rows. `LEFT` = **left table ki saari** + jo match ho (warna NULL). `RIGHT` = ulta. `FULL` = **dono ki saari**.
 
 | Join | Customers (left) | Orders (right) | Match na ho to |
@@ -208,6 +212,7 @@ WHERE o.id IS NULL;
 
 ## Clustered vs non-clustered index
 ? Table pe sirf ek clustered index kyun ho sakta hai, par non-clustered bahut saare?
+@viz index
 **Ek line:** **Clustered** index = table ka **data khud usi order mein** rakha hota hai (isliye ek hi). **Non-clustered** = **alag list** jo batati hai row kahan hai (jitne chaho).
 
 | | Clustered | Non-clustered |

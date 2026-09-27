@@ -167,6 +167,7 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY daily_sales;   -- reads block nahi hote
 
 ## Inner Join
 ? INNER JOIN kya return karta hai? Example ke saath batao.
+@viz joins
 **INNER JOIN** dono tables se sirf wo rows lautata hai jinka **match dono taraf mile**. Jis customer ka koi order nahi, ya jis order ka customer nahi mila — wo result mein nahi aayenge. `JOIN` likhna matlab `INNER JOIN`.
 
 Match `ON` condition se hota hai, usually foreign key = primary key. Ek taraf ki ek row doosri taraf ki kai rows se match ho sakti hai (one-to-many) — to result mein wo row kai baar dikhegi. Isliye JOIN ke baad `SUM`/`COUNT` karte waqt dhyan rakho ki rows multiply to nahi ho gayi.
@@ -185,6 +186,7 @@ WHERE o.created_at >= '2026-01-01';
 
 ## Left Join
 ? LEFT JOIN kya hai? Aise customers nikaalo jinka koi order nahi.
+@viz joins
 **LEFT JOIN** (LEFT OUTER JOIN) left table ki **saari rows** lautata hai, aur right table ki matching rows. Jahan right mein match nahi mila, wahan right ke columns **NULL** aa jaate hain.
 
 Use cases: "saare customers aur unke orders (agar hain)", "har product ki sales, chahe zero ho". Aur famous trick — **anti-join**: LEFT JOIN karke `WHERE right.id IS NULL` lagao to wo rows milti hain jinka **koi match nahi** (jinhone kabhi order nahi kiya). `NOT EXISTS` bhi yahi karta hai aur aksar utna hi tez hai.
@@ -286,6 +288,7 @@ ORDER BY avg_salary DESC;
 
 ## Indexes
 ? Index kya hai, kaise kaam karta hai, aur zyada indexes ka nuksaan kya hai?
+@viz index
 **Index** ek alag data structure hai jo database ko rows **jaldi dhoondhne** mein madad karta hai — kitaab ke peeche wali index jaisa. Bina index ke PostgreSQL ko poori table scan karni padti hai (**Seq Scan**); index ke saath wo seedha sahi rows pe pahunchta hai (**Index Scan**).
 
 PostgreSQL mein default **B-tree** index hai — equality (`=`), range (`<`, `>`, `BETWEEN`), `ORDER BY` aur prefix `LIKE 'abc%'` ke liye. Aur bhi types: **GIN** (JSONB, arrays, full-text search), **GiST** (geo data, PostGIS), **BRIN** (bahut badi, time-ordered tables jaise logs), **Hash**.

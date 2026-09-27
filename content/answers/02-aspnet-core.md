@@ -88,6 +88,7 @@ public class TokenService(IOptions<JwtOptions> opt)
 
 ## Middleware
 ? Middleware kya hai? Apna custom middleware kaise likhoge?
+@viz middleware
 **Middleware** ek software component hai jo **HTTP request ke raaste** mein baitha hai. Har request pipeline mein ek-ek karke middlewares se guzarti hai, aur har middleware do kaam kar sakta hai: request pe kuch kare aur **aage bhej de** (`next()`), ya wahin **short-circuit** karke response lauta de (jaise authentication fail hone pe 401).
 
 Response ulte order mein wapas aata hai — isliye middleware request ke pehle aur response ke baad dono jagah code chala sakta hai (jaise timing measure karna, response headers jodna).
@@ -256,6 +257,7 @@ public class HomeController : Controller
 
 ## Middleware Pipeline
 ? Middleware pipeline mein order kyun matter karta hai? Ek galat order ka example do.
+@viz middleware
 **Middleware pipeline** middlewares ki wo **chain** hai jisse har HTTP request guzarti hai. Request upar se neeche jaati hai (har middleware `next()` bula ke aage bhejta hai), endpoint pe pahunchti hai, aur response **ulte order** mein wapas aata hai. Koi bhi middleware short-circuit karke aage jaane se rok sakta hai.
 
 Typical recommended order neeche table mein hai.
@@ -460,6 +462,7 @@ var users = await db.Users
 
 ## IEnumerable
 ? `IEnumerable` kya hai aur DB query pe iska kya asar hota hai?
+@viz iqueryable
 `IEnumerable<T>` .NET ka sabse basic collection interface hai — sirf itna batata hai ki is par **ek-ek karke iterate** kiya ja sakta hai (`foreach`). Iska ek hi method hai `GetEnumerator()`. `List`, array, `HashSet`, `Dictionary` — sab `IEnumerable` hain.
 
 Uske LINQ methods (`Enumerable.Where`, `Select`) **C# delegates** (`Func<T, bool>`) lete hain aur **memory mein** chalte hain. EF Core context mein iska matlab: agar tumne DB query ko `IEnumerable` bana diya (`AsEnumerable()`, ya repository ne `IEnumerable` return kiya aur caller ne `.Where` lagaya), to **poora data pehle database se aa jaayega** aur filtering app ki memory mein hogi. 10 lakh rows ki table pe ye app ko maar deta hai.
@@ -477,6 +480,7 @@ var list = big.ToList();                      // SQL: SELECT * FROM orders (poor
 
 ## IQueryable
 ? `IQueryable` kya hai aur `IEnumerable` se kaise alag hai?
+@viz iqueryable
 `IQueryable<T>` `IEnumerable<T>` ko extend karta hai, par farak bahut bada hai: iske LINQ methods (`Queryable.Where`, `Select`) **Expression trees** (`Expression<Func<T, bool>>`) lete hain — yani code ko data ki tarah. Ek **query provider** (EF Core) us expression tree ko padh ke **SQL** bana deta hai.
 
 Isliye `db.Orders.Where(o => o.Amount > 100)` ka filter **database pe** chalta hai — SQL mein `WHERE amount > 100`, aur sirf matching rows network pe aati hain. `OrderBy`, `Skip`, `Take`, `Select` sab SQL mein jaate hain. Query tab tak execute nahi hoti jab tak `ToListAsync`, `FirstAsync`, `CountAsync` jaisa kuch na bulao.

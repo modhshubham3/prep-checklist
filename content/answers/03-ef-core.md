@@ -274,6 +274,7 @@ var projected = await db.Orders
 
 ## N+1 Problem
 ? N+1 problem kya hai? Isko detect aur fix kaise karoge?
+@viz n-plus-one
 **N+1 problem**: 1 query se N parent records aaye, aur phir **har parent ke liye 1 aur query** chali related data laane ke liye — total **N+1 queries**. 100 orders ke customers = 101 queries; 1000 orders = 1001. Har query chhoti hai par network round-trip ka overhead jud-jud ke API ko seconds mein le jaata hai.
 
 Kahan se aata hai? Lazy loading wale loop se, ya aise code se jo loop ke andar repository/DB call karta hai (`foreach (var o in orders) o.Customer = await repo.GetCustomer(o.CustomerId)`). Development mein 10 rows pe pata nahi chalta, production mein data badhte hi dikhta hai.

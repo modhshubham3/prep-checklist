@@ -194,6 +194,7 @@ provideHttpClient(withInterceptors([authInterceptor, loggingInterceptor, errorIn
 Isliye order matter karta hai: jaise logging ko auth header ke saath request dekhni hai to logging, auth ke baad aana chahiye; retry interceptor ko error handler se pehle hona chahiye taaki pehle retry ho, phir error dikhe.
 
 ## Event loop — setTimeout, Promise aur console.log
+@viz event-loop
 ```javascript q
 console.log('A');
 setTimeout(() => console.log('B'), 0);

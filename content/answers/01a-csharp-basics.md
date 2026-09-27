@@ -378,6 +378,7 @@ Console.WriteLine(e1.Name);          // "Asha K" — e1 aur e3 ek hi object hain
 
 ## Value Type
 ? Value type kya hai? Examples do, aur ye memory mein kahan rehte hain?
+@viz value-ref
 **Value type** mein variable ke andar **seedha value** rehti hai. Copy karoge to poori value ki alag copy banti hai — ek badalne se doosra nahi badalta.
 
 Value types: saare numeric types (`int`, `double`, `decimal`), `bool`, `char`, `struct`, `enum`, `DateTime`, `Guid`. Ye `System.ValueType` se derive hote hain.
@@ -403,6 +404,7 @@ Console.WriteLine(p1.X); // 1
 
 ## Reference Type
 ? Reference type kya hai? Ek reference type variable doosre mein assign karo to kya hota hai?
+@viz value-ref
 **Reference type** mein object **heap** pe banta hai, aur variable ke andar sirf us object ka **reference (address)** hota hai. Ek variable ko doosre mein assign karo to sirf reference copy hota hai — dono ek hi object ko point karte hain. Ek se badlo, doosre mein bhi dikhega.
 
 Reference types: `class`, `interface`, `delegate`, `record` (class wala), `string`, arrays, `object`. Ye null ho sakte hain — isi se famous `NullReferenceException` aata hai.

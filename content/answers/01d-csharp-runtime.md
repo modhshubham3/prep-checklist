@@ -1,5 +1,6 @@
 ## Garbage Collection
 ? Garbage Collector kaise kaam karta hai?
+@viz gc
 **Garbage Collector (GC)** CLR ka wo hissa hai jo **heap** ki memory automatically free karta hai. Tum `new` se object banate ho, par use delete nahi karte — jab koi object "unreachable" ho jaata hai (koi variable, field ya static use point nahi kar raha), GC baad mein uski memory wapas le leta hai.
 
 GC kaise decide karta hai? Wo **roots** se shuru karta hai — local variables, static fields, CPU registers — aur unse jude har object ko "zinda" mark karta hai. Jo mark nahi hua wo garbage hai. Phir wo zinda objects ko ek saath sarka deta hai (**compaction**) taaki memory mein chhed na rahein aur naya allocation tez ho.
@@ -126,6 +127,7 @@ Isliye GC **non-deterministic** hai — tum exactly nahi bata sakte ki memory ka
 
 ## async
 ? `async` keyword kya karta hai? Kya ye method ko naye thread pe chala deta hai?
+@viz async-waiter
 `async` keyword method ko **asynchronous** banata hai, taaki uske andar `await` use ho sake. Aise method ka return type `Task`, `Task<T>`, `ValueTask<T>` ya (sirf event handlers ke liye) `void` hota hai.
 
 Asal fayda: jab method kisi **I/O** (database, HTTP call, file) ka wait kar raha hota hai, tab wo thread ko **block nahi karta** — thread wapas thread pool mein chala jaata hai aur doosri requests serve karta hai. Result aane pe method wahin se aage chalta hai. Isse web server kam threads mein zyada requests sambhal leta hai (**scalability**).
@@ -146,6 +148,7 @@ public async Task<Order?> GetOrderAsync(int id)
 
 ## await
 ? `await` kya karta hai aur await ke dauraan thread ke saath kya hota hai?
+@viz async-waiter
 `await` ek `Task` ke complete hone ka **intezaar karta hai bina thread block kiye**. Jab `await` kisi aise task pe aata hai jo abhi complete nahi hua, to method wahin **ruk (suspend)** jaata hai aur control caller ko wapas chala jaata hai. Task complete hone pe baaki method (continuation) chalta hai — ho sakta hai kisi doosre thread pe.
 
 `await` task ka **result bhi nikalta hai** (`Task<int>` se `int`) aur agar task fail hua to uska **exception throw** karta hai — isliye normal `try/catch` async code pe bhi kaam karta hai.
@@ -255,6 +258,7 @@ GetDataAsync() call
 
 ## Transient
 ? DI mein Transient lifetime kya hai aur kab use karoge?
+@viz di-lifetimes
 **Transient** lifetime mein DI container **har baar** naya instance deta hai — jitni jagah inject hoga, utne naye objects. Ek hi request mein do classes ne maanga to dono ko alag object milega.
 
 Kab use karein? Halki (lightweight), **stateless** services ke liye jinka apna koi shared data nahi — jaise validators, mappers, calculators, email formatters. Transient + `IDisposable` service ko container request/scope end pe dispose karta hai.
@@ -272,6 +276,7 @@ builder.Services.AddTransient<IPriceCalculator, PriceCalculator>();
 
 ## Scoped
 ? Scoped lifetime kya hai aur DbContext scoped kyun hota hai?
+@viz di-lifetimes
 **Scoped** lifetime mein **har scope ke liye ek instance** banta hai. ASP.NET Core mein **har HTTP request ek scope** hai — to ek request ke andar jitni baar bhi service inject ho, **wahi ek object** milega; agli request mein naya.
 
 **DbContext by default scoped** hota hai (`AddDbContext`), aur ye bilkul sahi hai: ek request ke andar saare repositories ek hi DbContext share karte hain, isliye change tracking consistent rehti hai aur ek `SaveChanges` mein sab save ho jaata hai. DbContext thread-safe nahi hai — request ke bahar share nahi karna chahiye.
@@ -291,6 +296,7 @@ var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
 ## Singleton
 ? Singleton lifetime kya hai, aur Singleton mein Scoped service inject karo to kya hoga?
+@viz di-lifetimes
 **Singleton** lifetime mein poori application mein **sirf ek instance** banta hai — pehli baar maangne pe (ya startup pe), aur wo app band hone tak zinda rehta hai. Har request, har class ko wahi object milta hai.
 
 Kab use karein? Jo cheez **mehngi banti hai** aur share ho sakti hai, ya jisme **app-wide state** ho: in-memory cache (`IMemoryCache`), configuration, `HttpClient` factory, logger. Kyunki ek hi object kai requests ek saath use karengi, **Singleton thread-safe hona chahiye** — mutable fields pe `lock` ya concurrent collections.

@@ -15,6 +15,8 @@
 //                          so "predict the output" cards work
 //   ? text                 how an interviewer would ask it — practice mode shows
 //                          this instead of a bare title like "CLR"
+//   @viz name              step-through diagram from js/viz.js, shown after
+//                          the first paragraph (short and full versions)
 //   ! text                 the interview trap / common wrong answer
 //   > text                 memory hook ("Yaad rakho")
 const fs = require("fs");
@@ -66,6 +68,7 @@ for (const raw of lines) {
   }
   if (/^- /.test(line)) { flushPara(); it.pts.push(line.slice(2).trim()); markBullet(); continue; }
   if (/^\? /.test(line)) { flushPara(); it.pq = line.slice(2).trim(); continue; }
+  if (/^@viz /.test(line)) { flushPara(); it.v = line.slice(5).trim(); continue; }
   if (/^! /.test(line)) { flushPara(); it.trap = line.slice(2).trim(); continue; }
   if (/^> /.test(line)) { flushPara(); it.h = line.slice(2).trim(); continue; }
   if (line === "") { flushPara(); continue; }
@@ -84,6 +87,7 @@ const out = groups.map(gr => ({
   items: gr.items.map(x => {
     const o = { q: x.q };
     if (x.pq) o.pq = x.pq;
+    if (x.v) o.v = x.v;
     if (x.a.length) o.a = x.a;
     if (x.rows.length) o.t = { h: x.rows[0], r: x.rows.slice(1) };
     if (x.pts.length) o.pts = x.pts;
@@ -105,6 +109,12 @@ out.forEach(gr => gr.items.forEach(x => {
   if (seen.has(x.q)) problems.push("duplicate question: " + x.q);
   seen.set(x.q, true);
 }));
+// Diagrams: every `@viz name` must exist in js/viz.js.
+const vizSrc = fs.readFileSync(path.join(root, "js/viz.js"), "utf8");
+out.forEach(gr => gr.items.forEach(x => {
+  if (x.v && !vizSrc.includes(`"${x.v}": {`)) problems.push(`unknown @viz "${x.v}" in: ${x.q}`);
+}));
+
 // Study plan (content/plan.json): sessions that point at questions by their
 // exact text, so a renamed question has to be fixed here too.
 const plan = JSON.parse(fs.readFileSync(path.join(root, "content/plan.json"), "utf8"));

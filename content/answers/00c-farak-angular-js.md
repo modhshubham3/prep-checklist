@@ -30,6 +30,7 @@ this.http.get<User[]>('/api/users').subscribe(u => this.users = u);
 
 ## switchMap vs mergeMap vs concatMap vs exhaustMap — naya aaye to purane ka kya?
 ? Login button pe user 5 baar jaldi-jaldi click kar de to bhi sirf ek request jaani chahiye — kaunsa operator?
+@viz rx-maps
 **Ek line:** chaaron "har value pe ek naya observable (jaise API call)" chalate hain. Farak ye hai ki **pehla wala chal hi raha ho aur naya aa jaaye** to kya karein.
 
 | Operator | Naya aaya, purana abhi chal raha hai | Kab use |
@@ -58,6 +59,7 @@ loginClick$.pipe(exhaustMap(() => this.auth.login(this.form.value)));           
 
 ## Subject vs BehaviorSubject vs ReplaySubject — der se aane wale ko kya milega?
 ? Logged-in user ki info service mein rakhni hai, aur baad mein bana component bhi turant current user dekhe — kaunsa Subject?
+@viz subjects
 **Ek line:** teeno se tum khud values bhej sakte ho (`next`). Farak — jo **baad mein subscribe** kare, use **purani value** milegi ya nahi.
 
 | | Shuru mein value | Der se subscribe karne wale ko | Kab use |
@@ -115,6 +117,7 @@ export class OrderComponent implements OnInit {
 
 ## ngOnChanges vs ngOnInit vs ngOnDestroy — lifecycle ka order
 ? Parent se aaya @Input baar-baar badalta hai aur har baar data reload karna hai — kaunsa hook?
+@viz ng-lifecycle
 **Ek line:** **ngOnChanges** = `@Input` **badla** (har baar). **ngOnInit** = component ready (**ek baar**). **ngOnDestroy** = component **hatne wala** hai — safai.
 
 | Hook | Kitni baar | Kya karo |

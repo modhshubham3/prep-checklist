@@ -511,8 +511,10 @@ function inl(t){
 function answerParts(it, short = false){
   const paras = Array.isArray(it.a) ? it.a : (it.a ? [it.a] : []);
   let plain = it.q + (it.pq ? "\n" + it.pq : "") + (it.qc ? "\n\n" + it.qc : "");
-  let html = "";
-  const para = p => { html += "<p>" + inl(p) + "</p>"; plain += "\n\n" + p; };
+  let html = "", vizDone = false;
+  // Diagram placeholder right after the first paragraph; hydrateViz() fills it.
+  const viz = () => { if(it.v && !vizDone){ html += '<div class="vz-slot" data-viz="' + esc(it.v) + '"></div>'; vizDone = true; } };
+  const para = p => { html += "<p>" + inl(p) + "</p>"; plain += "\n\n" + p; viz(); };
   const table = () => {
     html += '<div class="tbl-wrap"><table class="ch-tbl"><tr>' + it.t.h.map(x => "<th>" + inl(x) + "</th>").join("") + "</tr>";
     plain += "\n\n" + it.t.h.join(" | ");
@@ -546,6 +548,7 @@ function answerParts(it, short = false){
     if(it.t) table();
     if(it.pts) bullets(it.pts);
   }
+  viz();
   if(it.ex && !short){ html += '<code class="ch-ex">' + esc(it.ex) + "</code>"; plain += "\n\n" + it.ex; }
   if(it.trap){ html += '<p class="ch-trap">' + inl(it.trap) + "</p>"; plain += "\n\nInterview trap: " + it.trap; }
   if(it.h){ html += '<em class="ch-hook">' + inl(it.h) + "</em>"; plain += "\n\nYaad rakho: " + it.h; }
@@ -560,9 +563,10 @@ function answerBox(it, fullHtml, alwaysShort = false){
   box.className = "ans-box" + (alwaysShort ? " always-short" : "");
   const shortHtml = answerParts(it, true).html;
   const full = fullHtml || answerParts(it).html;
-  if(shortHtml === full){ box.innerHTML = full; return box; }
+  if(shortHtml === full){ box.innerHTML = full; hydrateViz(box); return box; }
   const s = document.createElement("div"); s.className = "ans-short"; s.innerHTML = shortHtml;
   const f = document.createElement("div"); f.className = "ans-full"; f.innerHTML = full;
+  hydrateViz(s); hydrateViz(f);
   const more = document.createElement("button");
   more.type = "button"; more.className = "ans-more"; more.textContent = "Poora jawab padho ↓";
   more.addEventListener("click", () => {
@@ -1088,12 +1092,14 @@ const practice = (() => {
     const it = queue[i].it;
     const short = answerParts(it, true).html;
     $("prkey").innerHTML = short;
+    hydrateViz($("prkey"));
     $("prmore").hidden = short === answerParts(it).html;
     $("prask").hidden = true;
     $("prans").hidden = false;
   }
   function more(){
     $("prfull").innerHTML = answerParts(queue[i].it).html;
+    $("prfull").querySelectorAll(".vz-slot").forEach(s => s.remove());   // diagram already shown above
     $("prfull").hidden = false;
     $("prmore").hidden = true;
   }
@@ -1132,7 +1138,7 @@ const practice = (() => {
         const d = document.createElement("details"); d.className = "pr-rv";
         const s = document.createElement("summary"); s.innerHTML = inl(x.it.pq || x.it.q);
         const body = document.createElement("div"); body.className = "c2-det";
-        d.addEventListener("toggle", () => { if(d.open && !body.innerHTML) body.innerHTML = answerParts(x.it).html; });
+        d.addEventListener("toggle", () => { if(d.open && !body.innerHTML){ body.innerHTML = answerParts(x.it).html; hydrateViz(body); } });
         d.append(s, body); rv.appendChild(d);
       });
     }
@@ -1469,6 +1475,15 @@ const plan = (() => {
     $("planlearn").innerHTML = ""; s.learn.forEach(q => $("planlearn").appendChild(itemCard(BY_Q[q])));
     $("planfarak").innerHTML = ""; s.farak.forEach(q => $("planfarak").appendChild(itemCard(BY_Q[q])));
     $("planstep2").hidden = !s.farak.length;
+    // Several cards can share a diagram; in one session show it only the first time.
+    const seenViz = new Set();
+    $("planview").querySelectorAll(".plan-item").forEach(card => {
+      const here = new Set();
+      card.querySelectorAll(".vz").forEach(v => {
+        if(seenViz.has(v.dataset.viz)) v.remove(); else here.add(v.dataset.viz);
+      });
+      here.forEach(n => seenViz.add(n));
+    });
     $("plannextbtn").hidden = i >= PLAN.length - 1;
     $("planlist").hidden = true; $("planview").hidden = false;
     ov.querySelector(".cheat-body").scrollTop = 0;
