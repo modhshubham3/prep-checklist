@@ -10,8 +10,25 @@ const fs = require("fs");
 const path = require("path");
 const root = path.join(__dirname, "..");
 const load = (file, name) => new Function(fs.readFileSync(path.join(root, file), "utf8") + ";return " + name)();
-const CHEAT2 = load("js/answers.js", "CHEAT2");
+const ALL = load("js/answers.js", "CHEAT2");
 const CHEAT = load("js/data.js", "CHEAT");
+
+// Optional split for upload size limits:  node tools/print.js out.html 2/3
+// cuts the groups into 3 parts of roughly equal question count (never inside
+// a group) and prints part 2; the cheatsheet appendix goes in the last part.
+const [part, parts] = (process.argv[3] || "1/1").split("/").map(Number);
+const CHEAT2 = (() => {
+  if(parts === 1) return ALL;
+  const total = ALL.reduce((s, g) => s + g.items.length, 0);
+  let seen = 0;
+  return ALL.filter(g => {
+    const mid = seen + g.items.length / 2;          // a group goes where its middle falls
+    seen += g.items.length;
+    return Math.min(parts, Math.floor(mid / (total / parts)) + 1) === part;
+  });
+})();
+const withCheat = part === parts;
+const startNum = ALL.slice(0, ALL.indexOf(CHEAT2[0])).reduce((s, g) => s + g.items.length, 0);
 
 const esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const inl = t => esc(t).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
@@ -43,7 +60,7 @@ function body(it){
   return h;
 }
 
-let n = 0;
+let n = startNum;                                     // numbering continues across parts
 const total = CHEAT2.reduce((s, g) => s + g.items.length, 0);
 const toc = CHEAT2.map((g, gi) => `<li><a href="#g${gi}">${esc(g.g)}</a> <span>${g.items.length}</span></li>`).join("");
 const groups = CHEAT2.map((g, gi) => {
@@ -100,16 +117,17 @@ const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
   dl { margin: 0; } dt { font-weight: 700; margin-top: 1.8mm; break-after: avoid; } dd { margin: 0 0 0 4mm; }
 </style></head><body>
 <div class="cover">
-  <h1>Interview Prep — Answers</h1>
-  <p>.NET, ASP.NET Core, EF Core, PostgreSQL, Angular — ${total} sawaal, poore jawab ke saath</p>
-  <p>${CHEAT2.length} topics · Cheatsheet appendix · ${esc(today)}</p>
+  <h1>Interview Prep — Answers${parts > 1 ? ` <span style="color:#555">(Part ${part} of ${parts})</span>` : ""}</h1>
+  <p>.NET, ASP.NET Core, EF Core, PostgreSQL, Angular — ${total} sawaal${parts > 1 ? ` (#${startNum + 1}–${startNum + total})` : ""}, poore jawab ke saath</p>
+  <p>${CHEAT2.length} topics${withCheat ? " · Cheatsheet appendix" : ""} · ${esc(today)}</p>
 </div>
-<div class="toc"><h2>Index</h2><ol>${toc}<li><a href="#cheat">Appendix — Cheatsheet (quick revision)</a></li></ol></div>
+<div class="toc"><h2>Index</h2><ol>${toc}${withCheat ? '<li><a href="#cheat">Appendix — Cheatsheet (quick revision)</a></li>' : ""}</ol></div>
 ${groups}
-<div class="appendix"><h2 id="cheat">Appendix — Cheatsheet (quick revision)</h2>${cheat}</div>
+${withCheat ? `<div class="appendix"><h2 id="cheat">Appendix — Cheatsheet (quick revision)</h2>${cheat}</div>` : ""}
 </body></html>`;
 
 const out = process.argv[2] || path.join(root, "answers-print.html");
 fs.mkdirSync(path.dirname(out), { recursive: true });
 fs.writeFileSync(out, html);
-console.log(`${out}: ${total} questions in ${CHEAT2.length} groups + ${CHEAT.reduce((s, g) => s + g.items.length, 0)} cheatsheet terms`);
+console.log(`${out}: part ${part}/${parts}, questions #${startNum + 1}-${startNum + total} in ${CHEAT2.length} groups` +
+  (withCheat ? ` + ${CHEAT.reduce((s, g) => s + g.items.length, 0)} cheatsheet terms` : ""));

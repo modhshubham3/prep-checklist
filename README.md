@@ -62,6 +62,11 @@ Every card in full (written order, tables, code, trap, hook) grouped with a
 clickable index, plus the cheatsheet as an appendix. Diagrams are left out.
 `--user-data-dir` keeps it from handing off to an already-open Chrome.
 
+The full PDF is ~9.5 MB — too big for uploads capped near 11 MB once
+encoded. `node tools/print.js out/part1.html 1/3` (then `2/3`, `3/3`) splits
+it at group boundaries into ~3 MB parts; numbering continues across parts and
+the cheatsheet goes in the last one.
+
 ## Deploy
 
 Hosted on Vercel as a static site: import the repo, framework preset
