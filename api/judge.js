@@ -5,8 +5,8 @@
 //
 // Grader, whichever key the Vercel project has (JUDGE_PROVIDER forces one):
 //   ANTHROPIC_API_KEY → Claude, JUDGE_MODEL (default claude-opus-5), paid
-//   GEMINI_API_KEY    → Gemini, GEMINI_MODEL (default gemini-3.8-flash),
-//                       free tier (Google may use free-tier content)
+//   GEMINI_API_KEY    → Gemini, free tier (Google may use free-tier content);
+//                       GEMINI_MODEL is a comma list tried in order when one is busy
 // Rate-limited per IP and per day through the same Redis as sync, so a
 // public URL can't run up a bill or burn a free quota.
 
@@ -14,7 +14,10 @@ const Anthropic = require("@anthropic-ai/sdk").default;
 const { redis, configured } = require("./_redis");
 
 const MODEL = process.env.JUDGE_MODEL || "claude-opus-5";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+// Free-tier models get "high demand" 503s at busy times; try the next one.
+// Each model has its own free quota, so a 429 on one also moves on.
+const GEMINI_MODELS = (process.env.GEMINI_MODEL || "gemini-3.8-flash,gemini-3.5-flash,gemini-2.5-flash")
+  .split(",").map(s => s.trim()).filter(Boolean);
 const GEMINI_BASE = process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com";
 const provider = () => {
   const p = (process.env.JUDGE_PROVIDER || "").toLowerCase();
@@ -82,7 +85,8 @@ const GEMINI_SCHEMA = {
 const str = (v, max) => (typeof v === "string" ? v.slice(0, max).trim() : "");
 
 class JudgeError extends Error {
-  constructor(status, msg) { super(msg); this.status = status; }
+  // status: what we answer; httpStatus: what the provider answered (for retry decisions)
+  constructor(status, msg, httpStatus) { super(msg); this.status = status; this.httpStatus = httpStatus; }
 }
 
 async function gradeWithClaude(content) {
@@ -108,7 +112,19 @@ async function gradeWithClaude(content) {
 }
 
 async function gradeWithGemini(content) {
-  const r = await fetch(`${GEMINI_BASE}/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`, {
+  let last;
+  for (const model of GEMINI_MODELS) {
+    try { return await geminiOnce(model, content); }
+    catch (err) {
+      last = err;
+      if (!(err instanceof JudgeError) || ![429, 500, 502, 503, 504].includes(err.httpStatus)) throw err;   // not a capacity problem
+    }
+  }
+  throw last;
+}
+
+async function geminiOnce(model, content) {
+  const r = await fetch(`${GEMINI_BASE}/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
     body: JSON.stringify({
@@ -118,9 +134,10 @@ async function gradeWithGemini(content) {
     }),
   });
   const j = await r.json().catch(() => ({}));
-  if (r.status === 429) throw new JudgeError(429, "free quota used up");
-  if (r.status === 400 || r.status === 401 || r.status === 403) throw new JudgeError(r.status === 400 && !/API key/i.test(j.error?.message || "") ? 502 : 503, "gemini: " + (j.error?.message || r.status));
-  if (!r.ok) throw new JudgeError(502, "gemini " + r.status + ": " + (j.error?.message || ""));
+  if (r.status === 429) throw new JudgeError(429, model + ": free quota used up", 429);
+  if (r.status === 400 || r.status === 401 || r.status === 403) throw new JudgeError(r.status === 400 && !/API key/i.test(j.error?.message || "") ? 502 : 503, model + ": " + (j.error?.message || r.status));
+  if (r.status === 404) throw new JudgeError(502, model + " not available", 503);   // try the next model
+  if (!r.ok) throw new JudgeError(502, model + " " + r.status + ": " + (j.error?.message || ""), r.status);
   if (j.promptFeedback?.blockReason) throw new JudgeError(502, "gemini blocked: " + j.promptFeedback.blockReason);
   const parts = j.candidates?.[0]?.content?.parts || [];
   const text = parts.filter(p => typeof p.text === "string" && !p.thought).map(p => p.text).join("");
