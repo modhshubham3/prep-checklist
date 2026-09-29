@@ -181,6 +181,10 @@ module.exports = async (req, res) => {
   } catch (err) {
     const status = err instanceof JudgeError ? err.status : 502;
     console.error("judge failed (" + using + "):", err && err.message);   // details in Vercel logs only
-    return res.status(status).json({ error: status === 429 ? "limit reached, try later" : status === 503 ? "judge not configured" : "grading failed" });
+    return res.status(status).json({
+      error: status === 429 ? "limit reached, try later" : status === 503 ? "judge not configured" : "grading failed",
+      // Provider's own message (never contains the key) so a failure can be diagnosed without the logs.
+      detail: status === 502 ? String(err && err.message || "").slice(0, 300) : undefined,
+    });
   }
 };
