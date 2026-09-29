@@ -4,7 +4,7 @@
 // offline you get the last copy that loaded. Fonts and the QR library from
 // CDNs: cache-first, they're versioned and never change. The sync API is never
 // cached — progress must always be live.
-const CACHE = "prep-v3";
+const CACHE = "prep-v4";
 const SHELL = [
   "/", "/css/style.css",
   "/js/data.js", "/js/answers.js", "/js/migrate.js", "/js/viz.js", "/js/app.js",

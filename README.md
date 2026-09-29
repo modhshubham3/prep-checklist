@@ -51,6 +51,20 @@ Needs a Redis store connected to the Vercel project (Storage). Either works:
 - Upstash (`KV_REST_API_URL`/`KV_REST_API_TOKEN` or `UPSTASH_REDIS_REST_*`) — plain REST, preferred if both are set
 Without it the site still works, and the Sync panel says storage is missing.
 
+## Answer judge (practice mode)
+
+Practice answers (typed, or spoken via the browser's speech recognition) are
+graded by `api/judge.js`: Claude compares the answer with the card's notes and
+returns a score, right/partial/wrong, what was covered and missed, mistakes,
+feedback and a model answer. Mock interview mode asks 8 mixed questions and
+ends with a hire / next round / not selected verdict from the scores.
+
+Setup: add `ANTHROPIC_API_KEY` to the Vercel project's environment variables
+and redeploy. Optional: `JUDGE_MODEL` (default `claude-opus-5`),
+`JUDGE_PER_HOUR` (per IP, default 60), `JUDGE_PER_DAY` (site-wide, default
+400) — limits use the sync Redis. Without a key the page falls back to a rough
+keyword check and says so.
+
 ## PDF of all answers
 
 ```

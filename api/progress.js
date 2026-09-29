@@ -4,47 +4,15 @@
 // device holding that code shares one record. The code is effectively the
 // password, so it is long, random, and validated before it touches storage.
 //
-// Storage is Redis, reached one of two ways depending on which Vercel
-// integration was added:
-//   - Upstash: REST API via KV_* or UPSTASH_* variables (plain fetch)
-//   - Redis Cloud: a redis:// connection string in REDIS_URL (node-redis)
+// Storage is Redis (see _redis.js for the two ways it is reached).
 
-const REST_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const REST_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-const TCP_URL = process.env.REDIS_URL;
+const { redis, configured } = require("./_redis");
 
 const KEY_RE = /^[A-Za-z0-9_-]{20,64}$/;
 const MAX_BODY = 1024 * 1024;  // marks are ~40 KB; notes can add a few hundred KB
 const MAX_NOTE = 5000;          // characters per note
 const MAX_ENTRIES = 5000;
 const VALID = new Set(["haan", "thoda", "naa", null]);
-
-// One TCP client per warm function instance; reconnects on the next call if
-// the connection was dropped.
-let tcpClient = null;
-async function tcp() {
-  if (tcpClient && tcpClient.isReady) return tcpClient;
-  if (tcpClient) { try { await tcpClient.disconnect(); } catch (e) {} }
-  const { createClient } = require("redis");
-  tcpClient = createClient({ url: TCP_URL, socket: { connectTimeout: 5000, reconnectStrategy: false } });
-  tcpClient.on("error", () => {});   // failures surface through the awaited command
-  await tcpClient.connect();
-  return tcpClient;
-}
-
-async function redis(cmd) {
-  if (REST_URL && REST_TOKEN) {
-    const r = await fetch(REST_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${REST_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify(cmd),
-    });
-    const j = await r.json();
-    if (j.error) throw new Error(j.error);
-    return j.result;
-  }
-  return (await tcp()).sendCommand(cmd);
-}
 
 // Keep only well-formed entries: short key, known value, numeric timestamp.
 function clean(e) {
@@ -78,8 +46,9 @@ function cleanNotes(n) {
 //   u:<id>  own question   { q, a, g (topic), s (source: diary id or "online") }
 //   d:<id>  diary entry    { c (company), dt (yyyy-mm-dd), r (round), res (result), no (notes) }
 //   p:<day>:<device>  practice count for a day on one device { n }
+//   m:<id>  mock interview result { dt, res (verdict), n (score x10), g (label) }
 // Deleting keeps { del: true } so the delete wins over older copies.
-const REC_KEY = /^[udp]:[A-Za-z0-9_:.-]{1,60}$/;
+const REC_KEY = /^[udpm]:[A-Za-z0-9_:.-]{1,60}$/;
 const REC_STR = { q: 500, a: 5000, g: 80, s: 60, c: 100, dt: 10, r: 40, res: 20, no: 5000 };
 const MAX_RECS = 3000;
 function cleanRecs(x) {
@@ -112,7 +81,7 @@ module.exports = async (req, res) => {
 
   const key = String((req.query && req.query.key) || "");
   if (!KEY_RE.test(key)) return res.status(400).json({ error: "bad sync code" });
-  if (!(REST_URL && REST_TOKEN) && !TCP_URL) return res.status(503).json({ error: "storage not configured" });
+  if (!configured()) return res.status(503).json({ error: "storage not configured" });
 
   const rk = "prep:" + key;
   try {

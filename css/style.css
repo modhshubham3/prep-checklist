@@ -637,3 +637,38 @@ kbd{font:inherit;font-size:11px;font-weight:700;border:1px solid var(--rule);bor
 .vz-ctl .vz-play{background:var(--pen);border-color:var(--pen);color:#fff;}
 .vz-step{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--ink-soft);}
 @media (prefers-reduced-motion:reduce){.vz [data-tf],.vz [data-f]{transition:none;}}
+
+/* ---- practice: spoken/typed answers and the judge ---- */
+.pr-answer{width:100%;margin-top:12px;font-size:15px;line-height:1.5;}
+.pr-ansbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 2px;}
+.pr-mic{font:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--ink);background:var(--card);border:1px solid var(--rule);border-radius:999px;padding:8px 14px;}
+.pr-mic.on{background:var(--miss);border-color:var(--miss);color:#fff;animation:prpulse 1.4s infinite;}
+@keyframes prpulse{50%{opacity:.75;}}
+@media (prefers-reduced-motion:reduce){.pr-mic.on{animation:none;}}
+.pr-reveal .pr-plain{background:none;border-color:transparent;color:var(--pen);font-size:14px;}
+.pr-marks button.suggest{outline:3px solid var(--pen);outline-offset:1px;}
+.pr-marks button.suggest::after{content:"AI ka sujhav";display:block;font-size:10.5px;font-weight:700;color:var(--pen);}
+.pj{border:1.5px solid var(--rule);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:var(--card);}
+.pj.ok{border-color:var(--done);} .pj.mid{border-color:var(--flag);} .pj.bad{border-color:var(--miss);}
+.pj-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+.pj-v{font-weight:800;font-size:17px;}
+.pj.ok .pj-v{color:var(--done);} .pj.mid .pj-v{color:var(--flag);} .pj.bad .pj-v{color:var(--miss);}
+.pj-s{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;}
+.pj-off{font-size:11.5px;font-weight:700;border:1px solid var(--rule);border-radius:999px;padding:1px 8px;color:var(--ink-soft);}
+.pj ul{margin:6px 0;padding-left:0;list-style:none;font-size:14px;line-height:1.45;}
+.pj li{padding-left:22px;position:relative;margin:3px 0;}
+.pj-ok li::before{content:"✓";position:absolute;left:4px;color:var(--done);font-weight:800;}
+.pj-miss li::before{content:"○";position:absolute;left:4px;color:var(--flag);font-weight:800;}
+.pj-err li::before{content:"✗";position:absolute;left:4px;color:var(--miss);font-weight:800;}
+.pj-fb{margin:8px 0 0;font-size:14.5px;line-height:1.5;}
+.pj-ideal{margin-top:8px;font-size:14px;}
+.pj-ideal summary{cursor:pointer;font-weight:700;color:var(--pen);}
+.pj-ideal p{margin:6px 0 0;line-height:1.55;}
+.pj-mini{display:inline-block;min-width:44px;font-weight:800;font-variant-numeric:tabular-nums;margin-right:6px;}
+.pj-mini.ok{color:var(--done);} .pj-mini.mid{color:var(--flag);} .pj-mini.bad{color:var(--miss);}
+.pr-your{white-space:pre-wrap;background:var(--paper);border:1px dashed var(--rule);border-radius:8px;padding:8px 10px;font-size:14px;margin:0 0 10px;}
+.pr-topics{list-style:none;padding:0;margin:10px 0 0;font-size:14px;}
+.pr-topics li{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px solid var(--rule);}
+.pr-hist{display:flex;gap:12px;align-items:baseline;font-size:14px;padding:6px 0;border-bottom:1px solid var(--rule);}
+.pr-hist b{font-variant-numeric:tabular-nums;}
+.pr-mode-main{border-color:var(--pen);border-width:2px;}

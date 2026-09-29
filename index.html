@@ -230,9 +230,9 @@
             <strong>Quick round</strong>
             <span>10 kamzor sawaal — jo "Naa bhai" hain aur jo sabse pehle dekhe the, wo pehle</span>
           </button>
-          <button class="pr-mode" data-mode="mock" type="button">
-            <strong>Mock interview</strong>
-            <span>5 random sawaal, har ek pe 2 minute. Zor se bolke jawab do, jaise asli interview mein</span>
+          <button class="pr-mode pr-mode-main" data-mode="mock" type="button">
+            <strong>Mock interview — AI interviewer</strong>
+            <span>8 mixed sawaal (C#, ASP.NET, EF, SQL, Angular, project), har ek pe 3 minute. Bolke ya likh ke jawab do — end mein har jawab ka score aur Hire / No hire</span>
           </button>
           <button class="pr-mode" data-mode="farak" type="button">
             <strong>Confusing pairs</strong>
@@ -247,6 +247,8 @@
             <span id="prminesub">Diary / online se jode hue sawaal</span>
           </button>
         </div>
+
+        <div id="prhist"></div>
 
         <details class="pr-custom" id="prcustom">
           <summary>Apne hisaab se set karo</summary>
@@ -279,10 +281,19 @@
         <h3 class="pr-q" id="prq"></h3>
         <code class="ch-ex c2-qc" id="prqc" hidden></code>
         <div id="prask">
-          <p class="pr-tip">Pehle zor se bolo — definition, ek example, aur kab use karte ho. Phir jawab kholo.</p>
-          <div class="ask-btns pr-reveal"><button id="prreveal" type="button">Jawab dikhao <kbd>Space</kbd></button></div>
+          <p class="pr-tip" id="prtip">Jawab bolo ya likho — definition, ek example, aur kab use karte ho. AI check karke score dega.</p>
+          <textarea id="pranswer" class="note-ta pr-answer" rows="5" placeholder="Yahan likho, ya 🎤 dabake bolo…"></textarea>
+          <div class="pr-ansbar">
+            <button id="prmic" class="pr-mic" type="button">🎤 Bolke jawab do</button>
+            <span id="prmicst" class="sync-help"></span>
+          </div>
+          <div class="ask-btns pr-reveal">
+            <button id="prcheck" type="button">Check karo</button>
+            <button id="prreveal" class="pr-plain" type="button">Bina check, seedha jawab dikhao <kbd>Space</kbd></button>
+          </div>
         </div>
         <div id="prans" hidden>
+          <div id="prjudge" hidden></div>
           <div class="c2-det pr-key" id="prkey"></div>
           <button class="pr-more" id="prmore" type="button">Poora jawab padho</button>
           <div class="c2-det pr-full" id="prfull" hidden></div>
@@ -303,6 +314,7 @@
         <p class="ask-q" id="prdonetitle">Round khatam</p>
         <div class="pr-result" id="prresult"></div>
         <p class="sync-help" id="prsummary"></p>
+        <div id="prreport"></div>
         <div id="prreview"></div>
         <div class="ask-btns">
           <button id="prretry" type="button">Jo nahi aaye, wahi dobara</button>

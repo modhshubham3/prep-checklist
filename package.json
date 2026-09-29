@@ -1,8 +1,9 @@
 {
   "name": "prep-checklist",
   "private": true,
-  "description": "Interview prep site; the only dependency is the Redis client for the sync API.",
+  "description": "Interview prep site; dependencies are the Redis client (sync API) and the Anthropic SDK (answer judge).",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.129.0",
     "redis": "^4.7.0"
   }
 }

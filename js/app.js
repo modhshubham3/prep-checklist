@@ -956,24 +956,29 @@ const sync = (() => {
 })();
 
 /* ================= PRACTICE MODE ================= */
-// One card at a time: the question as an interviewer would ask it, say the
-// answer out loud, then see the key points (full answer on demand) and mark
-// honestly. Marks go into the same ticks the rest of the app uses, so weak
-// questions keep coming back. Oldest-reviewed come first within each level.
+// One card at a time: the question as an interviewer would ask it. Answer it
+// out loud (speech-to-text) or by typing, and have it checked: /api/judge
+// grades it against the card's notes (right / partial / wrong + score), or a
+// rough keyword check runs when the judge isn't set up. Or skip the check and
+// just read the answer. Marks go into the same ticks the rest of the app uses.
+// Mock interview mode asks a mixed set, holds feedback to the end, and gives
+// a hire / no-hire verdict from the scores.
 const practice = (() => {
   const $ = id => document.getElementById(id);
   const ov = $("practice");
   const BUILT = CHEAT2.flatMap(g => g.items.map(it => ({ it, g: g.g, key: kA(it.q) })));
   const MINE = "Mere sawaal";
   const RANK = { naa: 0, thoda: 1, haan: 3 };   // unmarked = 2
-  const MOCK_SECS = 120;
+  const MOCK_SECS = 180;
+  const TO_MARK = { right: "haan", partial: "thoda", wrong: "naa" };
   let queue = [], i = 0, tally = null, combo = 0, missed = [], timed = false, clock = null, left = 0;
+  let interview = null;                           // { answers: [], jobs: [] } while a mock interview runs
 
   // Own questions (from the diary / added by hand) look like built-in items.
   function mine(){
     return liveRecs("u:").map(r => ({
       it: { q: r.q, a: r.a ? r.a.split(/\n{2,}/) : ["Abhi iska jawab nahi likha — Interview diary → Mere sawaal mein jaake likh do."] },
-      g: MINE, key: r.key,
+      g: MINE, key: r.key, own: !r.a,
     }));
   }
   const all = () => BUILT.concat(mine());
@@ -1007,6 +1012,9 @@ const practice = (() => {
     const m = mine().length;
     $("prminesub").textContent = m ? m + " sawaal — diary / online se jode hue" : "Abhi koi nahi — Interview diary mein sawaal jodo";
     $("prmine").disabled = !m;
+    const hist = liveRecs("m:").sort((a, b) => b.t - a.t).slice(0, 5);
+    $("prhist").innerHTML = hist.length ? '<p class="sync-help pr-how">Pichhle mock interviews</p>' +
+      hist.map(h => `<div class="pr-hist"><span>${esc(h.dt || "")}</span><b>${((h.n || 0) / 10).toFixed(1)}/10</b><span>${esc(h.res || "")}</span></div>`).join("") : "";
   }
 
   CHEAT2.forEach(g => {
@@ -1040,6 +1048,25 @@ const practice = (() => {
     return n ? q.slice(0, n) : q;
   }
 
+  // A mock interview: a fixed mix like a real .NET full-stack round.
+  // Hand-written code questions are left out — hard to answer by voice.
+  const MIX = [
+    [/^Farak samjho — C#|^C# —|^Tricky — C#|delegates|Threading|Design patterns/, 2],
+    [/ASP\.NET|REST|\.NET practical/, 1],
+    [/Entity Framework|EF Core/, 1],
+    [/SQL|Database/, 2],
+    [/Angular/, 1],
+    [/^Project|^Templates|^Asli interview|^Resume deep-dive|^Production|^System design|^Architecture/, 1],
+  ];
+  function interviewSet(){
+    const used = new Set(), out = [];
+    MIX.forEach(([re, n]) => {
+      shuffle(BUILT.filter(x => re.test(x.g) && !used.has(x.key) && !/coding round/.test(x.g))).slice(0, n)
+        .forEach(x => { used.add(x.key); out.push(x); });
+    });
+    return out;
+  }
+
   const src = () => document.querySelector('input[name="prsrc"]:checked').value;
   function avail(){
     const n = pick({ src: src(), grp: $("prgroup").value, n: 0 }).length;
@@ -1068,19 +1095,96 @@ const practice = (() => {
     clock = setInterval(() => { left--; paintClock(); }, 1000);
   }
 
+  /* ---- speech to text (Chrome / Edge / Safari; typing works everywhere) ---- */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null, listening = false, base = "";
+  function micState(msg){ $("prmicst").textContent = msg || ""; $("prmic").classList.toggle("on", listening); $("prmic").textContent = listening ? "⏹ Rukko" : "🎤 Bolke jawab do"; }
+  function stopMic(){ listening = false; if(rec) try{ rec.stop(); }catch(e){} micState(""); }
+  function startMic(){
+    if(!SR){ micState("Is browser mein bolke jawab nahi chalta — Chrome/Edge use karo, ya type karo."); return; }
+    rec = new SR();
+    rec.lang = "en-IN"; rec.continuous = true; rec.interimResults = true;
+    base = $("pranswer").value ? $("pranswer").value.trimEnd() + " " : "";
+    rec.onresult = e => {
+      let fin = "", tmp = "";
+      for(let k = e.resultIndex; k < e.results.length; k++){
+        const t = e.results[k][0].transcript;
+        if(e.results[k].isFinal) fin += t + " "; else tmp += t;
+      }
+      if(fin) base += fin;
+      $("pranswer").value = base + tmp;
+    };
+    rec.onerror = e => { if(e.error === "not-allowed") { listening = false; micState("Mic ki permission nahi mili — address bar mein mic allow karo."); } };
+    rec.onend = () => { if(listening) try{ rec.start(); }catch(e){ stopMic(); } };   // phones stop after a pause
+    listening = true; micState("Sun raha hoon… bolte raho, ho jaaye to ⏹ dabao");
+    try{ rec.start(); }catch(e){ stopMic(); }
+  }
+
+  /* ---- judging ---- */
+  // Rough offline check: key terms from the card (bold/code words, table's first
+  // column) found in the answer. Only a fallback when /api/judge isn't set up.
+  function localJudge(it, text){
+    const src = [...(it.a || []).slice(0, 2), ...(it.pts || []), it.h || ""].join(" ");
+    const terms = new Set();
+    for(const m of src.matchAll(/\*\*([^*]+)\*\*|`([^`]+)`/g)) terms.add((m[1] || m[2]).toLowerCase().replace(/[^a-z0-9#+.\s]/g, " ").trim());
+    if(it.t) it.t.r.forEach(r => terms.add(r[0].toLowerCase().replace(/[`*]/g, "").trim()));
+    const list = [...terms].filter(t => t.length > 1 && t.length < 40).slice(0, 10);
+    if(!list.length) return null;
+    const ans = text.toLowerCase();
+    const hit = t => ans.includes(t) || t.split(/\s+/).filter(w => w.length > 3).every(w => ans.includes(w));
+    const covered = list.filter(hit), missedT = list.filter(t => !hit(t));
+    const score = Math.round(10 * covered.length / list.length);
+    return { score, verdict: score >= 7 ? "right" : score >= 4 ? "partial" : "wrong", covered, missed: missedT, mistakes: [],
+      feedback: "Ye offline andaza hai (sirf main shabd mile ya nahi) — sahi jaanch ke liye AI judge set karo.", ideal: "", offline: true };
+  }
+  async function judge(x, text){
+    if(!text.trim()) return { score: 0, verdict: "wrong", covered: [], missed: [], mistakes: [], feedback: "Jawab khaali tha.", ideal: "" };
+    const body = { q: x.it.q, pq: x.it.pq || "", ref: x.own ? "" : answerParts(x.it).plain.slice(0, 6000), answer: text };
+    try{
+      const r = await fetch("/api/judge", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if(r.ok) return await r.json();
+      if(r.status === 429) return Object.assign(localJudge(x.it, text) || {}, { note: "Aaj ki AI check limit poori ho gayi — ye offline andaza hai." });
+    }catch(e){}
+    return localJudge(x.it, text) || { score: null, verdict: null, covered: [], missed: [], mistakes: [], feedback: "Is sawaal ka offline check nahi ho sakta — jawab khud dekh ke mark karo.", ideal: "", offline: true };
+  }
+  const VERDICT = { right: ["Sahi", "ok"], partial: ["Aadha sahi", "mid"], wrong: ["Galat / adhoora", "bad"] };
+  function judgeHtml(j){
+    if(!j) return "";
+    const [label, cls] = VERDICT[j.verdict] || ["Check nahi hua", ""];
+    const li = (arr, c) => arr && arr.length ? `<ul class="pj-${c}">${arr.map(s => `<li>${esc(s)}</li>`).join("")}</ul>` : "";
+    return `<div class="pj ${cls}">
+      <div class="pj-head"><span class="pj-v">${label}</span>${j.score != null ? `<span class="pj-s">${j.score}/10</span>` : ""}${j.offline ? '<span class="pj-off">offline andaza</span>' : ""}</div>
+      ${j.note ? `<p class="sync-help">${esc(j.note)}</p>` : ""}
+      ${li(j.covered, "ok")}${li(j.missed, "miss")}${li(j.mistakes, "err")}
+      ${j.feedback ? `<p class="pj-fb">${esc(j.feedback)}</p>` : ""}
+      ${j.ideal ? `<details class="pj-ideal"><summary>Aise bol sakte the</summary><p>${esc(j.ideal)}</p></details>` : ""}
+    </div>`;
+  }
+
   function show(){
-    if(i >= queue.length) return done();
+    stopMic();
+    if(i >= queue.length) return interview ? finishInterview() : done();
     const x = queue[i];
     $("prprog").textContent = (i + 1) + " / " + queue.length;
     $("prbarfill").style.width = (i / queue.length * 100) + "%";
-    $("prgrp").textContent = x.g;
+    $("prgrp").textContent = interview ? "Mock interview" : x.g;
     $("prq").innerHTML = inl(x.it.pq || x.it.q);
     $("prqc").hidden = !x.it.qc;
     $("prqc").textContent = x.it.qc || "";
+    $("pranswer").value = "";
+    $("prcheck").disabled = false;
+    $("prcheck").textContent = interview ? (i + 1 < queue.length ? "Submit — agla sawaal" : "Submit — interview khatam") : "Check karo";
+    $("prreveal").hidden = !!interview;
+    $("prtip").textContent = interview
+      ? "Interviewer ko jaise bologe waise bolo ya likho. Feedback end mein milega."
+      : "Jawab bolo ya likho — definition, ek example, aur kab use karte ho. AI check karke score dega.";
     $("prask").hidden = false;
     $("prans").hidden = true;
+    $("prjudge").hidden = true; $("prjudge").innerHTML = "";
     $("prfull").hidden = true; $("prfull").innerHTML = "";
+    document.querySelectorAll("[data-pr]").forEach(b => b.classList.remove("suggest"));
     $("prcombo").textContent = combo >= 3 ? combo + " lagatar sahi 🔥" : "";
+    $("prskip").hidden = false;
     screen("card");
     startClock();
   }
@@ -1088,7 +1192,7 @@ const practice = (() => {
   // Quick check first: the short version (core line, table or points, trap,
   // hook). The full answer is one tap away.
   function reveal(){
-    stopClock();
+    stopClock(); stopMic();
     const it = queue[i].it;
     const short = answerParts(it, true).html;
     $("prkey").innerHTML = short;
@@ -1096,6 +1200,26 @@ const practice = (() => {
     $("prmore").hidden = short === answerParts(it).html;
     $("prask").hidden = true;
     $("prans").hidden = false;
+  }
+  async function check(){
+    stopMic();
+    const x = queue[i], text = $("pranswer").value.trim();
+    if(interview){
+      interview.answers[i] = text;
+      interview.jobs[i] = judge(x, text);                 // graded in the background
+      logOne();
+      i++; show();
+      return;
+    }
+    if(!text){ $("pranswer").focus(); $("prmicst").textContent = "Pehle kuch bolo ya likho — ya seedha jawab dekh lo."; return; }
+    $("prcheck").disabled = true; $("prcheck").textContent = "Check ho raha hai…";
+    const j = await judge(x, text);
+    if(queue[i] !== x) return;                             // moved on meanwhile
+    reveal();
+    $("prjudge").innerHTML = judgeHtml(j);
+    $("prjudge").hidden = false;
+    const s = TO_MARK[j.verdict];
+    if(s) document.querySelector(`[data-pr="${s}"]`).classList.add("suggest");
   }
   function more(){
     $("prfull").innerHTML = answerParts(queue[i].it).html;
@@ -1113,7 +1237,12 @@ const practice = (() => {
     refreshAll();
     i++; show();
   }
-  function skip(){ stopClock(); tally.skip++; combo = 0; i++; show(); }
+  function skip(){
+    stopClock(); stopMic();
+    if(interview){ interview.answers[i] = ""; interview.jobs[i] = Promise.resolve({ score: 0, verdict: "wrong", covered: [], missed: [], mistakes: [], feedback: "Skip kiya.", ideal: "" }); }
+    else { tally.skip++; combo = 0; }
+    i++; show();
+  }
 
   function done(){
     stopClock();
@@ -1130,32 +1259,75 @@ const practice = (() => {
       '<span style="flex:' + t.naa + ';background:var(--miss)"></span>';
     $("prresult").hidden = !marked;
     $("prsummary").textContent = "Aa gaya: " + t.haan + " · Adhoora: " + t.thoda + " · Nahi aaya: " + t.naa + (t.skip ? " · Skip: " + t.skip : "");
-    const rv = $("prreview"); rv.innerHTML = "";
-    if(missed.length){
-      const h = document.createElement("p"); h.className = "sync-help pr-how"; h.textContent = "In pe dobara nazar daalo:";
-      rv.appendChild(h);
-      missed.forEach(x => {
-        const d = document.createElement("details"); d.className = "pr-rv";
-        const s = document.createElement("summary"); s.innerHTML = inl(x.it.pq || x.it.q);
-        const body = document.createElement("div"); body.className = "c2-det";
-        d.addEventListener("toggle", () => { if(d.open && !body.innerHTML){ body.innerHTML = answerParts(x.it).html; hydrateViz(body); } });
-        d.append(s, body); rv.appendChild(d);
-      });
-    }
+    $("prreport").innerHTML = "";
+    reviewList(missed, "In pe dobara nazar daalo:");
     $("prretry").hidden = !missed.length;
     screen("done");
     stats();
   }
-  function begin(list, withTimer){
+  function reviewList(list, title, extra){
+    const rv = $("prreview"); rv.innerHTML = "";
     if(!list.length) return;
-    queue = list; i = 0; combo = 0; missed = []; timed = withTimer;
+    const h = document.createElement("p"); h.className = "sync-help pr-how"; h.textContent = title;
+    rv.appendChild(h);
+    list.forEach((x, n) => {
+      const d = document.createElement("details"); d.className = "pr-rv";
+      const s = document.createElement("summary");
+      s.innerHTML = (extra ? extra(n) : "") + inl(x.it.pq || x.it.q);
+      const body = document.createElement("div"); body.className = "c2-det";
+      d.addEventListener("toggle", () => { if(d.open && !body.innerHTML){ body.innerHTML = answerParts(x.it).html; hydrateViz(body); } });
+      d.append(s, body); rv.appendChild(d);
+    });
+  }
+
+  /* ---- mock interview ---- */
+  function startInterview(){
+    const set = interviewSet();
+    if(!set.length) return;
+    interview = { answers: [], jobs: [] };
+    queue = set; i = 0; combo = 0; missed = []; timed = true;
     tally = { haan: 0, thoda: 0, naa: 0, skip: 0 };
     show();
+  }
+  async function finishInterview(){
+    stopClock();
+    $("prprog").textContent = "";
+    $("prdonetitle").textContent = "Interview khatam — jawab check ho rahe hain…";
+    $("prresult").hidden = true; $("prsummary").textContent = ""; $("prreview").innerHTML = ""; $("prreport").innerHTML = "";
+    $("prretry").hidden = true;
+    screen("done");
+    const iv = interview, qs = queue.slice();
+    interview = null;
+    const res = await Promise.all(iv.jobs);
+    const scored = res.filter(r => r.score != null);
+    const avg = scored.length ? scored.reduce((s, r) => s + r.score, 0) / scored.length : 0;
+    const wrong = res.filter(r => r.verdict === "wrong").length;
+    const offline = res.some(r => r.offline);
+    const verdict = avg >= 7.5 && wrong <= 1 ? ["Hired ✅", "Strong — is level pe offer milne ke chances achhe hain.", "ok"]
+      : avg >= 6 && wrong <= 2 ? ["Next round 🟡", "Theek-thaak — kuch topics pakke karne hain, border-line.", "mid"]
+      : ["Not selected ❌", "Abhi nahi — neeche jin sawaalon mein score kam hai, wahi pehle karo.", "bad"];
+    // Marks follow the grades, so weak ones come back in practice.
+    qs.forEach((x, n) => { const m = TO_MARK[res[n].verdict]; if(m) put(x.key, m); });
+    refreshAll();
+    const label = qs.length + " sawaal";
+    putRec("m:" + Date.now().toString(36), { dt: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short" }), res: verdict[0], n: Math.round(avg * 10), g: label });
+
+    $("prdonetitle").textContent = verdict[0] + " — " + avg.toFixed(1) + "/10";
+    const byTopic = {};
+    qs.forEach((x, n) => { (byTopic[x.g] = byTopic[x.g] || []).push(res[n].score || 0); });
+    $("prreport").innerHTML =
+      `<div class="pj ${verdict[2]}"><p class="pj-fb">${verdict[1]}</p>` +
+      (offline ? '<p class="sync-help">Kuch jawab offline andaze se check hue (AI judge set nahi / limit) — score moti baat hai.</p>' : "") +
+      `<ul class="pr-topics">${Object.entries(byTopic).map(([g, s]) => `<li><span>${esc(g)}</span><b>${(s.reduce((a, b) => a + b, 0) / s.length).toFixed(1)}</b></li>`).join("")}</ul></div>` +
+      qs.map((x, n) => `<details class="pr-rv"><summary><span class="pj-mini ${(VERDICT[res[n].verdict] || [])[1] || ""}">${res[n].score ?? "–"}/10</span> ${inl(x.it.pq || x.it.q)}</summary>
+        <div class="c2-det"><p class="sync-help">Tumhara jawab:</p><p class="pr-your">${esc(iv.answers[n] || "(khaali)")}</p>${judgeHtml(res[n])}</div></details>`).join("");
+    $("prsummary").textContent = "Sahi: " + res.filter(r => r.verdict === "right").length + " · Aadha: " + res.filter(r => r.verdict === "partial").length + " · Galat: " + wrong;
+    stats();
   }
 
   function mode(m){
     if(m === "quick") begin(pick({ src: "weak", n: 10 }), false);
-    else if(m === "mock") begin(pick({ src: "random", n: 5 }), true);
+    else if(m === "mock") startInterview();
     else if(m === "mine") begin(pick({ grp: MINE, src: "all", n: 0 }), false);
     else if(m === "farak"){
       const pairs = all().filter(x => x.g.startsWith("Farak samjho"));
@@ -1164,8 +1336,19 @@ const practice = (() => {
     }
     else if(m === "topic"){ $("prcustom").open = true; avail(); $("prgroup").focus(); }
   }
+  function begin(list, withTimer){
+    if(!list.length) return;
+    interview = null;
+    queue = list; i = 0; combo = 0; missed = []; timed = withTimer;
+    tally = { haan: 0, thoda: 0, naa: 0, skip: 0 };
+    show();
+  }
   function open(){ stats(); avail(); screen("setup"); ov.classList.add("on"); document.body.style.overflow = "hidden"; }
-  function close(){ stopClock(); ov.classList.remove("on"); document.body.style.overflow = ""; $("prprog").textContent = ""; }
+  function close(){
+    if(interview && i > 0 && i < queue.length && !confirm("Interview beech mein chhod rahe ho — band karein?")) return;
+    stopClock(); stopMic(); interview = null;
+    ov.classList.remove("on"); document.body.style.overflow = ""; $("prprog").textContent = "";
+  }
 
   $("practiceopen").addEventListener("click", open);
   $("practiceclose").addEventListener("click", close);
@@ -1174,6 +1357,8 @@ const practice = (() => {
   document.querySelectorAll('input[name="prsrc"]').forEach(r => r.addEventListener("change", avail));
   $("prstart").addEventListener("click", () => begin(pick({ src: src(), grp: $("prgroup").value, n: +$("prcount").value }), $("prtimer").checked));
   $("prreveal").addEventListener("click", reveal);
+  $("prcheck").addEventListener("click", check);
+  $("prmic").addEventListener("click", () => listening ? stopMic() : startMic());
   $("prmore").addEventListener("click", more);
   $("prskip").addEventListener("click", skip);
   $("pragain").addEventListener("click", () => { stats(); avail(); screen("setup"); });
@@ -1183,15 +1368,16 @@ const practice = (() => {
     if(!ov.classList.contains("on") || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
     if(e.key === "Escape") return close();
     if($("prcard").hidden) return;
-    if(e.key === " " && !$("prask").hidden){ e.preventDefault(); reveal(); }
+    if(e.key === " " && !$("prask").hidden && !interview){ e.preventDefault(); reveal(); }
     else if(!$("prans").hidden && ["1", "2", "3"].includes(e.key)) mark(["haan", "thoda", "naa"][+e.key - 1]);
     else if(e.key === "s" || e.key === "S") skip();
   });
   onRecs.push(() => { if(!$("prsetup").hidden) stats(); });
   // Start a round straight from elsewhere (the study plan), weakest first.
   function run(list){ stats(); ov.classList.add("on"); document.body.style.overflow = "hidden"; begin(order(list.slice()), false); }
-  return { open, begin, run };
+  return { open, begin, run, localJudge };
 })();
+
 
 /* ================= INTERVIEW DIARY ================= */
 // Interviews (d:) and own questions (u:) live in the synced records. Each
