@@ -51,6 +51,17 @@ Needs a Redis store connected to the Vercel project (Storage). Either works:
 - Upstash (`KV_REST_API_URL`/`KV_REST_API_TOKEN` or `UPSTASH_REDIS_REST_*`) — plain REST, preferred if both are set
 Without it the site still works, and the Sync panel says storage is missing.
 
+## PDF of all answers
+
+```
+node tools/print.js out/answers.html
+chrome --headless=new --no-pdf-header-footer --user-data-dir=out/profile --print-to-pdf=out/answers.pdf out/answers.html
+```
+
+Every card in full (written order, tables, code, trap, hook) grouped with a
+clickable index, plus the cheatsheet as an appendix. Diagrams are left out.
+`--user-data-dir` keeps it from handing off to an already-open Chrome.
+
 ## Deploy
 
 Hosted on Vercel as a static site: import the repo, framework preset
