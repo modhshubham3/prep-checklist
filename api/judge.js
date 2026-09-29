@@ -3,14 +3,25 @@
 //   POST /api/judge  { q, pq?, ref?, answer }
 //   → { score 0-10, verdict: right|partial|wrong, covered[], missed[], mistakes[], feedback, ideal }
 //
-// Needs ANTHROPIC_API_KEY in the Vercel project. JUDGE_MODEL overrides the
-// model (default claude-opus-5). Rate-limited per IP and per day through the
-// same Redis as sync, so a public URL can't run up the bill.
+// Grader, whichever key the Vercel project has (JUDGE_PROVIDER forces one):
+//   ANTHROPIC_API_KEY → Claude, JUDGE_MODEL (default claude-opus-5), paid
+//   GEMINI_API_KEY    → Gemini, GEMINI_MODEL (default gemini-3.8-flash),
+//                       free tier (Google may use free-tier content)
+// Rate-limited per IP and per day through the same Redis as sync, so a
+// public URL can't run up a bill or burn a free quota.
 
 const Anthropic = require("@anthropic-ai/sdk").default;
 const { redis, configured } = require("./_redis");
 
 const MODEL = process.env.JUDGE_MODEL || "claude-opus-5";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const GEMINI_BASE = process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com";
+const provider = () => {
+  const p = (process.env.JUDGE_PROVIDER || "").toLowerCase();
+  if (p === "gemini" && process.env.GEMINI_API_KEY) return "gemini";
+  if (p === "claude" && process.env.ANTHROPIC_API_KEY) return "claude";
+  return process.env.ANTHROPIC_API_KEY ? "claude" : process.env.GEMINI_API_KEY ? "gemini" : null;
+};
 const PER_HOUR = +process.env.JUDGE_PER_HOUR || 60;      // per IP
 const PER_DAY = +process.env.JUDGE_PER_DAY || 400;        // whole site
 const LIMITS = { q: 600, pq: 600, ref: 6000, answer: 4000 };
@@ -52,7 +63,70 @@ const SCHEMA = {
   additionalProperties: false,
 };
 
+// Gemini's responseSchema takes an OpenAPI-style subset (upper-case types,
+// no additionalProperties), so the same shape is spelled out for it.
+const GEMINI_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    score: { type: "INTEGER" },
+    verdict: { type: "STRING", enum: ["right", "partial", "wrong"] },
+    covered: { type: "ARRAY", items: { type: "STRING" } },
+    missed: { type: "ARRAY", items: { type: "STRING" } },
+    mistakes: { type: "ARRAY", items: { type: "STRING" } },
+    feedback: { type: "STRING" },
+    ideal: { type: "STRING" },
+  },
+  required: SCHEMA.required,
+};
+
 const str = (v, max) => (typeof v === "string" ? v.slice(0, max).trim() : "");
+
+class JudgeError extends Error {
+  constructor(status, msg) { super(msg); this.status = status; }
+}
+
+async function gradeWithClaude(content) {
+  const client = new Anthropic();
+  try {
+    const msg = await client.beta.messages.create({
+      model: MODEL,
+      max_tokens: 4000,
+      betas: ["server-side-fallback-2026-07-01"],
+      fallbacks: "default",
+      output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
+      system: SYSTEM,
+      messages: [{ role: "user", content }],
+    });
+    if (msg.stop_reason === "refusal") throw new JudgeError(502, "grader declined");
+    return msg.content.filter(b => b.type === "text").map(b => b.text).join("");
+  } catch (err) {
+    if (err instanceof JudgeError) throw err;
+    if (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError) throw new JudgeError(503, "judge not configured: " + err.message);
+    if (err instanceof Anthropic.RateLimitError) throw new JudgeError(429, "model busy");
+    throw new JudgeError(502, err && err.message);
+  }
+}
+
+async function gradeWithGemini(content) {
+  const r = await fetch(`${GEMINI_BASE}/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: SYSTEM }] },
+      contents: [{ role: "user", parts: [{ text: content }] }],
+      generationConfig: { responseMimeType: "application/json", responseSchema: GEMINI_SCHEMA, temperature: 0.2 },
+    }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 429) throw new JudgeError(429, "free quota used up");
+  if (r.status === 400 || r.status === 401 || r.status === 403) throw new JudgeError(r.status === 400 && !/API key/i.test(j.error?.message || "") ? 502 : 503, "gemini: " + (j.error?.message || r.status));
+  if (!r.ok) throw new JudgeError(502, "gemini " + r.status + ": " + (j.error?.message || ""));
+  if (j.promptFeedback?.blockReason) throw new JudgeError(502, "gemini blocked: " + j.promptFeedback.blockReason);
+  const parts = j.candidates?.[0]?.content?.parts || [];
+  const text = parts.filter(p => typeof p.text === "string" && !p.thought).map(p => p.text).join("");
+  if (!text) throw new JudgeError(502, "gemini empty: " + (j.candidates?.[0]?.finishReason || "no candidate"));
+  return text;
+}
 
 // Fixed-window counters; the first INCR in a window sets its expiry.
 async function overLimit(ip) {
@@ -68,7 +142,8 @@ async function overLimit(ip) {
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "POST") { res.setHeader("Allow", "POST"); return res.status(405).json({ error: "method not allowed" }); }
-  if (!process.env.ANTHROPIC_API_KEY || !configured()) return res.status(503).json({ error: "judge not configured" });
+  const using = provider();
+  if (!using || !configured()) return res.status(503).json({ error: "judge not configured" });
 
   let body = req.body;
   try { if (typeof body === "string") body = JSON.parse(body); } catch (e) { return res.status(400).json({ error: "bad json" }); }
@@ -90,7 +165,6 @@ module.exports = async (req, res) => {
     return res.status(503).json({ error: "storage unavailable" });
   }
 
-  const client = new Anthropic();
   const content =
     `<question>${q}</question>\n` +
     (pq && pq !== q ? `<asked_as>${pq}</asked_as>\n` : "") +
@@ -98,27 +172,15 @@ module.exports = async (req, res) => {
     `<candidate_answer>\n${answer}\n</candidate_answer>`;
 
   try {
-    const msg = await client.beta.messages.create({
-      model: MODEL,
-      max_tokens: 4000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
-      system: SYSTEM,
-      messages: [{ role: "user", content }],
-    });
-    if (msg.stop_reason === "refusal") return res.status(502).json({ error: "grader declined" });
-    const text = msg.content.filter(b => b.type === "text").map(b => b.text).join("");
+    const text = using === "gemini" ? await gradeWithGemini(content) : await gradeWithClaude(content);
     const out = JSON.parse(text);
     out.score = Math.max(0, Math.min(10, Math.round(Number(out.score) || 0)));
+    ["covered", "missed", "mistakes"].forEach(k => { if (!Array.isArray(out[k])) out[k] = []; });
+    out.by = using;
     return res.status(200).json(out);
   } catch (err) {
-    if (err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError) {
-      console.error("judge auth:", err.message);
-      return res.status(503).json({ error: "judge not configured" });
-    }
-    if (err instanceof Anthropic.RateLimitError) return res.status(429).json({ error: "model busy, try again" });
-    console.error("judge failed:", err && err.message);
-    return res.status(502).json({ error: "grading failed" });
+    const status = err instanceof JudgeError ? err.status : 502;
+    console.error("judge failed (" + using + "):", err && err.message);   // details in Vercel logs only
+    return res.status(status).json({ error: status === 429 ? "limit reached, try later" : status === 503 ? "judge not configured" : "grading failed" });
   }
 };

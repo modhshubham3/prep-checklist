@@ -59,11 +59,16 @@ returns a score, right/partial/wrong, what was covered and missed, mistakes,
 feedback and a model answer. Mock interview mode asks 8 mixed questions and
 ends with a hire / next round / not selected verdict from the scores.
 
-Setup: add `ANTHROPIC_API_KEY` to the Vercel project's environment variables
-and redeploy. Optional: `JUDGE_MODEL` (default `claude-opus-5`),
-`JUDGE_PER_HOUR` (per IP, default 60), `JUDGE_PER_DAY` (site-wide, default
-400) — limits use the sync Redis. Without a key the page falls back to a rough
-keyword check and says so.
+Setup — add one key to the Vercel project's environment variables and redeploy:
+- `GEMINI_API_KEY` (free tier from Google AI Studio; Google may use free-tier
+  content to improve its products). Model: `GEMINI_MODEL`, default
+  `gemini-3.8-flash`.
+- or `ANTHROPIC_API_KEY` (paid). Model: `JUDGE_MODEL`, default `claude-opus-5`.
+With both set, Claude is used unless `JUDGE_PROVIDER=gemini`. Limits:
+`JUDGE_PER_HOUR` (per IP, default 60) and `JUDGE_PER_DAY` (site-wide, default
+400), kept in the sync Redis. Without a key the page falls back to a rough
+keyword check and says so; "AI app ke liye copy" puts a grading prompt on the
+clipboard for any chat app.
 
 ## PDF of all answers
 

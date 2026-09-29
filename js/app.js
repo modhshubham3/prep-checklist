@@ -1153,12 +1153,30 @@ const practice = (() => {
     const [label, cls] = VERDICT[j.verdict] || ["Check nahi hua", ""];
     const li = (arr, c) => arr && arr.length ? `<ul class="pj-${c}">${arr.map(s => `<li>${esc(s)}</li>`).join("")}</ul>` : "";
     return `<div class="pj ${cls}">
-      <div class="pj-head"><span class="pj-v">${label}</span>${j.score != null ? `<span class="pj-s">${j.score}/10</span>` : ""}${j.offline ? '<span class="pj-off">offline andaza</span>' : ""}</div>
+      <div class="pj-head"><span class="pj-v">${label}</span>${j.score != null ? `<span class="pj-s">${j.score}/10</span>` : ""}${j.offline ? '<span class="pj-off">offline andaza</span>' : j.by ? `<span class="pj-off">${j.by === "gemini" ? "Gemini" : "Claude"} ne check kiya</span>` : ""}</div>
       ${j.note ? `<p class="sync-help">${esc(j.note)}</p>` : ""}
       ${li(j.covered, "ok")}${li(j.missed, "miss")}${li(j.mistakes, "err")}
       ${j.feedback ? `<p class="pj-fb">${esc(j.feedback)}</p>` : ""}
       ${j.ideal ? `<details class="pj-ideal"><summary>Aise bol sakte the</summary><p>${esc(j.ideal)}</p></details>` : ""}
     </div>`;
+  }
+
+  // Free fallback: a ready-made grading prompt for any chat app.
+  async function copyPrompt(){
+    const x = queue[i], text = $("pranswer").value.trim();
+    const ref = x.own ? "" : answerParts(x.it, true).plain.slice(0, 2500);
+    const prompt =
+      "Tum ek strict par fair .NET full-stack interviewer ho. Neeche mera jawab check karo (speech-to-text / Hinglish ho sakta hai — grammar ignore, concepts dekho).\n" +
+      "Batao: score 0-10, verdict (sahi / aadha sahi / galat), kya sahi bola, kya chhoota, kya galat bola (correction ke saath), aur ek 60-90 second ka model answer Hinglish mein.\n\n" +
+      "Sawaal: " + (x.it.pq || x.it.q) + "\n\n" +
+      (ref ? "Reference notes:\n" + ref + "\n\n" : "") +
+      "Mera jawab:\n" + (text || "(abhi kuch nahi likha)");
+    try{ await navigator.clipboard.writeText(prompt); }
+    catch(e){
+      const ta = document.createElement("textarea"); ta.value = prompt; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); }catch(e2){} ta.remove();
+    }
+    $("prmicst").textContent = text ? "Copy ho gaya — ChatGPT / Gemini / Claude app mein paste karo." : "Copy ho gaya, par jawab khaali hai — pehle jawab likho/bolo.";
   }
 
   function show(){
@@ -1359,6 +1377,7 @@ const practice = (() => {
   $("prreveal").addEventListener("click", reveal);
   $("prcheck").addEventListener("click", check);
   $("prmic").addEventListener("click", () => listening ? stopMic() : startMic());
+  $("prcopy").addEventListener("click", copyPrompt);
   $("prmore").addEventListener("click", more);
   $("prskip").addEventListener("click", skip);
   $("pragain").addEventListener("click", () => { stats(); avail(); screen("setup"); });
