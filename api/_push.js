@@ -27,7 +27,7 @@ async function sendPush(msg, only) {
   const out = { sent: 0, failed: 0, removed: 0 };
   const list = only ? [{ key: null, sub: only }] : await devices();
   for (const d of list) {
-    try { await webpush.sendNotification(d.sub, payload, { TTL: 3600 }); out.sent++; }
+    try { await webpush.sendNotification(d.sub, payload, { TTL: 3600, urgency: "high" }); out.sent++; }
     catch (e) {
       // 404/410: gone. 403 "VAPID credentials ... do not correspond": made with other keys, can never work.
       if (e && (e.statusCode === 404 || e.statusCode === 410 || (e.statusCode === 403 && /VAPID credentials/i.test(String(e.body || ""))))) { if (d.key) await redis(["HDEL", "pushsubs", d.key]); out.removed++; }
