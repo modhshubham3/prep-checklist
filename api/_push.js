@@ -29,7 +29,8 @@ async function sendPush(msg, only) {
   for (const d of list) {
     try { await webpush.sendNotification(d.sub, payload, { TTL: 3600 }); out.sent++; }
     catch (e) {
-      if (e && (e.statusCode === 404 || e.statusCode === 410)) { if (d.key) await redis(["HDEL", "pushsubs", d.key]); out.removed++; }
+      // 404/410: gone. 403 "VAPID credentials ... do not correspond": made with other keys, can never work.
+      if (e && (e.statusCode === 404 || e.statusCode === 410 || (e.statusCode === 403 && /VAPID credentials/i.test(String(e.body || ""))))) { if (d.key) await redis(["HDEL", "pushsubs", d.key]); out.removed++; }
       else {
         out.failed++;
         (out.errors = out.errors || []).push({ status: e && e.statusCode, host: (() => { try { return new URL(d.sub.endpoint).host; } catch (x) { return "?"; } })(), body: String((e && e.body) || (e && e.message) || "").slice(0, 160) });

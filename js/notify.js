@@ -45,7 +45,12 @@
     if(!supported){ st.textContent = "Is browser mein notification nahi chalti. iPhone pe pehle Share → Add to Home Screen karo, phir wahan se kholo."; return; }
     let cfg; try{ cfg = await api(); }catch(e){ st.textContent = "Server se baat nahi ho paayi."; return; }
     if(!cfg.configured){ st.textContent = "Server pe notification abhi set nahi hai (VAPID keys / storage)."; return; }
-    const sub = await getSub();
+    let sub = await getSub();
+    // A subscription made with other VAPID keys can never receive anything: drop it and start over.
+    if(sub && sub.options && sub.options.applicationServerKey){
+      const have = btoa(String.fromCharCode(...new Uint8Array(sub.options.applicationServerKey))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      if(have !== cfg.publicKey){ try{ await api({ unsubscribe: true, endpoint: sub.endpoint }); await sub.unsubscribe(); }catch(e){} sub = null; bell.classList.remove("on"); }
+    }
     if(sub){
       st.textContent = "Is device pe notification ON hai.";
       btn("Test notification bhejo", async () => { const r = await api({ test: true, subscription: sub.toJSON() }); toast(r.ok ? "Test bhej diya" : "Nahi gaya — dobara ON karo"); });
