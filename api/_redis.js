@@ -35,7 +35,7 @@ async function redis(cmd) {
     if (j.error) throw new Error(j.error);
     return j.result;
   }
-  return (await tcp()).sendCommand(cmd);
+  return (await tcp()).sendCommand(cmd.map(String));   // node-redis rejects numbers as arguments
 }
 
 module.exports = { redis, configured };
