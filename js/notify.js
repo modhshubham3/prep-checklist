@@ -64,13 +64,18 @@
         if(perm !== "granted") throw new Error("Permission nahi mili");
         const reg = await navigator.serviceWorker.ready;
         const s = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(cfg.publicKey) });
-        const r = await api({ subscription: s.toJSON() });
+        const r = await api({ subscription: s.toJSON(), sync: syncCode() });
         if(!r._ok) throw new Error(r.error || "Save nahi hua");
         toast("ON ho gaya — test bhej ke dekho");
       });
     }
   }
-  getSub && supported && navigator.serviceWorker.ready.then(() => getSub()).then(s => bell.classList.toggle("on", !!s)).catch(() => {});
+  const syncCode = () => { try{ return localStorage.getItem("prep-sync-key") || undefined; }catch(e){ return undefined; } };
+  supported && navigator.serviceWorker.ready.then(() => getSub()).then(s => {
+    bell.classList.toggle("on", !!s);
+    // Tell the server which sync record is yours, so notifications favour your weak topics.
+    if(s && syncCode()) api({ subscription: s.toJSON(), sync: syncCode() }).catch(() => {});
+  }).catch(() => {});
 
   /* ---- quiz launch card ---- */
   const qb = $("quizopen");

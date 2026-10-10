@@ -12,15 +12,31 @@ const RECENT = 220;                                  // do not repeat a question
 const NO_QUIZ = /coding round/i;                     // hand-written code is hard to answer in a quick quiz
 const clip = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
 
-function pick(n, avoid, filter) {
+// Spaced repetition: what you marked "Naa bhai" comes up most, "Thoda thoda" next, unmarked normally,
+// and what you already know ("Haan bhai") rarely. With no marks every question has the same chance.
+const WEIGHT = { naa: 6, thoda: 3, haan: 0.4 };
+const weightOf = (q, marks) => { const m = marks && marks["a:" + q.id]; return (m && WEIGHT[m.v]) || 1; };
+
+function pick(n, avoid, filter, marks) {
   const pool = QUESTIONS.filter(q => !avoid.has(q.id) && (!filter || filter(q)));
   const list = pool.length >= n ? pool : QUESTIONS.filter(q => !filter || filter(q));   // everything was asked recently: start over
   const out = [];
   while (out.length < n && list.length) {
-    const i = Math.floor(Math.random() * list.length), q = list.splice(i, 1)[0];
+    let r = Math.random() * list.reduce((s, q) => s + weightOf(q, marks), 0), i = 0;
+    while (i < list.length - 1 && (r -= weightOf(list[i], marks)) > 0) i++;
+    const q = list.splice(i, 1)[0];
     if (!out.some(o => o.g === q.g) || list.length < n) out.push(q);   // two quiz questions from different topics
   }
   return out;
+}
+
+async function loadMarks() {
+  try {
+    const code = await redis(["GET", "prep_sync"]);
+    if (!code) return null;
+    const raw = JSON.parse((await redis(["GET", "prep:" + code])) || "{}");
+    return (raw && raw.e && typeof raw.e === "object") ? raw.e : null;
+  } catch (e) { return null; }
 }
 
 function istHour(now) { return new Date(now.getTime() + 5.5 * 3600 * 1000).getUTCHours(); }
@@ -41,13 +57,14 @@ module.exports = async function (req, res) {
   const kind = q.kind === "quiz" || q.kind === "question" ? q.kind : (hour % 4 === 0 ? "quiz" : "question");
   try {
     const recent = new Set((await redis(["LRANGE", "recent", 0, RECENT - 1])) || []);
+    const marks = await loadMarks();
     let msg, ids;
     if (kind === "quiz") {
-      const two = pick(2, recent, x => !NO_QUIZ.test(x.g));
+      const two = pick(2, recent, x => !NO_QUIZ.test(x.g), marks);
       ids = two.map(x => x.id);
       msg = { title: "Quiz time: 2 sawaal", body: two.map((x, i) => (i + 1) + ") " + clip(x.p || x.q, 90)).join("\n"), url: "/?quiz=" + ids.join(","), tag: "quiz" };
     } else {
-      const one = pick(1, recent)[0];
+      const one = pick(1, recent, null, marks)[0];
       ids = [one.id];
       msg = { title: "Prep: " + clip(one.g, 40), body: clip(one.p || one.q, 140), url: "/?q=" + one.id, tag: "question" };
     }

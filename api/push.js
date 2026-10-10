@@ -35,6 +35,8 @@ module.exports = async function (req, res) {
     const have = await devices();
     if (have.length >= MAX_DEVICES && !have.some(d => d.key === key(sub.endpoint))) return res.status(409).json({ error: "Bahut zyada devices jude hain" });
     await redis(["HSET", "pushsubs", key(sub.endpoint), JSON.stringify(sub)]);
+    // Remember which sync record is yours, so the hourly question can favour what you still get wrong.
+    if (typeof body.sync === "string" && /^[A-Za-z0-9_-]{20,64}$/.test(body.sync)) await redis(["SET", "prep_sync", body.sync]);
     return res.status(200).json({ ok: true });
   } catch (e) {
     return res.status(500).json({ error: e.message });
