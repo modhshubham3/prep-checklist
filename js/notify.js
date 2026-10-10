@@ -7,7 +7,8 @@
   /* ---- deep links ---- */
   function go(raw){
     let u; try{ u = new URL(raw, location.href); }catch(e){ return; }
-    const q = u.searchParams.get("q"), quiz = u.searchParams.get("quiz");
+    const q = u.searchParams.get("q"), quiz = u.searchParams.get("quiz"), drill = u.searchParams.get("drill");
+    if(drill){ const t = drill.split(",").filter(x => /^[a-z]{2,10}$/.test(x)).slice(0, 6); const c = (u.searchParams.get("c") || "").slice(0, 40); if(window.prepDrill && window.prepDrill(t, c ? "Interview: " + c : "Interview prep")) return clean(); }
     if(quiz){ const ids = quiz.split(",").filter(x => /^[a-z0-9]+$/.test(x)).slice(0, 5); if(ids.length && window.prepQuiz && window.prepQuiz(ids)) return clean(); }
     if(q && /^[a-z0-9]+$/.test(q) && window.prepOpenCard && window.prepOpenCard(q)) clean();
   }

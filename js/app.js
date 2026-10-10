@@ -1403,7 +1403,28 @@ const practice = (() => {
     begin(list, false);
     return true;
   }
-  return { open, begin, run, quiz, localJudge };
+  // Interview coming up: ~12 questions from the topics that company works with, weakest first,
+  // spread across the topics so one area does not take the whole round.
+  const DRILL = {
+    net: /^Farak samjho — C#|^C# |^Tricky — C#|delegates|Threading|Design patterns|ASP\.NET|REST|\.NET practical/i,
+    ef: /Entity Framework|EF Core|LINQ/i,
+    sql: /SQL|Database|PostgreSQL/i,
+    angular: /Angular|TypeScript|RxJS/i,
+    project: /^Project|^Asli interview|^Resume|^Tumhare resume|^Production|^System design|^Architecture|^2 Oct/i,
+  };
+  function drill(topics, label){
+    const keys = topics.filter(t => DRILL[t]); if(!keys.length) keys.push("net", "sql", "project");
+    const per = Math.max(2, Math.ceil(12 / keys.length)), out = [], used = new Set();
+    keys.forEach(t => order(BUILT.filter(x => DRILL[t].test(x.g) && !/coding round/i.test(x.g))).slice(0, per)
+      .forEach(x => { if(!used.has(x.key)){ used.add(x.key); out.push(x); } }));
+    if(!out.length) return false;
+    stats(); ov.classList.add("on", "quiz"); document.body.style.overflow = "hidden";
+    $("practiceclose").addEventListener("click", () => ov.classList.remove("quiz"), { once: true });
+    begin(order(out), false);
+    if(label) $("prgrp").textContent = label;
+    return true;
+  }
+  return { open, begin, run, quiz, drill, localJudge };
 })();
 
 // Open one question's card (a notification tap): clear filters, unfold its topic, open it, scroll to it.
@@ -1424,6 +1445,7 @@ function openCard(id){
 window.prepOpenCard = openCard;
 window.prepQuiz = ids => practice.quiz(ids);
 window.prepKey = kA;
+window.prepDrill = (topics, label) => practice.drill(topics, label);
 
 
 /* ================= INTERVIEW DIARY ================= */
