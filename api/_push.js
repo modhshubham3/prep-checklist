@@ -30,7 +30,10 @@ async function sendPush(msg, only) {
     try { await webpush.sendNotification(d.sub, payload, { TTL: 3600 }); out.sent++; }
     catch (e) {
       if (e && (e.statusCode === 404 || e.statusCode === 410)) { if (d.key) await redis(["HDEL", "pushsubs", d.key]); out.removed++; }
-      else out.failed++;
+      else {
+        out.failed++;
+        (out.errors = out.errors || []).push({ status: e && e.statusCode, host: (() => { try { return new URL(d.sub.endpoint).host; } catch (x) { return "?"; } })(), body: String((e && e.body) || (e && e.message) || "").slice(0, 160) });
+      }
     }
   }
   return out;
