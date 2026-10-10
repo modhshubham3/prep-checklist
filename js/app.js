@@ -1394,8 +1394,36 @@ const practice = (() => {
   onRecs.push(() => { if(!$("prsetup").hidden) stats(); });
   // Start a round straight from elsewhere (the study plan), weakest first.
   function run(list){ stats(); ov.classList.add("on"); document.body.style.overflow = "hidden"; begin(order(list.slice()), false); }
-  return { open, begin, run, localJudge };
+  // A notification's quiz: the given question ids, in the given order, with the same check + marks.
+  function quiz(ids){
+    const list = ids.map(id => BUILT.find(x => x.key === "a:" + id)).filter(Boolean);
+    if(!list.length) return false;
+    stats(); ov.classList.add("on", "quiz"); document.body.style.overflow = "hidden";
+    $("practiceclose").addEventListener("click", () => ov.classList.remove("quiz"), { once: true });
+    begin(list, false);
+    return true;
+  }
+  return { open, begin, run, quiz, localJudge };
 })();
+
+// Open one question's card (a notification tap): clear filters, unfold its topic, open it, scroll to it.
+function openCard(id){
+  const card = cheat2List.querySelector('.ch-card[data-key="a:' + id + '"]');
+  if(!card) return false;
+  cheat2Search.value = ""; c2filter = "all";
+  document.querySelectorAll("[data-c2filter]").forEach(x => x.setAttribute("aria-selected", x.dataset.c2filter === "all" ? "true" : "false"));
+  const hit = CHEAT2.find(g => g.items.some(it => kA(it.q) === "a:" + id));
+  if(hit) cheat2Fold.set(hit.g, true);
+  cheat2Filter();
+  card.classList.add("open", "spot");
+  const b = card.querySelector(".c2-q"); if(b) b.setAttribute("aria-expanded", "true");
+  setTimeout(() => card.scrollIntoView({ block: "start", behavior: "smooth" }), 80);
+  setTimeout(() => card.classList.remove("spot"), 4000);
+  return true;
+}
+window.prepOpenCard = openCard;
+window.prepQuiz = ids => practice.quiz(ids);
+window.prepKey = kA;
 
 
 /* ================= INTERVIEW DIARY ================= */

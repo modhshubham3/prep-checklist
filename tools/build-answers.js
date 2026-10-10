@@ -132,6 +132,14 @@ fs.writeFileSync(path.join(root, "js/answers.js"),
   "const CHEAT2 = " + JSON.stringify(out) + ";\n" +
   "const PLAN = " + JSON.stringify(plan) + ";\n");
 
+// The notification job (api/cron.js) runs on the server and cannot read js/answers.js, so it gets a
+// small list of its own. id = the same hash the app uses for a card's key ("a:" + id), so a tapped
+// notification can open exactly that card.
+const fnv = s => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(36); };
+const plain = t => String(t || "").replace(/\*\*|`/g, "").replace(/\s+/g, " ").trim();
+fs.writeFileSync(path.join(root, "api/_questions.json"),
+  JSON.stringify(out.flatMap(gr => gr.items.map(x => ({ id: fnv(x.q), q: plain(x.q).slice(0, 160), p: plain(x.pq).slice(0, 160), g: gr.g })))));
+
 const n = out.reduce((s, gr) => s + gr.items.length, 0);
 const words = out.reduce((s, gr) => s + gr.items.reduce((t, x) => t + (x.a || []).join(" ").split(/\s+/).length, 0), 0);
 console.log(`js/answers.js: ${out.length} groups, ${n} questions, ~${words} words of explanation`);

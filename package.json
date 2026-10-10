@@ -4,6 +4,7 @@
   "description": "Interview prep site; dependencies are the Redis client (sync API) and the Anthropic SDK (answer judge).",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
-    "redis": "^4.7.0"
+    "redis": "^4.7.0",
+    "web-push": "^3.6.7"
   }
 }

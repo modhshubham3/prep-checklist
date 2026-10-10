@@ -4,10 +4,10 @@
 // offline you get the last copy that loaded. Fonts and the QR library from
 // CDNs: cache-first, they're versioned and never change. The sync API is never
 // cached — progress must always be live.
-const CACHE = "prep-v4";
+const CACHE = "prep-v5";
 const SHELL = [
-  "/", "/css/style.css",
-  "/js/data.js", "/js/answers.js", "/js/migrate.js", "/js/viz.js", "/js/app.js",
+  "/", "/css/style.css", "/css/skin.css",
+  "/js/data.js", "/js/answers.js", "/js/migrate.js", "/js/viz.js", "/js/app.js", "/js/notify.js",
   "/manifest.webmanifest", "/icons/icon-192.png"
 ];
 
@@ -49,4 +49,25 @@ self.addEventListener("fetch", e => {
       }))
     );
   }
+});
+
+// Study notifications: the server sends { title, body, url, tag }; a tap opens that question or quiz.
+self.addEventListener("push", e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) {}
+  e.waitUntil(self.registration.showNotification(d.title || "Prep", {
+    body: d.body || "", tag: d.tag || "prep", renotify: true,
+    icon: "/icons/icon-192.png", badge: "/icons/icon-192.png", data: { url: d.url || "/" }
+  }));
+});
+
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || "/";
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+    for (const c of list) {
+      if ("focus" in c) { c.postMessage({ open: url }); return c.focus(); }
+    }
+    return self.clients.openWindow(url);
+  }));
 });

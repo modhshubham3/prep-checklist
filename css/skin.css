@@ -1,0 +1,54 @@
+/* Dark glass + gradient skin. Re-skins the app through the same colour tokens, so every screen follows. */
+:root{ --saffron:#ff9a2e; --saffron2:#ff6a00; --glow:rgba(255,140,40,.35); }
+:root, :root[data-theme="dark"]{
+  --paper:#0d0f14; --card:rgba(255,255,255,.06); --ink:#f2f0ec; --ink-soft:#a7a39b; --rule:rgba(255,255,255,.12);
+  --pen:#ffb24d; --pen-soft:rgba(255,154,46,.14); --done:#4fd1a0; --flag:#f0b24a; --flag-soft:rgba(240,178,74,.14); --miss:#ff7a70;
+}
+:root[data-theme="light"]{
+  --paper:#fbf6ee; --card:rgba(255,255,255,.75); --ink:#231a10; --ink-soft:#6d6253; --rule:rgba(60,40,10,.14);
+  --pen:#d9570a; --pen-soft:rgba(255,140,40,.16); --done:#1a7a52; --flag:#a86400; --flag-soft:#fbf1dd; --miss:#c0392b;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme]){ --paper:#fbf6ee; --card:rgba(255,255,255,.75); --ink:#231a10; --ink-soft:#6d6253; --rule:rgba(60,40,10,.14); --pen:#d9570a; --pen-soft:rgba(255,140,40,.16); --done:#1a7a52; --flag:#a86400; --flag-soft:#fbf1dd; --miss:#c0392b; }
+}
+body{
+  background:
+    radial-gradient(900px 500px at 85% -10%, rgba(255,120,30,.22), transparent 60%),
+    radial-gradient(700px 500px at -10% 20%, rgba(120,80,255,.16), transparent 60%),
+    var(--paper);
+  background-attachment:fixed;
+}
+h1{
+  background:linear-gradient(90deg,var(--saffron),#ffd27a 60%,var(--saffron2));
+  -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:-.02em;
+}
+.cheat-open, .pr-mode, .sheet-ask{
+  background:var(--card); border:1px solid var(--rule);
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
+  box-shadow:0 6px 24px rgba(0,0,0,.18);
+}
+/* hundreds of these: no blur / shadow, or scrolling gets heavy on a phone */
+.ch-card, .pj, .pr-hist{ background:var(--card); border:1px solid var(--rule); }
+.ch-card{ scroll-margin-top:90px; }
+.cheat-open{ border-radius:18px; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.cheat-open:hover{ transform:translateY(-2px); border-color:var(--pen); box-shadow:0 10px 30px var(--glow); }
+.cheat-open:active{ transform:scale(.985); }
+.cheat-open.quiz{ background:linear-gradient(135deg,rgba(255,154,46,.28),rgba(255,106,0,.10)); border-color:rgba(255,154,46,.5); }
+.cheat, .cheat-body{ background:transparent; }
+.cheat.on{ background:var(--paper); animation:skinIn .22s ease; }
+@keyframes skinIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;} }
+.theme-btn{ border-radius:999px; background:var(--card); border:1px solid var(--rule); color:var(--ink); }
+.theme-btn.bell{ display:inline-flex; align-items:center; justify-content:center; width:38px; padding:0; }
+.theme-btn.bell.on{ color:var(--pen); border-color:var(--pen); box-shadow:0 0 14px var(--glow); }
+.pr-bar span, #prbarfill{ background:linear-gradient(90deg,var(--saffron),var(--saffron2)); }
+button.b-haan,button.b-thoda,button.b-naa{ border-radius:14px; }
+.ch-card.spot{ outline:2px solid var(--pen); box-shadow:0 0 0 6px var(--glow); transition:box-shadow .4s; }
+
+/* Quiz look: bigger question, "Quiz time" ribbon, accent glow. */
+#practice.quiz .cheat-bar h2::before{ content:"Quiz time · "; color:var(--pen); }
+#practice.quiz #prq{ font-size:1.35rem; line-height:1.4; font-weight:700; }
+#practice.quiz #prgrp{ display:inline-block; padding:3px 10px; border-radius:999px; background:var(--pen-soft); color:var(--pen); font-weight:600; }
+#practice.quiz .cheat-body .inner{ position:relative; }
+#practice.quiz .cheat-body .inner::before{ content:""; position:absolute; inset:-20px -10px auto; height:160px; background:radial-gradient(closest-side,var(--glow),transparent); pointer-events:none; opacity:.6; }
+
+@media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }

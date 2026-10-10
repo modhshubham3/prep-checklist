@@ -1,0 +1,23 @@
+name: Study notifications
+
+# One question every hour; every 4th hour a 2-question quiz instead. Runs at :30 UTC, which is
+# the top of the hour in IST. The server skips quiet hours (23:00 to 07:00 IST) by itself.
+# Needs two repository secrets: APP_URL (https://prep-checklist.vercel.app) and CRON_SECRET.
+on:
+  schedule:
+    - cron: "30 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask the site to send the next notification
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then echo "APP_URL or CRON_SECRET secret is missing"; exit 1; fi
+          code=$(curl -sS -o out.json -w "%{http_code}" -m 60 -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron")
+          cat out.json; echo
+          test "$code" = "200"
