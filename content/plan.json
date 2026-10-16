@@ -1,5 +1,26 @@
 [
   {
+    "t": "15 Oct interview — Angular/JS jo atka",
+    "why": "Angular round mein 'yaad nahi' bahut aaya — yeh 12 pakke karo",
+    "learn": [
+      "fetch se API call — kya interceptor chalega?",
+      "Promise RxJS ka hissa nahi hai",
+      "const vs let vs var",
+      "Closure — ek example ke saath",
+      "Angular directives ke types",
+      "Decorator kya hota hai — kitne type?",
+      "Child se parent ko data — @Output",
+      "@Injectable kya karta hai — providedIn vs providers",
+      "Angular Signals — ek paragraph",
+      "Change detection ke types — Default vs OnPush",
+      "Routing guards ke types",
+      "angular.json mein kya hota hai — package.json se farak"
+    ],
+    "farak": [
+      ".NET Framework vs .NET Core — aaj ka sach"
+    ]
+  },
+  {
     "t": "2 Oct interview — pehle yeh",
     "why": "Asli interview mein yahi galat ya aadha gaya — agle se pehle pakka karo",
     "learn": [
