@@ -53,6 +53,20 @@
     l.parts.forEach(p => { const b = el("div", "lpart"); b.appendChild(el("h4", null, p.h)); const t = el("p"); t.innerHTML = rich(p.text); b.appendChild(t); concept.appendChild(b); });
     root.appendChild(concept);
 
+    /* ---- 0. concept story: a cartoon scene with Boltu (js/scenes.js), driven by our own play/scrubber ---- */
+    let sc = null;
+    if(window.Scenes && Scenes.has(l.id)){
+      const sb = el("div", "pbox scene-box"); sb.appendChild(el("h3", null, "Pehle kahani dekho"));
+      const stage = el("div", "scene-stage"); sb.appendChild(stage);
+      const bar = el("div", "scene-ctl"), lab = el("span", "scene-n"), sk = el("input", "scrub"); sk.type = "range"; sk.min = 0; sk.value = 0; sk.setAttribute("aria-label", "Kahani ka step");
+      const pb = btn("▶ Chalao", "pbtn ghost", () => { if(!sc) return; if(sc.playing){ sc.pause(); pb.textContent = "▶ Chalao"; } else { sc.play(); pb.textContent = "⏸ Roko"; } });
+      bar.append(pb, sk, lab); sb.appendChild(bar); root.appendChild(sb);
+      sc = Scenes.play(l.id, stage, { autoplay: false, onStep: (i, st2) => { sk.value = i; sk.style.setProperty("--p", (100 * i / Math.max(1, st2.total - 1)) + "%"); lab.textContent = (i + 1) + " / " + st2.total; } });
+      sk.max = sc.steps.length - 1; lab.textContent = "1 / " + sc.steps.length;
+      sk.addEventListener("input", () => { sc.pause(); pb.textContent = "▶ Chalao"; sc.seek(+sk.value); });
+      sc.onEnd = () => { pb.textContent = "▶ Dobara"; };
+    }
+
     /* ---- 1. predict first ---- */
     const pr = el("div", "pbox"); pr.appendChild(el("h3", null, "1 · Pehle predict karo"));
     const listing0 = el("pre", "code-list");
@@ -63,7 +77,9 @@
     function showAnswer(ix){
       [...opts.children].forEach((b, n) => { b.disabled = true; b.classList.toggle("right", n === l.predict.answer); b.classList.toggle("wrong", n === ix && ix !== l.predict.answer); });
       fb.innerHTML = ""; fb.className = "pfeedback " + (ix === l.predict.answer ? "ok" : "bad");
-      fb.append(el("b", null, ix === l.predict.answer ? "Sahi! " : "Galat — yahi seekhna hai. "), document.createTextNode(l.predict.why));
+      const good = ix === l.predict.answer;
+      if(window.Mascot){ const m = Mascot.create({ size: 52, mood: good ? "cheer" : "oops" }); m.classList.add("fb-boltu"); fb.appendChild(m); }
+      const tx = el("div", "fb-text"); tx.append(el("b", null, good ? "Sahi! " : "Galat — yahi seekhna hai. "), document.createTextNode(l.predict.why)); fb.appendChild(tx);
       player.classList.remove("locked");
     }
     l.predict.options.forEach((o, n) => opts.appendChild(btn(o, "popt", () => {
@@ -120,7 +136,7 @@
     scrub.addEventListener("input", () => { stop(); f = +scrub.value - 1; paint(); });
     root.appendChild(player); paint(); setPlaying(false);
     if(s.predicted != null) showAnswer(s.predicted);
-    root._cleanup = stop;
+    root._cleanup = () => { stop(); if(sc){ sc.destroy(); sc = null; } };
 
     /* ---- 3. playground ---- */
     const pg = el("div", "pbox"); pg.appendChild(el("h3", null, "3 · Khud chalao — badal ke dekho"));

@@ -152,6 +152,7 @@
     }
     function celebrate(viaSolution){
       const box = el("div", "pbox win");
+      if(window.Mascot && !viaSolution){ const m = Mascot.create({ size: 88, mood: "celebrate" }); m.classList.add("win-boltu"); box.appendChild(m); }
       box.appendChild(el("h3", null, viaSolution ? "Solution — isse padho, phir band karke KHUD dobara likho" : "✅ Solve ho gaya!" + (s.clean ? " Bina hint ke!" : "")));
       const why = el("p"); why.innerHTML = rich(x.why); box.appendChild(why);
       box.appendChild(el("p", "note", "Edge cases jo hamesha socho: " + x.edge.join(" · ")));

@@ -3,12 +3,12 @@
 // Same-origin files: cache-first with background revalidation (stale-while-revalidate). A launch never waits on
 // the network; the fresh copy is stored for the next launch. Bump CACHE on every deploy so the precache is rebuilt.
 // The QR library CDN: cache-first. The sync / push APIs are never cached: progress must always be live.
-const CACHE = "prep-v12";
+const CACHE = "prep-v13";
 const SHELL = [
   "/", "/index.html",
-  "/css/style.css", "/css/skin.css", "/css/platform.css", "/css/lamplight.css",
+  "/css/style.css", "/css/skin.css", "/css/platform.css", "/css/lamplight.css", "/css/mascot.css",
   "/js/data.js", "/js/answers.js", "/js/migrate.js", "/js/viz.js", "/js/app.js", "/js/shell.js",
-  "/js/lab-data.js", "/js/learn-data.js", "/js/decide-data.js", "/js/platform-core.js", "/js/learn.js", "/js/lab.js", "/js/decide.js",
+  "/js/lab-data.js", "/js/learn-data.js", "/js/decide-data.js", "/js/platform-core.js", "/js/mascot.js", "/js/scenes.js", "/js/learn.js", "/js/lab.js", "/js/decide.js",
   "/js/platform.js", "/js/notify.js", "/js/feel.js",
   "/fonts/Figtree.woff2", "/fonts/BricolageGrotesque.woff2", "/fonts/JetBrainsMono.woff2",
   "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"
