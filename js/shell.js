@@ -90,6 +90,19 @@
     if($("diary").classList.contains("on") && d && t && /^0 interviews/.test(t.textContent)) d.open = true;
   }).observe($("diary"), { attributes: true, attributeFilter: ["class"] });
 
+  /* ---- laptop keys: Alt+1..6 switch screens, "/" jumps to search ---- */
+  document.addEventListener("keydown", e => {
+    if(e.altKey && !e.ctrlKey && !e.metaKey && /^Digit[1-6]$/.test(e.code)){
+      e.preventDefault(); e.stopPropagation();          // capture: practice's own 1/2/3 marking must not see it
+      const b = bar.querySelector('[data-tab="' + TABS[+e.code.slice(5) - 1] + '"]'); if(b) b.click();
+      return;
+    }
+    if(e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || "")){
+      const id = { answers: "cheat2search", cheat: "cheatsearch" }[current()];
+      if(id){ e.preventDefault(); $(id).focus(); }
+    }
+  }, true);
+
   paint();
   if(/^#\/[a-z]+$/.test(location.hash)) fromHash();
 })();

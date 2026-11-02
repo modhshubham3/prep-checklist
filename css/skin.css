@@ -141,3 +141,30 @@ input[type=radio],input[type=checkbox]{ width:22px; height:22px; }
 @media (max-height:420px){ :root{ --tab-h:48px; } .tabbar span{ display:none; } }
 .ans-more,.note-toggle,.c2-copy,.txt-btn{ min-height:44px; }
 .theme-btn.bell{ min-width:44px; }
+
+/* ===== Laptop / desktop (>= 900px): left sidebar, readable column, no bottom bar ===== */
+@media (min-width:900px){
+  :root{ --tab-h:0px; --side-w:224px; }
+  .tabbar{
+    top:calc(var(--appbar-h) + var(--safe-t)); bottom:0; left:0; right:auto; width:var(--side-w); height:auto; transform:none;
+    flex-direction:column; justify-content:flex-start; gap:4px; padding:14px 12px; border:0; border-right:1px solid var(--rule); border-radius:0; z-index:74;
+  }
+  .tabbar button{ flex:none; flex-direction:row; justify-content:flex-start; gap:12px; height:46px; padding:0 14px; border-radius:12px; font-size:.95rem; }
+  .tabbar svg{ width:20px; height:20px; }
+  .tabbar button:hover{ background:var(--card); color:var(--ink); }
+  .tabbar button[aria-current="page"]{ background:var(--pen-soft); color:var(--pen); }
+  .tabbar button[aria-current="page"]::before{ top:10px; bottom:10px; left:0; right:auto; width:3px; height:auto; border-radius:0 3px 3px 0; }
+  .tabbar button::after{ content:attr(data-key); margin-left:auto; font-size:.72rem; font-weight:600; color:var(--ink-soft); opacity:.7; }
+  .cheat{ left:var(--side-w); }
+  .wrap{ max-width:none; margin:0 0 0 var(--side-w); padding-bottom:48px; padding-inline:max(32px, calc((100vw - var(--side-w) - 920px) / 2)); }
+  .cheat-bar{ padding-inline:max(32px, calc((100vw - var(--side-w) - 1000px) / 2)); }
+  .cheat-body{ padding:20px max(32px, calc((100vw - var(--side-w) - 1000px) / 2)) 48px; }
+  .cheat-body .inner{ max-width:1000px; }
+  .pr-modes{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .pr-modes .pr-mode{ margin:0; }
+  .pr-mode[data-mode="quick"], .pr-mode-main{ grid-column:1 / -1; }
+  .start-card{ max-width:none; }
+  .toast{ left:calc(var(--side-w) + 24px); transform:none; }
+  .ch-card:hover{ border-color:var(--pen); }
+}
+@media (min-width:1500px){ .wrap{ padding-inline:max(32px, calc((100vw - var(--side-w) - 1040px) / 2)); } }
