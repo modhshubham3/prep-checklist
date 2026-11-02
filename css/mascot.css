@@ -1,0 +1,243 @@
+/* ==========================================================================
+   Boltu the robo-owl (js/mascot.js)  +  concept scenes (js/scenes.js)
+   Theme: reads --saffron --ink --ink-soft --rule --paper --card --pen --done --miss when present,
+   with fallbacks, and has its own light/dark scene palette keyed on html[data-theme].
+   Motion: transforms + opacity only. prefers-reduced-motion = static poses, no loops, no transitions.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- mascot */
+.mc{
+  --mc-body:var(--mc-body-o,var(--saffron,#ff9f2e));
+  --mc-dark:var(--mc-dark-o,var(--saffron2,#f07312));
+  --mc-belly:#ffd08a;
+  --mc-cream:#fff3dc;
+  --mc-line:#2b1a0c;
+  --mc-screen:#241a12;
+  --mc-glow:#4fe3c1;
+  --mc-cheek:#ff8fa3;
+  position:relative; display:inline-block; flex:none; line-height:0; vertical-align:middle;
+  transform-origin:50% 100%; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;
+}
+.mc-svg{ display:block; width:100%; height:100%; overflow:visible; }
+.mc-svg *{ transform-box:view-box; }
+
+/* shapes */
+.mc-svg path,.mc-svg circle,.mc-svg ellipse,.mc-svg rect,.mc-svg line{ stroke-linecap:round; stroke-linejoin:round; }
+.mc-shadow{ fill:#000; opacity:.22; transform-origin:100px 197px; }
+.mc-body{ fill:var(--mc-body); stroke:var(--mc-line); stroke-width:4.5; }
+.mc-hilite{ fill:none; stroke:#fff; stroke-opacity:.45; stroke-width:6; }
+.mc-belly{ fill:var(--mc-belly); }
+.mc-tuft,.mc-wingp{ fill:var(--mc-dark); stroke:var(--mc-line); stroke-width:4.5; }
+.mc-wingl{ fill:none; stroke:var(--mc-line); stroke-width:3; stroke-opacity:.55; }
+.mc-foot{ fill:var(--mc-dark); stroke:var(--mc-line); stroke-width:4; }
+.mc-disc{ fill:var(--mc-cream); }
+.mc-cheek{ fill:var(--mc-cheek); opacity:.5; transition:opacity .3s; }
+.mc-sclera{ fill:#fff; }
+.mc-ring{ fill:none; stroke:var(--mc-line); stroke-width:4; }
+.mc-iris{ fill:var(--mc-line); }
+.mc-shine{ fill:#fff; }
+.mc-lidfill{ fill:var(--mc-cream); }
+.mc-lash{ stroke:var(--mc-line); stroke-width:5; fill:none; }
+.mc-happy{ fill:none; stroke:var(--mc-line); stroke-width:5.5; opacity:0; transition:opacity .15s; }
+.mc-beak{ fill:#ff7a1a; stroke:var(--mc-line); stroke-width:3.5; transform-origin:100px 105px; }
+.mc-m{ fill:none; stroke:var(--mc-line); stroke-width:4; opacity:0; transform-origin:100px 132px; transition:opacity .2s; }
+.mc-m-smile{ opacity:1; }
+.mc-m-o{ fill:var(--mc-line); }
+.mc-mouth-in{ fill:var(--mc-line); stroke:var(--mc-line); stroke-width:3; }
+.mc-tongue{ fill:#ff7d92; stroke:none; }
+.mc-brow{ fill:none; stroke:var(--mc-line); stroke-width:5; transition:transform .35s cubic-bezier(.34,1.56,.64,1); transform-box:fill-box; transform-origin:50% 50%; }
+.mc-screen{ fill:var(--mc-screen); stroke:var(--mc-line); stroke-width:3.5; }
+.mc-glyph{ fill:var(--mc-glow); font:700 15px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.02em; }
+.mc-stem{ stroke:var(--mc-line); stroke-width:4.5; }
+.mc-bulb{ fill:var(--mc-glow); stroke:var(--mc-line); stroke-width:3.5; transition:fill .3s; }
+.mc-bulb-shine{ fill:#fff; opacity:.8; }
+.mc-halo{ fill:var(--mc-glow); opacity:.28; transform-origin:100px 17px; transition:fill .3s; }
+.mc-rays{ fill:none; stroke:#ffd84a; stroke-width:4; opacity:0; transform-origin:100px 17px; }
+
+/* layers that carry the always-on loops. Static, mood-specific poses sit on *other* elements and tween with transitions */
+.mc-bob{ animation:mc-bob 3.4s ease-in-out infinite; animation-delay:var(--mc-d,0s); transform-origin:100px 197px; }
+.mc-tilt{ transform-origin:100px 190px; transition:transform .5s cubic-bezier(.34,1.4,.64,1); }
+.mc-breathe{ animation:mc-breathe 3.4s ease-in-out infinite; animation-delay:var(--mc-d,0s); transform-origin:100px 187px; }
+.mc-look{ animation:mc-look 9s ease-in-out infinite; animation-delay:var(--mc-d,0s); }
+.mc-pupil{ transition:transform .35s cubic-bezier(.34,1.56,.64,1); }
+.mc-lid{ transform:translateY(-44px); transition:transform .4s ease; }
+.mc-blink{ animation:mc-blink 4.8s infinite; animation-delay:var(--mc-d,0s); }
+.mc-wing{ transition:transform .45s cubic-bezier(.34,1.56,.64,1); }
+.mc-sway-l{ animation:mc-sway-l 3.4s ease-in-out infinite; animation-delay:var(--mc-d,0s); }
+.mc-sway-r{ animation:mc-sway-r 3.4s ease-in-out infinite; animation-delay:var(--mc-d,0s); }
+.mc-bulbg{ animation:mc-glow 2.6s ease-in-out infinite; transform-origin:100px 17px; }
+
+@keyframes mc-bob{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-3px) } }
+@keyframes mc-breathe{ 0%,100%{ transform:scale(1,1) } 50%{ transform:scale(1.012,1.03) } }
+@keyframes mc-blink{ 0%,91%,100%{ transform:translateY(0) } 94%,96%{ transform:translateY(46px) } }
+@keyframes mc-look{ 0%,38%,100%{ transform:translate(0,0) } 44%,58%{ transform:translate(3.5px,-1px) } 64%,80%{ transform:translate(-3.5px,1px) } }
+@keyframes mc-sway-l{ 0%,100%{ transform:rotate(2deg) } 50%{ transform:rotate(-4deg) } }
+@keyframes mc-sway-r{ 0%,100%{ transform:rotate(-2deg) } 50%{ transform:rotate(4deg) } }
+@keyframes mc-glow{ 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.14) } }
+
+/* ---- moods: static poses ---- */
+/* think: head tilted, eyes up-right, one brow up, wing on chin, "?" bubble */
+.mc[data-mood="think"] .mc-tilt{ transform:rotate(-7deg); }
+.mc[data-mood="think"] .mc-pupil{ transform:translate(5px,-5.5px); }
+.mc[data-mood="think"] .mc-look{ animation:none; }
+.mc[data-mood="think"] .mc-brow-l{ transform:translateY(3px) rotate(6deg); }
+.mc[data-mood="think"] .mc-brow-r{ transform:translateY(-5px) rotate(-8deg); }
+.mc[data-mood="think"] .mc-m-smile{ opacity:0; }
+.mc[data-mood="think"] .mc-m-flat{ opacity:1; }
+.mc[data-mood="think"] .mc-wing-r{ transform:rotate(50deg); }
+.mc[data-mood="think"] .mc-sway-r{ animation:none; }
+.mc[data-mood="think"] .mc-bulbg{ animation-duration:1.2s; }
+.mc[data-mood="think"] .mc-bob{ animation-duration:4.6s; }
+
+/* cheer: arch eyes, open grin, wings up, hopping, sparkles */
+.mc[data-mood="cheer"] .mc-happy,.mc[data-mood="celebrate"] .mc-happy{ opacity:1; }
+.mc[data-mood="cheer"] .mc-sclera,.mc[data-mood="cheer"] .mc-pupil,.mc[data-mood="cheer"] .mc-ring,.mc[data-mood="cheer"] .mc-lid,
+.mc[data-mood="celebrate"] .mc-sclera,.mc[data-mood="celebrate"] .mc-pupil,.mc[data-mood="celebrate"] .mc-ring,.mc[data-mood="celebrate"] .mc-lid{ opacity:0; }
+.mc[data-mood="cheer"] .mc-cheek,.mc[data-mood="celebrate"] .mc-cheek{ opacity:.85; }
+.mc[data-mood="cheer"] .mc-brow,.mc[data-mood="celebrate"] .mc-brow{ transform:translateY(-3px); }
+.mc[data-mood="cheer"] .mc-m-smile,.mc[data-mood="celebrate"] .mc-m-smile{ opacity:0; }
+.mc[data-mood="cheer"] .mc-m-open,.mc[data-mood="celebrate"] .mc-m-open{ opacity:1; }
+.mc[data-mood="cheer"] .mc-wing-l,.mc[data-mood="celebrate"] .mc-wing-l{ transform:rotate(138deg); }
+.mc[data-mood="cheer"] .mc-wing-r,.mc[data-mood="celebrate"] .mc-wing-r{ transform:rotate(-138deg); }
+.mc[data-mood="cheer"] .mc-bob{ animation:mc-hop .78s cubic-bezier(.3,.1,.5,1) infinite; }
+.mc[data-mood="cheer"] .mc-shadow{ animation:mc-shadow .78s cubic-bezier(.3,.1,.5,1) infinite; }
+.mc[data-mood="cheer"] .mc-sway-l,.mc[data-mood="cheer"] .mc-sway-r{ animation:mc-flap .39s ease-in-out infinite alternate; }
+.mc[data-mood="cheer"] .mc-bulbg{ animation-duration:.8s; }
+
+/* celebrate: bigger hops + wiggle + confetti (js) */
+.mc[data-mood="celebrate"] .mc-bob{ animation:mc-hop2 .62s cubic-bezier(.3,.1,.5,1) infinite; }
+.mc[data-mood="celebrate"] .mc-shadow{ animation:mc-shadow .62s cubic-bezier(.3,.1,.5,1) infinite; }
+.mc[data-mood="celebrate"] .mc-tilt{ animation:mc-wiggle 1.24s ease-in-out infinite; }
+.mc[data-mood="celebrate"] .mc-sway-l,.mc[data-mood="celebrate"] .mc-sway-r{ animation:mc-flap .31s ease-in-out infinite alternate; }
+.mc[data-mood="celebrate"] .mc-m-open{ opacity:1; }
+.mc[data-mood="celebrate"] .mc-bulbg{ animation-duration:.5s; }
+.mc[data-mood="celebrate"] .mc-bulb{ fill:#ffd84a; }
+.mc[data-mood="celebrate"] .mc-halo{ fill:#ffd84a; }
+
+/* oops: wide eyes, tiny pupils, worried brows, frown, sweat drop, shake */
+.mc[data-mood="oops"] .mc-pupil{ transform:scale(.62); }
+.mc[data-mood="oops"] .mc-look{ animation:none; }
+.mc[data-mood="oops"] .mc-brow-l{ transform:translateY(-3px) rotate(-17deg); }
+.mc[data-mood="oops"] .mc-brow-r{ transform:translateY(-3px) rotate(17deg); }
+.mc[data-mood="oops"] .mc-m-smile{ opacity:0; }
+.mc[data-mood="oops"] .mc-m-frown{ opacity:1; }
+.mc[data-mood="oops"] .mc-cheek{ opacity:.25; }
+.mc[data-mood="oops"] .mc-wing-l{ transform:rotate(28deg); }
+.mc[data-mood="oops"] .mc-wing-r{ transform:rotate(-28deg); }
+.mc[data-mood="oops"] .mc-bob{ animation:mc-shake .5s ease-out 1, mc-tremble .22s .5s linear infinite alternate; }
+.mc[data-mood="oops"] .mc-bulb{ fill:var(--miss,#ff6b5e); }
+.mc[data-mood="oops"] .mc-halo{ fill:var(--miss,#ff6b5e); }
+.mc[data-mood="oops"] .mc-bulbg{ animation-duration:.6s; }
+.mc[data-mood="oops"] .mc-glyph{ fill:#ff8a7e; }
+
+/* hint: bulb blazing, one wing pointing up, brow raised, little "ooh" mouth */
+.mc[data-mood="hint"] .mc-tilt{ transform:rotate(4deg); }
+.mc[data-mood="hint"] .mc-pupil{ transform:translate(-1.5px,-5px); }
+.mc[data-mood="hint"] .mc-look{ animation:none; }
+.mc[data-mood="hint"] .mc-brow-r{ transform:translateY(-5px) rotate(-6deg); }
+.mc[data-mood="hint"] .mc-brow-l{ transform:translateY(-2px); }
+.mc[data-mood="hint"] .mc-m-smile{ opacity:0; }
+.mc[data-mood="hint"] .mc-m-o{ opacity:1; }
+.mc[data-mood="hint"] .mc-wing-r{ transform:rotate(193deg); }
+.mc[data-mood="hint"] .mc-sway-r{ animation:mc-point 1.1s ease-in-out infinite; }
+.mc[data-mood="hint"] .mc-bulb{ fill:#ffe066; }
+.mc[data-mood="hint"] .mc-halo{ fill:#ffe066; animation:mc-halo 1.1s ease-in-out infinite; }
+.mc[data-mood="hint"] .mc-rays{ opacity:1; animation:mc-rays 1.1s ease-in-out infinite; }
+.mc[data-mood="hint"] .mc-bulbg{ animation:none; }
+
+/* sleepy: heavy lids, drooping head, slow breathing, z z z, dim bulb */
+.mc[data-mood="sleepy"] .mc-tilt{ transform:rotate(9deg) translateY(4px); }
+.mc[data-mood="sleepy"] .mc-lid{ transform:translateY(-17px); }
+.mc[data-mood="sleepy"] .mc-blink{ animation:mc-nod 5.5s ease-in-out infinite; }
+.mc[data-mood="sleepy"] .mc-pupil{ transform:translate(0,5px) scale(.9); }
+.mc[data-mood="sleepy"] .mc-look{ animation:none; }
+.mc[data-mood="sleepy"] .mc-brow{ transform:translateY(5px); }
+.mc[data-mood="sleepy"] .mc-m-smile{ opacity:0; }
+.mc[data-mood="sleepy"] .mc-m-o{ opacity:1; animation:mc-snore 3.4s ease-in-out infinite; }
+.mc[data-mood="sleepy"] .mc-bob{ animation-duration:5.4s; }
+.mc[data-mood="sleepy"] .mc-breathe{ animation-duration:5.4s; }
+.mc[data-mood="sleepy"] .mc-wing-l{ transform:rotate(-5deg); }
+.mc[data-mood="sleepy"] .mc-wing-r{ transform:rotate(5deg); }
+.mc[data-mood="sleepy"] .mc-bulb{ fill:#8a8f9a; }
+.mc[data-mood="sleepy"] .mc-halo{ opacity:.1; fill:#8a8f9a; }
+.mc[data-mood="sleepy"] .mc-bulbg{ animation-duration:5.4s; }
+.mc[data-mood="sleepy"] .mc-glyph{ fill:#8a8f9a; }
+.mc[data-mood="sleepy"] .mc-cheek{ opacity:.35; }
+
+/* keyframes for moods */
+@keyframes mc-hop{ 0%,100%{ transform:translateY(0) scale(1.05,.93) } 45%{ transform:translateY(-15px) scale(.96,1.05) } 70%{ transform:translateY(-4px) } }
+@keyframes mc-hop2{ 0%,100%{ transform:translateY(0) scale(1.06,.92) } 45%{ transform:translateY(-22px) scale(.95,1.07) } 70%{ transform:translateY(-6px) } }
+@keyframes mc-shadow{ 0%,100%{ transform:scale(1); opacity:.22 } 45%{ transform:scale(.7); opacity:.12 } }
+@keyframes mc-flap{ from{ transform:rotate(-12deg) } to{ transform:rotate(10deg) } }
+@keyframes mc-wiggle{ 0%,100%{ transform:rotate(-4deg) } 50%{ transform:rotate(4deg) } }
+@keyframes mc-shake{ 0%{ transform:translateX(0) } 15%{ transform:translateX(-6px) rotate(-3deg) } 35%{ transform:translateX(6px) rotate(3deg) } 55%{ transform:translateX(-4px) } 75%{ transform:translateX(3px) } 100%{ transform:translateX(0) } }
+@keyframes mc-tremble{ from{ transform:translateX(-.8px) } to{ transform:translateX(.8px) } }
+@keyframes mc-point{ 0%,100%{ transform:rotate(-4deg) } 50%{ transform:rotate(8deg) } }
+@keyframes mc-halo{ 0%,100%{ transform:scale(1.2); opacity:.35 } 50%{ transform:scale(1.8); opacity:.18 } }
+@keyframes mc-rays{ 0%,100%{ transform:scale(.9); opacity:.55 } 50%{ transform:scale(1.15); opacity:1 } }
+@keyframes mc-nod{ 0%,100%{ transform:translateY(0) } 55%{ transform:translateY(8px) } 65%,75%{ transform:translateY(26px) } 90%{ transform:translateY(2px) } }
+@keyframes mc-snore{ 0%,100%{ transform:scale(.6) } 50%{ transform:scale(1.2) } }
+
+/* talking: beak flaps while the bubble types */
+.mc-talk .mc-beak-talk{ animation:mc-talk .18s ease-in-out infinite alternate; }
+@keyframes mc-talk{ from{ transform:translateY(0) } to{ transform:translateY(2.4px) scaleY(.88) } }
+
+/* ---- effects ---- */
+.mc-fx > g{ opacity:0; transition:opacity .25s; }
+.mc[data-mood="think"] .mc-fx-think,.mc[data-mood="oops"] .mc-fx-oops,.mc[data-mood="sleepy"] .mc-fx-sleepy,
+.mc[data-mood="cheer"] .mc-fx-spark,.mc[data-mood="celebrate"] .mc-fx-spark{ opacity:1; }
+.mc-tdot{ fill:var(--mc-cream); stroke:var(--mc-line); stroke-width:2.5; }
+.mc-tbub ellipse{ fill:var(--mc-cream); stroke:var(--mc-line); stroke-width:3; }
+.mc-tbub text{ fill:var(--mc-line); font:800 20px/1 system-ui,sans-serif; }
+.mc-fx-think .t1{ animation:mc-pulse 1.6s ease-in-out infinite; transform-origin:160px 60px; }
+.mc-fx-think .t2{ animation:mc-pulse 1.6s .25s ease-in-out infinite; transform-origin:170px 46px; }
+.mc-fx-think .mc-tbub{ animation:mc-float 2.4s ease-in-out infinite; transform-origin:180px 22px; }
+.mc-sweat{ fill:#8fd3ff; stroke:var(--mc-line); stroke-width:2.5; animation:mc-drip 1.5s ease-in infinite; }
+.mc-z{ fill:var(--ink,#fff); font:800 17px/1 system-ui,sans-serif; opacity:0; animation:mc-zz 3s ease-in-out infinite; }
+.mc-z.z2{ animation-delay:.9s; font-size:21px; } .mc-z.z3{ animation-delay:1.8s; font-size:25px; }
+.mc-sp{ fill:#ffd84a; stroke:var(--mc-line); stroke-width:1.6; transform-box:fill-box; transform-origin:center; animation:mc-twinkle 1s ease-in-out infinite; }
+.mc-sp.s2{ animation-delay:.3s; } .mc-sp.s3{ animation-delay:.6s; fill:#ff9bb5; }
+@keyframes mc-pulse{ 0%,100%{ transform:scale(.8); opacity:.6 } 50%{ transform:scale(1.2); opacity:1 } }
+@keyframes mc-float{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-4px) } }
+@keyframes mc-drip{ 0%{ transform:translateY(-4px); opacity:0 } 15%{ opacity:1 } 100%{ transform:translateY(20px); opacity:0 } }
+@keyframes mc-zz{ 0%{ opacity:0; transform:translate(0,6px) } 25%{ opacity:1 } 100%{ opacity:0; transform:translate(6px,-14px) } }
+@keyframes mc-twinkle{ 0%,100%{ transform:scale(.45) rotate(0); opacity:.5 } 50%{ transform:scale(1.1) rotate(25deg); opacity:1 } }
+
+/* ---- confetti (spawned by js) ---- */
+.mc-conf{ position:absolute; left:50%; top:34%; width:0; height:0; pointer-events:none; z-index:3; }
+.mc-conf i{ position:absolute; left:0; top:0; display:block; border-radius:1px; will-change:transform,opacity; }
+
+/* ---- small sizes: thicker features read better ---- */
+.mc-small .mc-body,.mc-small .mc-tuft,.mc-small .mc-wingp{ stroke-width:6; }
+.mc-small .mc-ring{ stroke-width:5; }
+.mc-small .mc-glyph{ font-size:14px; }
+
+/* ---- speech bubble ---- */
+.mc-bubble{
+  --b-bg:var(--bubble-bg,#fffaf0); --b-ink:var(--bubble-ink,#2b1a0c);
+  position:relative; display:none; box-sizing:border-box; max-width:100%;
+  padding:10px 14px; border-radius:16px; background:var(--b-bg); color:var(--b-ink);
+  border:2.5px solid #2b1a0c; font:600 15px/1.42 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; text-align:left;
+  box-shadow:0 3px 0 rgba(0,0,0,.25);
+}
+.mc-bubble.on{ display:block; animation:mc-bpop .28s cubic-bezier(.34,1.56,.64,1); }
+.mc-bubble.mc-float{ position:absolute; z-index:4; bottom:calc(100% + 12px); left:50%; transform:translateX(-50%); width:max-content; max-width:230px; line-height:1.35; }
+.mc-bubble.mc-float.on{ animation:mc-bpop-f .28s cubic-bezier(.34,1.56,.64,1); }
+.mc-bubble::before,.mc-bubble::after{ content:""; position:absolute; width:14px; height:14px; background:var(--b-bg); border:2.5px solid #2b1a0c; border-top:0; border-right:0; transform:rotate(45deg); }
+.mc-bubble[data-side="top"]::before{ left:calc(50% - 7px); bottom:-9px; border-left-width:2.5px; border-bottom-width:2.5px; transform:rotate(-45deg); }
+.mc-bubble[data-side="left"]::before{ left:-9px; bottom:18px; transform:rotate(45deg); }
+.mc-bubble[data-side="right"]::before{ right:-9px; bottom:18px; transform:rotate(-135deg); }
+.mc-bubble::after{ display:none; }
+.mc-typed{ white-space:pre-wrap; }
+.mc-rest{ visibility:hidden; white-space:pre-wrap; }
+.mc-sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+@keyframes mc-bpop{ from{ transform:scale(.85); opacity:0 } to{ transform:scale(1); opacity:1 } }
+@keyframes mc-bpop-f{ from{ transform:translateX(-50%) scale(.85); opacity:0 } to{ transform:translateX(-50%) scale(1); opacity:1 } }
+
+/* ---- reduced motion: keep each mood's static pose, drop every loop and tween ---- */
+@media (prefers-reduced-motion: reduce){
+  .mc *,.mc-bubble{ animation:none !important; transition:none !important; }
+  .mc .mc-fx-think .mc-tbub,.mc .mc-sp{ opacity:1; }
+  .mc .mc-z{ opacity:1; }
+  .mc-conf{ display:none; }
+}
