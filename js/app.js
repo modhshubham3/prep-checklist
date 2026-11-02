@@ -484,7 +484,7 @@ function cheatFilter(){
 document.getElementById("chexpand").addEventListener("click", () => { cheatFold.all(CHEAT.map(g => g.g), true); cheatFilter(); });
 document.getElementById("chcollapse").addEventListener("click", () => { cheatFold.all([], false); cheatFilter(); });
 
-cheatSearch.addEventListener("input", cheatFilter);
+cheatSearch.addEventListener("input", debounce(cheatFilter, 150));
 document.querySelectorAll("[data-cfilter]").forEach(t => t.addEventListener("click", () => {
   document.querySelectorAll("[data-cfilter]").forEach(x => x.setAttribute("aria-selected","false"));
   t.setAttribute("aria-selected","true");
@@ -679,8 +679,11 @@ CHEAT2.forEach((grp, gi) => {
   });
 });
 
+// Search helpers: 1 character matches half the book (opens hundreds of cards = multi-second freeze), so wait for 2.
+function qOf(inp){ const v = inp.value.trim().toLowerCase(); return v.length < 2 ? "" : v; }
+function debounce(fn, ms){ let t; return function(){ clearTimeout(t); t = setTimeout(fn, ms); }; }
 function cheat2Filter(){
-  const q = cheat2Search.value.trim().toLowerCase();
+  const q = qOf(cheat2Search);
   walkGroups(cheat2List, cheat2Fold, node => {
     const st = node.dataset.state;
     const okF = c2filter === "all" ? true : (c2filter === "baaki" ? !st : st === c2filter);
@@ -719,7 +722,7 @@ function cheat2Refresh(){
   cheat2Filter();
 }
 
-cheat2Search.addEventListener("input", cheat2Filter);
+cheat2Search.addEventListener("input", debounce(cheat2Filter, 150));
 document.querySelectorAll("[data-c2filter]").forEach(t => t.addEventListener("click", () => {
   document.querySelectorAll("[data-c2filter]").forEach(x => x.setAttribute("aria-selected","false"));
   t.setAttribute("aria-selected","true");
@@ -1620,7 +1623,7 @@ const diary = (() => {
     $("dymq").value = ""; $("dyma").value = "";
     draw();
   });
-  $("dymsearch").addEventListener("input", drawMine);
+  $("dymsearch").addEventListener("input", debounce(drawMine, 150));
   document.querySelectorAll("[data-dytab]").forEach(b => b.addEventListener("click", () => setTab(b.dataset.dytab)));
   $("diaryopen").addEventListener("click", () => { ov.classList.add("on"); document.body.style.overflow = "hidden"; setTab(tab); });
   $("diaryclose").addEventListener("click", () => { ov.classList.remove("on"); document.body.style.overflow = ""; });

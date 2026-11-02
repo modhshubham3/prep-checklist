@@ -21,6 +21,11 @@
   function paint(){
     const c = current();
     document.body.dataset.tab = c;
+    // Hidden screens must not be reachable by Tab / screen reader.
+    const wrap = document.querySelector(".wrap"); if(wrap) wrap.inert = c !== "answers";
+    Object.values(VIEW).forEach(id => { const v = $(id); v.inert = !v.classList.contains("on"); });
+    // Keep the URL honest if a screen was closed some other way (Esc, notification).
+    if(location.hash !== "#/" + c && /^#\/[a-z]+$/.test(location.hash)){ try{ history.replaceState(null, "", "#/" + c); }catch(x){} }
     bar.querySelectorAll("button").forEach(b => {
       if(b.dataset.tab === c) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
@@ -64,6 +69,26 @@
   // "Quick quiz" card on the Practice screen reuses the existing quiz launcher.
   const pq = $("prquiz"), qo = $("quizopen");
   if(pq && qo) pq.addEventListener("click", () => qo.click());
+
+  /* ---- home card: next plan step + overall progress ---- */
+  const hp = $("homeplan");
+  function homeText(){
+    const sub = $("plansub"), tl = $("ch2tally"), pl = $("plantally");
+    if($("homeplant")) $("homeplant").textContent = sub && sub.textContent.indexOf("agla:") > -1 ? "Agla: " + sub.textContent.split("agla:")[1].trim() : "Study plan shuru karo";
+    if($("homeplans")) $("homeplans").textContent = pl && pl.textContent ? pl.textContent : "20 session × 30 min";
+    if($("homeline")) $("homeline").textContent = tl && tl.textContent ? "Answers: " + tl.textContent + " pakka" : "";
+  }
+  if(hp) hp.addEventListener("click", () => { show("plan"); if(location.hash !== "#/plan") try{ history.pushState(null, "", "#/plan"); }catch(x){} });
+  const mo2 = new MutationObserver(homeText);
+  ["plan", "practice"].forEach(id => mo2.observe($(id), { attributes: true, attributeFilter: ["class"] }));
+  homeText();
+
+  // Empty diary: open the "add interview" form straight away.
+  mo.observe($("diary"), { attributes: true, attributeFilter: ["class"] });
+  new MutationObserver(() => {
+    const d = $("dyintform"), t = $("dytally");
+    if($("diary").classList.contains("on") && d && t && /^0 interviews/.test(t.textContent)) d.open = true;
+  }).observe($("diary"), { attributes: true, attributeFilter: ["class"] });
 
   paint();
   if(/^#\/[a-z]+$/.test(location.hash)) fromHash();

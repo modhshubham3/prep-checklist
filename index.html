@@ -14,7 +14,8 @@
 <meta name="theme-color" content="#0d0f14" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/skin.css">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -24,16 +25,24 @@
 <script>try{var t=localStorage.getItem("prep-theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 </head>
 <body>
-<div class="wrap">
-
-<header class="top">
+<header class="appbar" id="appbar">
+  <span class="brand">Interview prep</span>
   <div class="toprow">
     <button class="theme-btn" id="syncbtn" type="button" aria-haspopup="dialog">Sync</button>
     <button class="theme-btn" id="themebtn" type="button" aria-label="Theme badlo"></button>
   </div>
-  <h1>Interview prep</h1>
-  <p class="sub">C#, ASP.NET Core, Angular aur PostgreSQL — 2–3 saal experience pe jo actually poochha jaata hai. Neeche har sawaal ka jawab, code example aur yaad rakhne ka trick hai. Box pe tap karke mark karo ki kitna aata hai.</p>
 </header>
+<div class="wrap">
+
+<div class="start" role="region" aria-label="Aaj ka plan">
+  <button type="button" class="start-card" id="homeplan">
+    <span class="start-k">Aaj ka plan</span>
+    <strong id="homeplant">Study plan kholo</strong>
+    <span id="homeplans" class="start-s"></span>
+    <span class="co-n">&rsaquo;</span>
+  </button>
+  <p class="start-line" id="homeline"></p>
+</div>
 
 <!-- Legacy launchers: hidden. shell.js clicks these to open a screen, app.js still binds them. -->
 <div class="launch" id="legacy-launch" hidden aria-hidden="true">
@@ -72,7 +81,7 @@
   <h2>Answers + examples</h2>
   <span class="ch-tally" id="ch2tally"></span>
 </div>
-<input class="cheat-search" id="cheat2search" type="search" placeholder="Search karo — jaise boxing, switchMap, N+1, MVCC">
+<input class="cheat-search" id="cheat2search" type="search" placeholder="Search: boxing, N+1, MVCC">
 <div class="cheat-filters sticky-filters" role="tablist">
   <button class="tab" role="tab" data-c2filter="all" aria-selected="true">Sab</button>
   <button class="tab" role="tab" data-c2filter="haan" aria-selected="false">Haan bhai</button>
@@ -92,7 +101,7 @@
 
 </div>
 
-<div class="cheat" id="allq" role="dialog" aria-modal="true" aria-label="All questions">
+<div class="cheat" id="allq" role="region" aria-label="All questions">
   <div class="cheat-bar">
     <h2>All questions</h2>
     <button class="cheat-close" id="allqclose">Band karo</button>
@@ -124,7 +133,7 @@
   </div>
 </div>
 
-<div class="cheat" id="plan" role="dialog" aria-modal="true" aria-label="Study plan">
+<div class="cheat" id="plan" role="region" aria-label="Study plan">
   <div class="cheat-bar">
     <h2 id="plantitle">Study plan</h2>
     <span class="ch-tally" id="plantally"></span>
@@ -153,7 +162,7 @@
   </div>
 </div>
 
-<div class="cheat" id="diary" role="dialog" aria-modal="true" aria-label="Interview diary">
+<div class="cheat" id="diary" role="region" aria-label="Interview diary">
   <div class="cheat-bar">
     <h2>Interview diary</h2>
     <span class="ch-tally" id="dytally"></span>
@@ -164,7 +173,7 @@
       <div class="cheat-filters" role="tablist">
         <button class="tab" role="tab" data-dytab="int" aria-selected="true">Interviews</button>
         <button class="tab" role="tab" data-dytab="mine" aria-selected="false">Mere sawaal</button>
-        <button class="tab" role="tab" data-dytab="topics" aria-selected="false">Kya baar-baar aa raha hai</button>
+        <button class="tab" role="tab" data-dytab="topics" aria-selected="false">Baar-baar</button>
       </div>
 
       <div id="dyint">
@@ -220,7 +229,7 @@
   </div>
 </div>
 
-<div class="cheat" id="practice" role="dialog" aria-modal="true" aria-label="Practice">
+<div class="cheat" id="practice" role="region" aria-label="Practice">
   <div class="cheat-bar">
     <h2>Practice</h2>
     <span class="ch-tally" id="prprog"></span>
@@ -341,7 +350,7 @@
   </div>
 </div>
 
-<div class="cheat" id="cheat" role="dialog" aria-modal="true" aria-label="Cheatsheet">
+<div class="cheat" id="cheat" role="region" aria-label="Cheatsheet">
   <div class="cheat-bar">
     <h2>Cheatsheet</h2>
     <span class="ch-tally" id="chtally"></span>

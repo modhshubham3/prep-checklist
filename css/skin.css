@@ -1,15 +1,15 @@
 /* Dark glass + gradient skin. Re-skins the app through the same colour tokens, so every screen follows. */
 :root{ --saffron:#ff9a2e; --saffron2:#ff6a00; --glow:rgba(255,140,40,.35); }
-:root, :root[data-theme="dark"]{
+:root, :root:not([data-theme="light"]), :root[data-theme="dark"]{
   --paper:#0d0f14; --card:rgba(255,255,255,.06); --ink:#f2f0ec; --ink-soft:#a7a39b; --rule:rgba(255,255,255,.12);
-  --pen:#ffb24d; --pen-soft:rgba(255,154,46,.14); --done:#4fd1a0; --flag:#f0b24a; --flag-soft:rgba(240,178,74,.14); --miss:#ff7a70;
+  --on-pen:#1a1206; --pen:#ffb24d; --pen-soft:rgba(255,154,46,.14); --done:#4fd1a0; --flag:#f0b24a; --flag-soft:rgba(240,178,74,.14); --miss:#ff7a70;
 }
 :root[data-theme="light"]{
   --paper:#fbf6ee; --card:rgba(255,255,255,.75); --ink:#231a10; --ink-soft:#6d6253; --rule:rgba(60,40,10,.14);
-  --pen:#d9570a; --pen-soft:rgba(255,140,40,.16); --done:#1a7a52; --flag:#a86400; --flag-soft:#fbf1dd; --miss:#c0392b;
+  --on-pen:#fff; --pen:#c2410c; --pen-soft:rgba(255,140,40,.16); --done:#1a7a52; --flag:#8f5400; --flag-soft:#fbf1dd; --miss:#c0392b;
 }
 @media (prefers-color-scheme: light){
-  :root:not([data-theme]){ --paper:#fbf6ee; --card:rgba(255,255,255,.75); --ink:#231a10; --ink-soft:#6d6253; --rule:rgba(60,40,10,.14); --pen:#d9570a; --pen-soft:rgba(255,140,40,.16); --done:#1a7a52; --flag:#a86400; --flag-soft:#fbf1dd; --miss:#c0392b; }
+  :root:not([data-theme]){ --paper:#fbf6ee; --card:rgba(255,255,255,.75); --ink:#231a10; --ink-soft:#6d6253; --rule:rgba(60,40,10,.14); --on-pen:#fff; --pen:#c2410c; --pen-soft:rgba(255,140,40,.16); --done:#1a7a52; --flag:#8f5400; --flag-soft:#fbf1dd; --miss:#c0392b; }
 }
 body{
   background:
@@ -85,3 +85,59 @@ input,textarea,select,.ch-ex,code,pre,.c2-det,.ch-card .c2-det{ -webkit-user-sel
 @media (hover:none){ .cheat-open:hover, .pr-mode:hover{ transform:none; box-shadow:none; } }
 @media (min-width:900px){ .tabbar{ left:50%; right:auto; width:560px; transform:translateX(-50%); border-radius:16px 16px 0 0; border:1px solid var(--rule); border-bottom:0; } }
 .launch[hidden]{ display:none !important; }
+
+/* ===== v2: persistent app bar, home card, touch + a11y + perf ===== */
+:root{ --appbar-h:48px; }
+.appbar{
+  position:fixed; top:0; left:0; right:0; z-index:75; height:calc(var(--appbar-h) + var(--safe-t)); padding:var(--safe-t) max(14px,env(safe-area-inset-right)) 0 max(14px,env(safe-area-inset-left));
+  display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--paper); border-bottom:1px solid var(--rule);
+}
+.brand{ font-weight:800; font-size:1.05rem; letter-spacing:-.02em; background:linear-gradient(90deg,var(--saffron),var(--saffron2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.appbar .toprow{ margin:0; gap:8px; }
+.wrap{ padding-top:calc(var(--appbar-h) + var(--safe-t) + 12px); padding-left:max(18px,env(safe-area-inset-left)); padding-right:max(18px,env(safe-area-inset-right)); }
+.cheat{ top:calc(var(--appbar-h) + var(--safe-t)); }
+.cheat-bar{ padding-top:14px; }
+.sticky-filters{ top:calc(var(--appbar-h) + var(--safe-t)); }
+.tabbar{ padding-inline:env(safe-area-inset-left) env(safe-area-inset-right); }
+.tabbar button{ font-size:.72rem; }
+.tabbar button:focus-visible{ outline:2px solid var(--pen); outline-offset:-4px; border-radius:10px; }
+
+.start{ margin:0 0 18px; }
+.start-card{
+  position:relative; width:100%; text-align:left; font:inherit; color:#fff; cursor:pointer; border:0; border-radius:18px; padding:16px 44px 16px 18px;
+  background:linear-gradient(120deg,var(--saffron2),#7c3aed); display:flex; flex-direction:column; gap:4px;
+}
+.start-card .start-k{ font-size:.75rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; opacity:.9; }
+.start-card strong{ font-size:1.05rem; line-height:1.3; }
+.start-card .start-s{ font-size:.85rem; opacity:.92; }
+.start-card .co-n{ position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:1.6rem; }
+.start-line{ margin:10px 2px 0; color:var(--ink-soft); font-size:.9rem; }
+
+/* contrast: selected pill */
+.tab[aria-selected="true"]{ color:var(--on-pen); }
+/* tap targets >= 44px (hit area grows, look stays) */
+.tab,.theme-btn,.cheat-filters button,.tools button{ min-height:44px; }
+.theme-btn{ padding-inline:14px; }
+.mark-btn,.mark{ position:relative; }
+.mark-btn::after,.mark::after{ content:""; position:absolute; inset:-12px; }
+.mark{ overflow:visible; }
+.ch-grp,.c2-q{ min-height:44px; }
+input[type=radio],input[type=checkbox]{ width:22px; height:22px; }
+.ch-tally,.theme-btn,.dy-lab{ font-size:14px; }
+.g-n{ font-size:13px; opacity:1; color:var(--ink-soft); }
+.pr-stats span,.dy-chip{ font-size:13px; }
+.cheat-search,.note-ta,select.cheat-search{ font-size:16px; }   /* iOS zooms in on anything smaller */
+/* selectable question text */
+.c2-q,.ch-txt,#prq,.ch-card{ -webkit-user-select:text; user-select:text; }
+.tabbar,.tabs,button,.cheat-bar{ -webkit-user-select:none; user-select:none; }
+/* filter chips: never hidden behind a clip */
+.cheat-filters,.tabs{ scroll-snap-type:x proximity; }
+.cheat-filters button,.tabs .tab{ flex:none; scroll-snap-align:start; }
+/* perf: off-screen cards skip layout/paint */
+#cheat2list .ch-card{ content-visibility:auto; contain-intrinsic-size:auto 64px; }
+/* Practice: one clear primary action */
+.pr-mode[data-mode="quick"]{ background:linear-gradient(120deg,rgba(255,154,46,.30),rgba(255,106,0,.12)); border-color:rgba(255,154,46,.55); }
+.pr-mode[data-mode="quick"] strong::after{ content:"  ·  shuru yahan se"; font-weight:600; font-size:.8rem; color:var(--pen); }
+@media (max-height:420px){ :root{ --tab-h:48px; } .tabbar span{ display:none; } }
+.ans-more,.note-toggle,.c2-copy,.txt-btn{ min-height:44px; }
+.theme-btn.bell{ min-width:44px; }
