@@ -1,3 +1,15 @@
+# Learning platform + interview prep
+
+Home (`#/home`) leads to five areas: **Seekho** (animated lessons, predict-first), **Code Lab** (write JavaScript in the
+browser, tests run in a Web Worker, approach-first and a hint ladder), **Logic Gym** (daily problem, dry-run, approach
+drills), **Decision Lab** (pick an option and write your reason before seeing the expert's), and **Interview Prep**
+(everything below, the original app, unchanged).
+
+Content lives in `js/lab-data.js` (`window.LAB`), `js/learn-data.js` (`LEARN`), `js/decide-data.js` (`DECIDE`).
+After editing run `node tools/check-lab.js` — it runs every reference solution against its tests and checks lesson
+frames, predict answers and scenario fields. Progress is stored in `localStorage` (`prep-platform-v1`; no cross-device
+sync yet). `api/tutor.js` gives optional AI hints (same keys as the judge) and never returns the solution.
+
 # Interview prep checklist
 
 C#, ASP.NET Core, Angular and PostgreSQL topics with a three-state checklist

@@ -25,7 +25,7 @@
     const wrap = document.querySelector(".wrap"); if(wrap) wrap.inert = c !== "answers";
     Object.values(VIEW).forEach(id => { const v = $(id); v.inert = !v.classList.contains("on"); });
     // Keep the URL honest if a screen was closed some other way (Esc, notification).
-    if(location.hash !== "#/" + c && (/^#\/[a-z]+$/.test(location.hash) || (!location.hash && c !== "answers"))){ try{ history.replaceState(null, "", "#/" + c); }catch(x){} }
+    if(document.body.dataset.mode === "interview" && location.hash !== "#/" + c && (/^#\/[a-z]+$/.test(location.hash) || (!location.hash && c !== "answers"))){ try{ history.replaceState(null, "", "#/" + c); }catch(x){} }
     bar.querySelectorAll("button").forEach(b => {
       if(b.dataset.tab === c) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
@@ -54,7 +54,7 @@
   function fromHash(){
     const m = /^#\/([a-z]+)$/.exec(location.hash);
     if(m && TABS.includes(m[1])) show(m[1]);
-    else if(!location.hash) show("answers");
+    else if(!location.hash && document.body.dataset.mode === "interview") show("answers");
   }
   window.addEventListener("popstate", fromHash);
 
@@ -92,6 +92,7 @@
 
   /* ---- laptop keys: Alt+1..6 switch screens, "/" jumps to search ---- */
   document.addEventListener("keydown", e => {
+    if(document.body.dataset.mode !== "interview") return;       // these keys belong to the interview-prep screens only
     if(e.altKey && !e.ctrlKey && !e.metaKey && /^Digit[1-6]$/.test(e.code)){
       e.preventDefault(); e.stopPropagation();          // capture: practice's own 1/2/3 marking must not see it
       const b = bar.querySelector('[data-tab="' + TABS[+e.code.slice(5) - 1] + '"]'); if(b) b.click();
@@ -109,6 +110,9 @@
   const jobsPaint = () => { const n = window.prepJobsDue || 0; dot.hidden = !n; dot.textContent = n > 9 ? "9+" : String(n); dBtn.title = n ? n + " follow-up due" : dBtn.dataset.key; };
   document.addEventListener("prep:jobs", jobsPaint); jobsPaint();
 
+  // Used by platform.js: leave the interview screens cleanly (true = all closed) and re-enter on a hash.
+  window.prepShell = { fromHash, show, closeAll: () => closeOthers("") };
+
   paint();
-  if(/^#\/[a-z]+$/.test(location.hash)) fromHash();
+  if(document.body.dataset.mode === "interview" && /^#\/[a-z]+$/.test(location.hash)) fromHash();
 })();

@@ -18,6 +18,7 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/skin.css">
+<link rel="stylesheet" href="css/platform.css">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -25,8 +26,9 @@
 <script>try{var t=localStorage.getItem("prep-theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 </head>
 <body>
+<script>(function(){var m="home",h=location.hash,q=location.search,x=/^#\/([a-z]+)/.exec(h);if(/[?&](q|quiz|drill)=/.test(q))m="interview";else if(x){if(["learn","lab","logic","decide"].indexOf(x[1])>-1)m=x[1];else if(["interview","plan","answers","checklist","practice","cheat","diary"].indexOf(x[1])>-1)m="interview";}document.body.dataset.mode=m;})();</script>
 <header class="appbar" id="appbar">
-  <span class="brand">Interview prep</span>
+  <a class="brand" id="brand" href="#/home"><span class="brand-back">‹ </span>Prep</a>
   <div class="toprow">
     <button class="theme-btn" id="syncbtn" type="button" aria-haspopup="dialog">Sync</button>
     <button class="theme-btn" id="themebtn" type="button" aria-label="Theme badlo"></button>
@@ -450,6 +452,22 @@
   </div>
 </div>
 
+<div id="platform">
+  <div class="mod" id="m-home"></div>
+  <div class="mod" id="m-learn"></div>
+  <div class="mod" id="m-lab"></div>
+  <div class="mod" id="m-logic"></div>
+  <div class="mod" id="m-decide"></div>
+</div>
+<nav class="tabbar" id="pnav" aria-label="Platform">
+  <button type="button" data-go="home" data-key=""><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/></svg><span>Home</span></button>
+  <button type="button" data-go="learn" data-key=""><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M9 8h6"/></svg><span>Seekho</span></button>
+  <button type="button" data-go="lab" data-key=""><svg viewBox="0 0 24 24"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/></svg><span>Code Lab</span></button>
+  <button type="button" data-go="logic" data-key=""><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 10a3 3 0 116 0c0 2-3 2-3 4M12 17h.01"/></svg><span>Logic</span></button>
+  <button type="button" data-go="decide" data-key=""><svg viewBox="0 0 24 24"><path d="M12 3v18M5 7h14M5 7l-2 6a3 3 0 006 0zM19 7l-2 6a3 3 0 006 0z"/></svg><span>Decide</span></button>
+  <button type="button" data-go="interview" data-key=""><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg><span>Interview</span></button>
+</nav>
+
 <nav class="tabbar" id="tabbar" aria-label="Main">
   <button type="button" data-tab="plan" data-key="Alt+1" title="Alt+1"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg><span>Plan</span></button>
   <button type="button" data-tab="answers" data-key="Alt+2" title="Alt+2" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M4 19V5M9 8h6"/></svg><span>Answers</span></button>
@@ -481,6 +499,14 @@
 <script src="js/viz.js"></script>
 <script src="js/app.js"></script>
 <script src="js/shell.js"></script>
+<script src="js/lab-data.js"></script>
+<script src="js/learn-data.js"></script>
+<script src="js/decide-data.js"></script>
+<script src="js/platform-core.js"></script>
+<script src="js/learn.js"></script>
+<script src="js/lab.js"></script>
+<script src="js/decide.js"></script>
+<script src="js/platform.js"></script>
 <script src="js/notify.js"></script>
 </body>
 </html>
