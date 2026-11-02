@@ -615,6 +615,7 @@ function noteBox(key){
 
 // Re-read notes into every box (after a sync merge), without clobbering one being typed in.
 function refreshNotes(){
+  cheat2List.querySelectorAll(".ch-card").forEach(c => { if(!c._built) c.classList.toggle("has-note", !!(notes[c.dataset.key] && notes[c.dataset.key].s)); });
   document.querySelectorAll(".note-ta").forEach(ta => {
     if(document.activeElement === ta) return;
     ta.value = (notes[ta.dataset.key] && notes[ta.dataset.key].s) || "";
@@ -624,18 +625,47 @@ function refreshNotes(){
 
 // First visit: the "Farak samjho" comparisons start open — the easiest way in.
 const cheat2Fold = folds("prep-folds-main", CHEAT2.filter(g => g.g.startsWith("Farak samjho")).slice(0, 1).map(g => g.g));
+/* Lazy cards: at load a card is only its question + mark button (cheap). The answer body,
+   note box and copy button are built the first time the card is opened (ensureCard), and the
+   lowercase search text is built on first search (findOf). 695 eager cards were ~49k DOM nodes
+   and a 1.8s long task on a phone. */
+function ensureCard(c){
+  if(c._built) return;
+  c._built = true;
+  const it = c._it, key = c.dataset.key;
+  const { html, plain } = answerParts(it);
+  const det = c.querySelector(".c2-det");
+  det.appendChild(answerBox(it, html));
+  const cp = document.createElement("button");
+  cp.className = "c2-copy";
+  cp.textContent = "Copy karo";
+  cp.addEventListener("click", () => copyTopic(c, plain));
+  const nb = noteBox(key);
+  det.append(nb, cp);
+  nb.paint();
+}
+function findOf(c){ return c._find || (c._find = answerParts(c._it).plain.toLowerCase()); }
+// Build many cards without blocking the UI: a few per frame.
+const buildQ = []; let buildRaf = 0;
+function buildSoon(c){ if(!c._built && !c._queued){ c._queued = true; buildQ.push(c); if(!buildRaf) buildRaf = requestAnimationFrame(buildTick); } }
+function buildTick(){
+  buildRaf = 0; const t0 = performance.now();
+  while(buildQ.length && performance.now() - t0 < 10) ensureCard(buildQ.shift());
+  if(buildQ.length) buildRaf = requestAnimationFrame(buildTick);
+}
+
+const cheat2Frag = document.createDocumentFragment();
 CHEAT2.forEach((grp, gi) => {
-  cheat2List.appendChild(grpHead(grp.g, cheat2Fold, () => cheat2Filter()));
+  cheat2Frag.appendChild(grpHead(grp.g, cheat2Fold, () => cheat2Filter()));
 
   grp.items.forEach((it, ii) => {
     const key = kA(it.q);
     const c = document.createElement("div");
     c.className = "ch-card";
     c.dataset.key = key;
+    c._it = it;
     if(state[key]) c.dataset.state = state[key];
-
-    const { html, plain } = answerParts(it);
-    c.dataset.find = plain.toLowerCase();
+    if(notes[key] && notes[key].s) c.classList.add("has-note");
 
     const mb = document.createElement("button");
     mb.className = "mark-btn";
@@ -652,19 +682,13 @@ CHEAT2.forEach((grp, gi) => {
     qb.innerHTML = '<span></span><svg viewBox="0 0 8 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1L6.5 6L1.5 11"/></svg>';
     qb.querySelector("span").textContent = it.q;
     qb.addEventListener("click", () => {
+      ensureCard(c);
       const open = c.classList.toggle("open");
       qb.setAttribute("aria-expanded", open ? "true" : "false");
     });
 
     const det = document.createElement("div");
     det.className = "c2-det";
-    det.appendChild(answerBox(it, html));
-    const cp = document.createElement("button");
-    cp.className = "c2-copy";
-    cp.textContent = "Copy karo";
-    cp.addEventListener("click", () => copyTopic(c, plain));
-    const nb = noteBox(key);
-    det.append(nb, cp);
 
     // Question code stays visible when the card is closed: think first, then open.
     if(it.qc){
@@ -674,10 +698,10 @@ CHEAT2.forEach((grp, gi) => {
       main.append(qb, qc, det);
     } else main.append(qb, det);
     c.append(mb, main);
-    cheat2List.appendChild(c);
-    nb.paint();
+    cheat2Frag.appendChild(c);
   });
 });
+cheat2List.appendChild(cheat2Frag);
 
 // Search helpers: 1 character matches half the book (opens hundreds of cards = multi-second freeze), so wait for 2.
 function qOf(inp){ const v = inp.value.trim().toLowerCase(); return v.length < 2 ? "" : v; }
@@ -688,9 +712,9 @@ function cheat2Filter(){
     const st = node.dataset.state;
     const okF = c2filter === "all" ? true : (c2filter === "baaki" ? !st : st === c2filter);
     const note = notes[node.dataset.key];
-    const hay = note && note.s ? node.dataset.find + "\n" + note.s.toLowerCase() : node.dataset.find;
-    const ok = okF && (!q || hay.includes(q));
+    const ok = okF && (!q || findOf(node).includes(q) || !!(note && note.s && note.s.toLowerCase().includes(q)));
     if(q){
+      if(ok) buildSoon(node);
       node.classList.toggle("open", ok);
       const b = node.querySelector(".c2-q");
       if(b) b.setAttribute("aria-expanded", ok ? "true" : "false");
@@ -704,6 +728,7 @@ function cheat2Toggle(open){
   cheat2Fold.all(CHEAT2.map(g => g.g), open);
   cheat2Filter();
   cheat2List.querySelectorAll(".ch-card").forEach(c => {
+    if(open) buildSoon(c);
     c.classList.toggle("open", open);
     const b = c.querySelector(".c2-q");
     if(b) b.setAttribute("aria-expanded", open ? "true" : "false");
@@ -1434,6 +1459,7 @@ const practice = (() => {
 function openCard(id){
   const card = cheat2List.querySelector('.ch-card[data-key="a:' + id + '"]');
   if(!card) return false;
+  ensureCard(card);
   cheat2Search.value = ""; c2filter = "all";
   document.querySelectorAll("[data-c2filter]").forEach(x => x.setAttribute("aria-selected", x.dataset.c2filter === "all" ? "true" : "false"));
   const hit = CHEAT2.find(g => g.items.some(it => kA(it.q) === "a:" + id));
