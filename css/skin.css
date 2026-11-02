@@ -52,3 +52,36 @@ button.b-haan,button.b-thoda,button.b-naa{ border-radius:14px; }
 #practice.quiz .cheat-body .inner::before{ content:""; position:absolute; inset:-20px -10px auto; height:160px; background:radial-gradient(closest-side,var(--glow),transparent); pointer-events:none; opacity:.6; }
 
 @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+
+/* ===== App shell: bottom tab bar, one screen at a time ===== */
+:root{ --tab-h:58px; --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px); }
+html,body{ overscroll-behavior:none; -webkit-tap-highlight-color:transparent; }
+body{ -webkit-user-select:none; user-select:none; }
+input,textarea,select,.ch-ex,code,pre,.c2-det,.ch-card .c2-det{ -webkit-user-select:text; user-select:text; }
+.wrap{ padding-top:calc(var(--safe-t) + 8px); padding-bottom:calc(var(--tab-h) + var(--safe-b) + 24px); }
+
+.tabbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:80;
+  display:flex; height:calc(var(--tab-h) + var(--safe-b)); padding-bottom:var(--safe-b);
+  background:var(--paper); border-top:1px solid var(--rule);
+}
+.tabbar button{
+  flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+  background:none; border:0; border-radius:0; color:var(--ink-soft); font:inherit; font-size:.64rem; font-weight:600; padding:6px 0 4px;
+  cursor:pointer; position:relative;
+}
+.tabbar svg{ width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+.tabbar button[aria-current="page"]{ color:var(--pen); }
+.tabbar button[aria-current="page"]::before{ content:""; position:absolute; top:0; left:28%; right:28%; height:3px; border-radius:0 0 3px 3px; background:var(--pen); }
+.tabbar button:active{ opacity:.6; }
+
+/* Full-screen views stop above the bar, so the bar is always visible. */
+.cheat{ bottom:calc(var(--tab-h) + var(--safe-b)); }
+.cheat-bar{ padding-top:calc(14px + var(--safe-t)); }
+.cheat-close{ display:none; }            /* tabs replace "Band karo" */
+.cheat-body{ overscroll-behavior:contain; padding-bottom:24px; }
+.toast{ bottom:calc(var(--tab-h) + var(--safe-b) + 12px); }
+.sync-sheet{ max-height:92dvh; }
+@media (hover:none){ .cheat-open:hover, .pr-mode:hover{ transform:none; box-shadow:none; } }
+@media (min-width:900px){ .tabbar{ left:50%; right:auto; width:560px; transform:translateX(-50%); border-radius:16px 16px 0 0; border:1px solid var(--rule); border-bottom:0; } }
+.launch[hidden]{ display:none !important; }

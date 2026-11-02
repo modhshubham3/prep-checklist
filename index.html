@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Prep">
+<meta name="format-detection" content="telephone=no">
 <title>Interview Prep — .NET, Angular, PostgreSQL</title>
 <!-- Personal prep tool: keep it out of search results. Remove if it should be findable. -->
 <meta name="robots" content="noindex, nofollow">
@@ -31,7 +35,8 @@
   <p class="sub">C#, ASP.NET Core, Angular aur PostgreSQL — 2–3 saal experience pe jo actually poochha jaata hai. Neeche har sawaal ka jawab, code example aur yaad rakhne ka trick hai. Box pe tap karke mark karo ki kitna aata hai.</p>
 </header>
 
-<div class="launch">
+<!-- Legacy launchers: hidden. shell.js clicks these to open a screen, app.js still binds them. -->
+<div class="launch" id="legacy-launch" hidden aria-hidden="true">
 <button class="cheat-open plan" id="planopen">
   <span class="co-t"><strong>Study plan — time kam hai? yahan se</strong><span id="plansub">18 session × 30 min — sirf sabse zaroori topics, sahi order mein</span></span>
   <span class="co-n">&rsaquo;</span>
@@ -248,6 +253,10 @@
             <strong>Ek topic</strong>
             <span>Topic chuno, uske kamzor sawaal pehle</span>
           </button>
+          <button class="pr-mode" id="prquiz" type="button">
+            <strong>Quick quiz</strong>
+            <span>2 random sawaal abhi — notification wala quiz yahi hai</span>
+          </button>
           <button class="pr-mode" data-mode="mine" type="button" id="prmine">
             <strong>Mere sawaal</strong>
             <span id="prminesub">Diary / online se jode hue sawaal</span>
@@ -399,6 +408,15 @@
   </div>
 </div>
 
+<nav class="tabbar" id="tabbar" aria-label="Main">
+  <button type="button" data-tab="plan"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg><span>Plan</span></button>
+  <button type="button" data-tab="answers" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M4 19V5M9 8h6"/></svg><span>Answers</span></button>
+  <button type="button" data-tab="checklist"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg><span>Checklist</span></button>
+  <button type="button" data-tab="practice"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Practice</span></button>
+  <button type="button" data-tab="cheat"><svg viewBox="0 0 24 24"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg><span>Cheat</span></button>
+  <button type="button" data-tab="diary"><svg viewBox="0 0 24 24"><path d="M5 4h12a2 2 0 012 2v14H7a2 2 0 01-2-2z"/><path d="M9 9h6M9 13h6"/></svg><span>Diary</span></button>
+</nav>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <div class="scrim" id="scrim" role="dialog" aria-modal="true" aria-labelledby="askq">
@@ -420,6 +438,7 @@
 <script src="js/migrate.js"></script>
 <script src="js/viz.js"></script>
 <script src="js/app.js"></script>
+<script src="js/shell.js"></script>
 <script src="js/notify.js"></script>
 </body>
 </html>
