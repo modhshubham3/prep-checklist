@@ -241,3 +241,100 @@
   .mc .mc-z{ opacity:1; }
   .mc-conf{ display:none; }
 }
+
+/* ==========================================================================
+   Scenes (js/scenes.js)
+   ========================================================================== */
+.sc{
+  --sc-bg:#171b25; --sc-bg2:#1e2431; --sc-ink:var(--ink,#f2f0ec); --sc-soft:var(--ink-soft,#a7a39b);
+  --sc-line:#0a0806; --sc-road:#4b5468; --sc-roadl:#c9ced8; --sc-floor:#2a3142; --sc-glass:rgba(255,255,255,.09); --sc-glassl:rgba(255,255,255,.55);
+  --sc-stair:#3a4258; --sc-rib:#0c0f16; --sc-ribt:#ffd9a0; --sc-edge:rgba(255,255,255,.12);
+  position:relative; width:100%; max-width:560px; margin:0 auto; box-sizing:border-box; color:var(--sc-ink);
+}
+:root[data-theme="light"] .sc{
+  --sc-bg:#fff8ea; --sc-bg2:#ffeed2; --sc-line:#2b1a0c; --sc-road:#b9b0a1; --sc-roadl:#fff8ea; --sc-floor:#ead9bb; --sc-glass:rgba(255,255,255,.7); --sc-glassl:rgba(255,255,255,.9);
+  --sc-rib:#2a2118; --sc-edge:rgba(60,40,10,.16); --sc-stair:#e2d3b6;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme]) .sc{
+    --sc-bg:#fff8ea; --sc-bg2:#ffeed2; --sc-line:#2b1a0c; --sc-road:#b9b0a1; --sc-roadl:#fff8ea; --sc-floor:#ead9bb; --sc-glass:rgba(255,255,255,.7); --sc-glassl:rgba(255,255,255,.9);
+    --sc-rib:#2a2118; --sc-edge:rgba(60,40,10,.16); --sc-stair:#e2d3b6;
+  }
+}
+.sc-stage{ border-radius:20px; overflow:hidden; border:1px solid var(--sc-edge); background:linear-gradient(180deg,var(--sc-bg),var(--sc-bg2)); line-height:0; }
+.sc-svg{ display:block; width:100%; height:auto; }
+.sc-say{ display:flex; align-items:flex-end; gap:12px; margin-top:12px; }
+.sc-mc{ flex:none; width:76px; min-height:78px; display:flex; align-items:flex-end; }
+.sc-cap{ flex:1; min-width:0; }
+.sc-cap .mc-bubble{ display:block; min-height:calc(3 * 1.42em + 20px); }
+.sc-cap .mc-bubble:not(.on){ visibility:hidden; }
+.sc-plain{ margin:0; font:600 15px/1.45 system-ui,sans-serif; }
+.sc-sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+/* element base: transforms about the element's own (0,0), tweened by the engine */
+.sc-t{ transform-box:view-box; transform-origin:0 0; transition:transform .55s cubic-bezier(.3,.8,.3,1), opacity .4s ease; will-change:transform,opacity; }
+.sc-now .sc-t{ transition:none !important; }
+.sc-hid{ fill:none; stroke:none; }
+
+/* shared art vocabulary */
+.sc-svg .o{ stroke:var(--sc-line); stroke-width:2.5; stroke-linejoin:round; stroke-linecap:round; }
+.sc-svg .o-line{ fill:none; stroke:var(--sc-line); stroke-width:3; stroke-linecap:round; }
+.sc-svg .gloss{ fill:none; stroke:#fff; stroke-opacity:.5; stroke-width:3; stroke-linecap:round; }
+.fs{ fill:#ffb24d } .fb{ fill:#8fb3ff } .fp{ fill:#ff9bb5 } .ft{ fill:#5fe0bf } .fy{ fill:#ffe27a } .fv{ fill:#b9a2ff }
+.fw{ fill:#dca468 } .fwd{ fill:#b97d45 } .fpaper{ fill:#fffaf0 } .fgrey{ fill:#8d95a3 } .fred{ fill:#ff7d70 } .fgreen{ fill:#5fd08f }
+.fg{ fill:var(--sc-glass) } .ffloor{ fill:var(--sc-floor) } .fink{ fill:var(--sc-line) } .fsoft{ fill:var(--sc-soft) }
+.sc-svg .tc{ font:800 15px/1 ui-monospace,Menlo,Consolas,monospace; fill:#2b1a0c; }
+.sc-svg .tc.sm{ font-size:12.5px; } .sc-svg .tc.md{ font-size:14px; } .sc-svg .tc.lg{ font-size:20px; }
+.sc-svg .tc-fill{ fill:#2b1a0c; }
+.sc-svg .tw{ font:800 13px/1 system-ui,sans-serif; fill:var(--sc-ink); }
+.sc-svg .tw.soft{ fill:var(--sc-soft); font-weight:700; }
+.sc-svg .tw.mono{ font-family:ui-monospace,Menlo,Consolas,monospace; }
+
+.sc-rib{ fill:var(--sc-rib); stroke:var(--sc-edge); stroke-width:1.5; }
+.sc-codet{ font:700 14px/1 ui-monospace,Menlo,Consolas,monospace; fill:var(--sc-ribt); }
+
+/* roads */
+.sc-svg .rd{ fill:none; stroke:var(--sc-road); stroke-width:26; stroke-linejoin:round; }
+.sc-svg .rdl{ fill:none; stroke:var(--sc-roadl); stroke-opacity:.7; stroke-width:2.5; stroke-dasharray:9 9; }
+
+/* scene 1 */
+.lockb{ transition:fill .2s; }
+.bad .lockb{ fill:#ff7d70; }
+
+/* scene 3 (loops) */
+.sc-svg .tread{ stroke:var(--sc-line); stroke-opacity:.55; stroke-width:3; fill:none; }
+.treads.run{ animation:sc-belt .36s linear infinite; }
+@keyframes sc-belt{ from{ transform:translateX(0) } to{ transform:translateX(-16px) } }
+.sc-svg .sc-board{ fill:var(--sc-rib); stroke:var(--sc-edge); stroke-width:1.5; }
+.sc-svg .tl{ font:800 15px/1 ui-monospace,Menlo,Consolas,monospace; fill:var(--sc-ribt); }
+.sc-svg .tl.sm{ font-size:13px; } .sc-svg .tl.lg{ font-size:24px; }
+.lampc{ fill:#8d95a3; stroke:#0a0806; stroke-width:2; transition:fill .25s; }
+.lamp.ok .lampc,.ok .lampc{ fill:#5fd08f; } .bad .lampc{ fill:#ff7d70; }
+/* scene 4 (arrays) */
+.sc-svg .ghost{ fill:none; stroke:var(--sc-soft); stroke-opacity:.55; stroke-width:2.5; stroke-dasharray:6 6; }
+.sc-svg .fink-in{ fill:#0f1219; }
+.sc-svg .thin{ stroke-width:2; stroke-opacity:.6; }
+/* scene 5 (strings) */
+.sc-svg .thr{ fill:none; stroke:var(--sc-soft); stroke-width:3; stroke-linecap:round; stroke-opacity:.8; }
+.sc-svg .quo{ font:900 50px/1 Georgia,serif; fill:#ff9bb5; stroke:var(--sc-line); stroke-width:1.5; paint-order:stroke; }
+
+/* scene 6 (functions) */
+.gear-t{ fill:none; stroke-width:5; stroke:#ffe27a; }
+.gear-t.gt-ft{ stroke:#5fe0bf; }
+.gear.spin{ animation:sc-spin 1.2s linear infinite; }
+[data-k="g2"].spin{ animation-direction:reverse; }
+@keyframes sc-spin{ to{ transform:rotate(360deg) } }
+/* scene 7 (objects) */
+.sc-svg .dk{ stroke:var(--sc-line); stroke-opacity:.6; stroke-width:3; }
+.sc-svg .ghostk,.sc-svg .ghostv{ fill:none; stroke:var(--sc-soft); stroke-opacity:.8; stroke-dasharray:5 5; }
+.sc-svg .hlf{ fill:none; stroke:#ffd24a; stroke-width:3.5; transform-origin:0 0; }
+.sc-svg .hot{ fill:#ffe27a; }
+.sc-svg [data-k^="vr"]{ transition:fill .3s; }
+/* scene 8 (recursion) */
+.sc-svg .blush{ fill:#ff7d92; opacity:.55; }
+.sc-svg .hilite{ fill:none; stroke:#fff; stroke-opacity:.55; stroke-width:4; stroke-linecap:round; }
+/* scene 9 (problem solving) */
+.sc-svg .stl{ transition:fill .3s; } .sc-svg .stl.on{ fill:#2b1a0c; }
+.sc-svg .stair{ fill:var(--sc-stair); transition:fill .35s; transform-box:view-box; }
+.sc-svg .stair.on.s0{ fill:#8fb3ff } .sc-svg .stair.on.s1{ fill:#ff9bb5 } .sc-svg .stair.on.s2{ fill:#5fe0bf } .sc-svg .stair.on.s3{ fill:#ffe27a } .sc-svg .stair.on.s4{ fill:#b9a2ff }
+.sc-svg .stair ~ text{ pointer-events:none; }

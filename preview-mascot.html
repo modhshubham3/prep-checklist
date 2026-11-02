@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Boltu and Scenes preview</title>
+<!-- skin.css only supplies the colour tokens (--paper --ink --saffron ...); mascot.css has its own fallbacks and works without it. -->
+<link rel="stylesheet" href="css/skin.css">
+<link rel="stylesheet" href="css/mascot.css">
+<style>
+  :root{ color-scheme:dark light; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--paper,#0d0f14); color:var(--ink,#f2f0ec); -webkit-user-select:auto; user-select:auto; }
+  .pv{ max-width:600px; margin:0 auto; padding:0 16px 56px; }
+  header.pv-top{ position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:10px; padding:10px 16px; margin:0 -16px 8px; background:color-mix(in srgb,var(--paper,#0d0f14) 88%,transparent); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--rule,rgba(255,255,255,.12)); }
+  header.pv-top h1{ font-size:1.05rem; margin:0; flex:1; background:none; -webkit-background-clip:initial; background-clip:initial; color:var(--ink,#f2f0ec); letter-spacing:0; }
+  h2{ font-size:1.15rem; margin:28px 0 6px; }
+  p.note{ margin:0 0 12px; color:var(--ink-soft,#a7a39b); font-size:.92rem; }
+  .seg{ display:inline-flex; border:1px solid var(--rule,rgba(255,255,255,.2)); border-radius:999px; overflow:hidden; }
+  .seg button{ font:inherit; font-size:.85rem; font-weight:700; min-height:36px; padding:0 12px; border:0; background:transparent; color:var(--ink-soft,#a7a39b); cursor:pointer; }
+  .seg button[aria-pressed="true"]{ background:var(--pen,#ffb24d); color:var(--on-pen,#1a1206); }
+  .hero{ display:flex; flex-direction:column; align-items:center; gap:12px; padding:48px 12px 14px; border:1px solid var(--rule,rgba(255,255,255,.12)); border-radius:20px; background:var(--card,rgba(255,255,255,.05)); }
+  .hero .stage{ min-height:260px; display:flex; align-items:flex-end; justify-content:center; width:100%; }
+  .chips{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .chips button,.ctl button,.say button{ font:inherit; font-size:.9rem; font-weight:700; min-height:40px; min-width:40px; padding:0 14px; border-radius:12px; border:1px solid var(--rule,rgba(255,255,255,.2)); background:var(--card,rgba(255,255,255,.06)); color:var(--ink,#f2f0ec); cursor:pointer; }
+  .chips button[aria-pressed="true"]{ background:var(--pen,#ffb24d); border-color:var(--pen,#ffb24d); color:var(--on-pen,#1a1206); }
+  .say{ display:flex; gap:8px; width:100%; }
+  .say input{ flex:1; min-width:0; font:inherit; min-height:40px; padding:0 12px; border-radius:12px; border:1px solid var(--rule,rgba(255,255,255,.2)); background:transparent; color:var(--ink,#f2f0ec); }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:10px; }
+  .cell{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 4px 8px; border:1px solid var(--rule,rgba(255,255,255,.12)); border-radius:16px; background:var(--card,rgba(255,255,255,.05)); font-size:.82rem; color:var(--ink-soft,#a7a39b); }
+  .sizes{ display:flex; align-items:flex-end; justify-content:center; gap:18px; padding:14px 8px; border:1px solid var(--rule,rgba(255,255,255,.12)); border-radius:16px; background:var(--card,rgba(255,255,255,.05)); }
+  .scene{ margin-top:8px; padding:14px 12px 12px; border:1px solid var(--rule,rgba(255,255,255,.12)); border-radius:20px; background:var(--card,rgba(255,255,255,.04)); scroll-margin-top:60px; }
+  .scene h3{ margin:0 0 2px; font-size:1.02rem; } .scene .n{ color:var(--ink-soft,#a7a39b); font-weight:600; font-size:.85rem; }
+  .ctl{ display:flex; align-items:center; gap:6px; margin-top:12px; flex-wrap:wrap; }
+  .ctl input[type=range]{ flex:1; min-width:110px; accent-color:var(--pen,#ffb24d); height:40px; }
+  .ctl .pos{ font-size:.82rem; color:var(--ink-soft,#a7a39b); min-width:46px; text-align:right; font-variant-numeric:tabular-nums; }
+  .ctl select{ font:inherit; min-height:40px; border-radius:12px; border:1px solid var(--rule,rgba(255,255,255,.2)); background:var(--card,rgba(255,255,255,.06)); color:var(--ink,#f2f0ec); padding:0 6px; }
+  .jump{ display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 4px; } .jump a{ font-size:.78rem; padding:4px 10px; border-radius:999px; border:1px solid var(--rule,rgba(255,255,255,.2)); color:var(--ink-soft,#a7a39b); text-decoration:none; }
+  button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ outline:3px solid var(--pen,#ffb24d); outline-offset:2px; }
+</style>
+</head>
+<body>
+<div class="pv">
+  <header class="pv-top">
+    <h1>Boltu + Scenes</h1>
+    <div class="seg" role="group" aria-label="Theme">
+      <button type="button" data-theme-btn="auto" aria-pressed="true">Auto</button>
+      <button type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+      <button type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+    </div>
+  </header>
+
+  <h2>Boltu, the robo-ullu</h2>
+  <p class="note">Tap a mood. Type something and press Bolo to see the speech bubble type itself out. Reduced-motion users get the same poses with no loops.</p>
+  <div class="hero">
+    <div class="stage" id="hero"></div>
+    <div class="chips" id="moodChips" role="group" aria-label="Mood"></div>
+    <form class="say" id="sayForm"><input id="sayText" aria-label="What Boltu says" value="Namaste! Main Boltu hoon. Chalo code seekhein."><button type="submit">Bolo</button></form>
+  </div>
+
+  <h2>All moods at 96px</h2>
+  <div class="grid" id="moodGrid"></div>
+
+  <h2>Small and large</h2>
+  <div class="sizes" id="sizes"></div>
+
+  <h2>Concept scenes</h2>
+  <p class="note">One metaphor animation per lesson. Play, step, or drag the scrubber: every step can be reached from any other.</p>
+  <div class="jump" id="jump"></div>
+  <div id="scenes"></div>
+</div>
+
+<script src="js/mascot.js"></script>
+<script src="js/scenes.js"></script>
+<script>
+(function () {
+  var root = document.documentElement;
+  /* theme switch */
+  function setTheme(t) {
+    if (t === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", t);
+    [].forEach.call(document.querySelectorAll("[data-theme-btn]"), function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-theme-btn") === t)); });
+  }
+  [].forEach.call(document.querySelectorAll("[data-theme-btn]"), function (b) { b.addEventListener("click", function () { setTheme(b.getAttribute("data-theme-btn")); }); });
+  var qs = new URLSearchParams(location.search);
+  if (qs.get("theme")) setTheme(qs.get("theme"));
+
+  /* hero mascot */
+  var hero = Mascot.create({ size: 160, mood: "idle" });
+  document.getElementById("hero").appendChild(hero);
+  var chips = document.getElementById("moodChips");
+  Mascot.moods.forEach(function (m) {
+    var b = document.createElement("button"); b.type = "button"; b.textContent = m; b.setAttribute("aria-pressed", String(m === "idle"));
+    b.addEventListener("click", function () {
+      hero.setMood(m);
+      [].forEach.call(chips.children, function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+    });
+    chips.appendChild(b);
+  });
+  document.getElementById("sayForm").addEventListener("submit", function (e) { e.preventDefault(); Mascot.say(hero, document.getElementById("sayText").value, { ms: 26 }); });
+  setTimeout(function () { if (!qs.get("quiet")) Mascot.say(hero, "Namaste! Main Boltu hoon. Chalo code seekhein.", { ms: 26 }); }, 300);
+
+  var grid = document.getElementById("moodGrid");
+  Mascot.moods.forEach(function (m) {
+    var cell = document.createElement("div"); cell.className = "cell";
+    cell.appendChild(Mascot.create({ size: 96, mood: m })); cell.appendChild(document.createTextNode(m)); grid.appendChild(cell);
+  });
+  var sizes = document.getElementById("sizes");
+  [56, 96, 160].forEach(function (s) { sizes.appendChild(Mascot.create({ size: s, mood: s === 56 ? "cheer" : s === 96 ? "idle" : "hint" })); });
+
+  /* scenes */
+  window.__ctl = {};
+  var host = document.getElementById("scenes"), jump = document.getElementById("jump");
+  Scenes.list().forEach(function (it, i) {
+    var a = document.createElement("a"); a.href = "#sc-" + it.id; a.textContent = (i + 1); a.setAttribute("aria-label", it.title); jump.appendChild(a);
+    var card = document.createElement("section"); card.className = "scene"; card.id = "sc-" + it.id;
+    card.innerHTML = '<h3>' + (i + 1) + '. ' + it.title + ' <span class="n">· ' + it.steps + ' steps</span></h3><div class="slot"></div>' +
+      '<div class="ctl"><button type="button" data-a="reset" aria-label="Restart">&#9198;</button><button type="button" data-a="prev" aria-label="Previous step">&#8249;</button>' +
+      '<button type="button" data-a="play" aria-label="Play">&#9654;</button><button type="button" data-a="next" aria-label="Next step">&#8250;</button>' +
+      '<input type="range" min="0" value="0" step="1" aria-label="Step"><span class="pos"></span>' +
+      '<select aria-label="Speed"><option value="0.6">0.6x</option><option value="1" selected>1x</option><option value="1.6">1.6x</option></select></div>';
+    host.appendChild(card);
+    var slot = card.querySelector(".slot"), rng = card.querySelector("input"), pos = card.querySelector(".pos"), play = card.querySelector('[data-a=play]');
+    var ctl = Scenes.play(it.id, slot, {
+      onStep: function (n, s) { rng.value = n; pos.textContent = (n + 1) + " / " + s.total; }
+    });
+    ctl.onEnd = function () { play.innerHTML = "&#9654;"; play.setAttribute("aria-label", "Play"); };
+    rng.max = ctl.steps.length - 1;
+    window.__ctl[it.id] = ctl;
+    card.querySelector(".ctl").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return; var act = b.getAttribute("data-a");
+      if (act === "reset") { ctl.pause(); ctl.reset(); play.innerHTML = "&#9654;"; play.setAttribute("aria-label", "Play"); }
+      if (act === "prev") { ctl.pause(); ctl.step(-1); }
+      if (act === "next") { ctl.pause(); ctl.step(1); }
+      if (act === "play") { if (ctl.playing) { ctl.pause(); play.innerHTML = "&#9654;"; play.setAttribute("aria-label", "Play"); } else { ctl.play(); play.innerHTML = "&#10074;&#10074;"; play.setAttribute("aria-label", "Pause"); } }
+      if (act !== "play") { play.innerHTML = "&#9654;"; play.setAttribute("aria-label", "Play"); }
+    });
+    rng.addEventListener("input", function () { ctl.pause(); play.innerHTML = "&#9654;"; ctl.seek(+rng.value); });
+    card.querySelector("select").addEventListener("change", function (e) { ctl.setSpeed(+e.target.value); });
+  });
+})();
+</script>
+</body>
+</html>
