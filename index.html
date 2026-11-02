@@ -47,7 +47,7 @@
 <!-- Legacy launchers: hidden. shell.js clicks these to open a screen, app.js still binds them. -->
 <div class="launch" id="legacy-launch" hidden aria-hidden="true">
 <button class="cheat-open plan" id="planopen">
-  <span class="co-t"><strong>Study plan — time kam hai? yahan se</strong><span id="plansub">18 session × 30 min — sirf sabse zaroori topics, sahi order mein</span></span>
+  <span class="co-t"><strong>Study plan — time kam hai? yahan se</strong><span id="plansub">20 session × 30 min — sirf sabse zaroori topics, sahi order mein</span></span>
   <span class="co-n">&rsaquo;</span>
 </button>
 
@@ -93,6 +93,7 @@
   <button class="tab" id="c2short" type="button" aria-pressed="true">Chhota version</button>
 </div>
 <div id="cheat2list"></div>
+<p class="note" id="c2empty" hidden>Kuch nahi mila — spelling badlo ya filter hata do.</p>
 
 <div class="tools">
   <button id="reset">Sab clear karo</button>
@@ -171,12 +172,39 @@
   <div class="cheat-body">
     <div class="inner">
       <div class="cheat-filters" role="tablist">
-        <button class="tab" role="tab" data-dytab="int" aria-selected="true">Interviews</button>
+        <button class="tab" role="tab" data-dytab="jobs" aria-selected="true">Jobs</button>
+        <button class="tab" role="tab" data-dytab="int" aria-selected="false">Interviews</button>
         <button class="tab" role="tab" data-dytab="mine" aria-selected="false">Mere sawaal</button>
         <button class="tab" role="tab" data-dytab="topics" aria-selected="false">Baar-baar</button>
       </div>
 
-      <div id="dyint">
+      <div id="dyjobs">
+        <div class="jb-funnel" id="jbfunnel"></div>
+        <details class="dy-form" id="jbform">
+          <summary>+ Nayi application jodo</summary>
+          <div class="dy-grid">
+            <label>Company<input id="jbcompany" class="cheat-search" maxlength="100" placeholder="Company ka naam"></label>
+            <label>Role<input id="jbrole" class="cheat-search" maxlength="80" placeholder=".NET Developer"></label>
+            <label>Source
+              <select id="jbsrc" class="cheat-search"><option>Naukri</option><option>LinkedIn</option><option>Referral</option><option>Company site</option><option>Instahyre</option><option>Consultant</option><option>Other</option></select>
+            </label>
+            <label>Stage
+              <select id="jbstage" class="cheat-search"><option>Saved</option><option selected>Applied</option><option>Screening</option><option>Tech</option><option>HR</option><option>Offer</option><option>Joined</option><option>Rejected</option><option>Ghosted</option></select>
+            </label>
+            <label>Applied date<input id="jbdate" class="cheat-search" type="date"></label>
+            <label>Follow-up date<input id="jbfu" class="cheat-search" type="date"></label>
+            <label>CTC (expected / offered)<input id="jbctc" class="cheat-search" maxlength="40" placeholder="jaise 12 LPA"></label>
+            <label>Notice (din)<input id="jbnotice" class="cheat-search" type="number" min="0" max="365" inputmode="numeric"></label>
+          </div>
+          <label class="dy-lab">Recruiter / notes <span>Naam, phone, JD link — jiske paas tumhara sync code ho wo ye dekh sakta hai</span>
+            <textarea id="jbnotes" class="note-ta" rows="3" maxlength="5000"></textarea>
+          </label>
+          <div class="ask-btns"><button id="jbsave" type="button">Save karo</button></div>
+        </details>
+        <div id="jblist"></div>
+      </div>
+
+      <div id="dyint" hidden>
         <details class="dy-form" id="dyintform">
           <summary>+ Naya interview jodo</summary>
           <div class="dy-grid">
@@ -250,6 +278,10 @@
             <strong>Quick round</strong>
             <span>10 kamzor sawaal — jo "Naa bhai" hain aur jo sabse pehle dekhe the, wo pehle</span>
           </button>
+          <button class="pr-mode" data-mode="code" type="button">
+            <strong>Coding round — 2 problems × 15 min</strong>
+            <span>Code likho, edge cases (null, empty, duplicates) aur complexity bolo — machine-coding / DSA round jaisa</span>
+          </button>
           <button class="pr-mode pr-mode-main" data-mode="mock" type="button">
             <strong>Mock interview — AI interviewer</strong>
             <span>8 mixed sawaal (C#, ASP.NET, EF, SQL, Angular, project), har ek pe 3 minute. Bolke ya likh ke jawab do — end mein har jawab ka score aur Hire / No hire</span>
@@ -291,7 +323,7 @@
               <option value="0">Saare</option>
             </select>
           </div>
-          <label class="pr-check"><input type="checkbox" id="prtimer"> Har sawaal pe 2 minute ka timer</label>
+          <label class="pr-check"><input type="checkbox" id="prtimer"> Har sawaal pe 3 minute ka timer</label>
           <p class="sync-help" id="pravail"></p>
           <div class="ask-btns"><button id="prstart" type="button">Shuru karo</button></div>
         </details>
@@ -369,6 +401,7 @@
         <button class="tab" id="chcollapse" type="button">Sab band</button>
       </div>
       <div id="cheatlist"></div>
+      <p class="note" id="chempty" hidden>Kuch nahi mila — spelling badlo ya filter hata do.</p>
     </div>
   </div>
 </div>

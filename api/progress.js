@@ -46,10 +46,11 @@ function cleanNotes(n) {
 //   u:<id>  own question   { q, a, g (topic), s (source: diary id or "online") }
 //   d:<id>  diary entry    { c (company), dt (yyyy-mm-dd), r (round), res (result), no (notes) }
 //   p:<day>:<device>  practice count for a day on one device { n }
+//   j:<id>  job application    { c (company), g (role), s (source), st (stage), dt (applied), fu (follow-up date), ctc, n (notice days), no (recruiter / notes) }
 //   m:<id>  mock interview result { dt, res (verdict), n (score x10), g (label) }
 // Deleting keeps { del: true } so the delete wins over older copies.
-const REC_KEY = /^[udpm]:[A-Za-z0-9_:.-]{1,60}$/;
-const REC_STR = { q: 500, a: 5000, g: 80, s: 60, c: 100, dt: 10, r: 40, res: 20, no: 5000 };
+const REC_KEY = /^[udpmj]:[A-Za-z0-9_:.-]{1,60}$/;
+const REC_STR = { q: 500, a: 5000, g: 80, s: 60, c: 100, dt: 10, r: 40, res: 20, no: 5000, st: 20, fu: 10, ctc: 40 };
 const MAX_RECS = 3000;
 function cleanRecs(x) {
   const out = {};

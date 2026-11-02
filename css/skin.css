@@ -168,3 +168,17 @@ input[type=radio],input[type=checkbox]{ width:22px; height:22px; }
   .ch-card:hover{ border-color:var(--pen); }
 }
 @media (min-width:1500px){ .wrap{ padding-inline:max(32px, calc((100vw - var(--side-w) - 1040px) / 2)); } }
+
+/* ===== QA fixes ===== */
+.sync-join .cheat-close,.sheet-ask .cheat-close{ display:inline-flex; align-items:center; justify-content:center; }   /* sync "Chalu"/"Jodo" were hidden with the old close buttons */
+#prq,.pr-your,.dy-qs li,.dy-chip,.dy-card,.c2-q span,.ch-txt,.pj-fb,.note-ta{ overflow-wrap:anywhere; word-break:break-word; }
+
+/* ===== Jobs tracker ===== */
+.jb-funnel{ margin-bottom:12px; }
+.jb-funnel .note{ margin-bottom:8px; }
+.dy-chips{ display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; }
+.dy-card.due{ border-color:var(--miss); box-shadow:0 0 0 1px var(--miss) inset; }
+.dy-go{ color:var(--pen); }
+.tab-dot{ position:absolute; top:4px; left:calc(50% + 6px); min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:var(--miss); color:#fff; font-weight:700; font-size:.62rem; line-height:16px; font-style:normal; text-align:center; }
+.tab-dot[hidden]{ display:none; }
+@media (min-width:900px){ .tab-dot{ top:15px; left:auto; right:44px; } }

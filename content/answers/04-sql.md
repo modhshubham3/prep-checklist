@@ -466,7 +466,7 @@ DELETE FROM logs WHERE id IN (
 
 DELETE se bahut **tez** hai kyunki row-by-row kaam nahi karta — seedha table ki data files chhod ke nayi khaali file bana deta hai, aur disk space **turant** wapas milta hai. `WHERE` nahi laga sakta. Row-level triggers nahi chalte. `RESTART IDENTITY` se auto-increment counter bhi reset.
 
-PostgreSQL mein TRUNCATE **transactional hai** — `BEGIN; TRUNCATE ...; ROLLBACK;` kaam karta hai (kai doosre databases mein nahi). Par ye table pe **ACCESS EXCLUSIVE lock** leta hai — us dauraan koi padh bhi nahi sakta. Agar doosri table foreign key se refer karti hai, to `CASCADE` chahiye (jo unhe bhi khaali kar dega — khatarnak).
+PostgreSQL mein TRUNCATE **transactional hai** — `BEGIN; TRUNCATE ...; ROLLBACK;` kaam karta hai. **SQL Server mein bhi TRUNCATE rollback ho jaata hai** (transaction ke andar); Oracle / MySQL mein TRUNCATE turant commit ho jaata hai, rollback nahi. Par ye table pe **ACCESS EXCLUSIVE lock** leta hai — us dauraan koi padh bhi nahi sakta. Agar doosri table foreign key se refer karti hai, to `CASCADE` chahiye (jo unhe bhi khaali kar dega — khatarnak).
 
 ```sql
 TRUNCATE TABLE staging_import;

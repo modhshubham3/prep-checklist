@@ -25,7 +25,7 @@
     const wrap = document.querySelector(".wrap"); if(wrap) wrap.inert = c !== "answers";
     Object.values(VIEW).forEach(id => { const v = $(id); v.inert = !v.classList.contains("on"); });
     // Keep the URL honest if a screen was closed some other way (Esc, notification).
-    if(location.hash !== "#/" + c && /^#\/[a-z]+$/.test(location.hash)){ try{ history.replaceState(null, "", "#/" + c); }catch(x){} }
+    if(location.hash !== "#/" + c && (/^#\/[a-z]+$/.test(location.hash) || (!location.hash && c !== "answers"))){ try{ history.replaceState(null, "", "#/" + c); }catch(x){} }
     bar.querySelectorAll("button").forEach(b => {
       if(b.dataset.tab === c) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
@@ -39,16 +39,16 @@
   }
   function show(tab){
     if(!closeOthers(tab)){ paint(); return; }
-    if(tab === "answers") window.scrollTo(0, 0);
-    else if(!isOn(tab)) $(OPEN[tab]).click();
+    if(tab !== "answers" && !isOn(tab)) $(OPEN[tab]).click();
     paint();
   }
 
   bar.addEventListener("click", e => {
     const b = e.target.closest("button[data-tab]"); if(!b) return;
     const tab = b.dataset.tab;
+    // Push first, then switch: paint() must not rewrite the hash before the history entry exists (that broke Back).
+    if(location.hash !== "#/" + tab){ try{ history.pushState(null, "", "#/" + tab); }catch(x){} }
     show(tab);
-    if(current() === tab && location.hash !== "#/" + tab){ try{ history.pushState(null, "", "#/" + tab); }catch(x){} }
   });
 
   function fromHash(){
@@ -78,7 +78,7 @@
     if($("homeplans")) $("homeplans").textContent = pl && pl.textContent ? pl.textContent : "20 session × 30 min";
     if($("homeline")) $("homeline").textContent = tl && tl.textContent ? "Answers: " + tl.textContent + " pakka" : "";
   }
-  if(hp) hp.addEventListener("click", () => { show("plan"); if(location.hash !== "#/plan") try{ history.pushState(null, "", "#/plan"); }catch(x){} });
+  if(hp) hp.addEventListener("click", () => { if(location.hash !== "#/plan") try{ history.pushState(null, "", "#/plan"); }catch(x){} show("plan"); });
   const mo2 = new MutationObserver(homeText);
   ["plan", "practice"].forEach(id => mo2.observe($(id), { attributes: true, attributeFilter: ["class"] }));
   homeText();
@@ -102,6 +102,12 @@
       if(id){ e.preventDefault(); $(id).focus(); }
     }
   }, true);
+
+  // Overdue job follow-ups: a dot on the Diary tab.
+  const dBtn = bar.querySelector('[data-tab="diary"]');
+  const dot = document.createElement("i"); dot.className = "tab-dot"; dot.hidden = true; dBtn.appendChild(dot);
+  const jobsPaint = () => { const n = window.prepJobsDue || 0; dot.hidden = !n; dot.textContent = n > 9 ? "9+" : String(n); dBtn.title = n ? n + " follow-up due" : dBtn.dataset.key; };
+  document.addEventListener("prep:jobs", jobsPaint); jobsPaint();
 
   paint();
   if(/^#\/[a-z]+$/.test(location.hash)) fromHash();

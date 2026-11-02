@@ -12,7 +12,7 @@
     if(quiz){ const ids = quiz.split(",").filter(x => /^[a-z0-9]+$/.test(x)).slice(0, 5); if(ids.length && window.prepQuiz && window.prepQuiz(ids)) return clean(); }
     if(q && /^[a-z0-9]+$/.test(q) && window.prepOpenCard && window.prepOpenCard(q)) clean();
   }
-  function clean(){ try{ history.replaceState(null, "", location.pathname); }catch(e){} }
+  function clean(){ try{ history.replaceState(null, "", location.pathname + location.hash); }catch(e){} }
   go(location.href);
   if("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => { if(e.data && e.data.open) go(e.data.open); });
 

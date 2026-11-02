@@ -103,7 +103,7 @@ Distributed system mein doosri services **fail/slow hongi hi**. Teen patterns sa
 - **Fallback** — cached data, default value, "abhi available nahi" message.
 - **Bulkhead** — alag dependencies ke liye alag resource pools, taaki ek ke slow hone se sab na atkein.
 
-.NET mein **Polly** (ab `Microsoft.Extensions.Http.Resilience`) — `HttpClient` pe ek line mein standard resilience pipeline.
+.NET mein **Polly** (v8) — `Microsoft.Extensions.Http.Resilience` usi Polly ke upar bana hai; `AddStandardResilienceHandler()` se `HttpClient` pe ek line mein standard resilience pipeline.
 
 ```csharp
 builder.Services.AddHttpClient<PaymentClient>(c => c.BaseAddress = new Uri("https://pay.example.com"))

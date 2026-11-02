@@ -7,7 +7,7 @@
 Building blocks:
 - **Component** — UI ka ek tukda: TypeScript class (logic) + HTML template + CSS. Poori app components ka tree hai.
 - **Service** — business logic, API calls, shared state. `@Injectable` se DI mein aata hai, taaki components patle rahein.
-- **Module (NgModule)** — related cheezon ka group. Angular 14+ se **standalone components** aaye — module ki zaroorat nahi; Angular 17+ mein ye default hai.
+- **Module (NgModule)** — related cheezon ka group. Angular 14+ se **standalone components** aaye — module ki zaroorat nahi; `ng new` Angular 17+ mein standalone app banata hai, aur `standalone: true` likhna Angular 19+ mein default hai (likhna zaroori nahi).
 - **Directive** — DOM element ka behaviour ya structure badalna (`*ngIf`, `[ngClass]`).
 - **Pipe** — template mein display ke liye value transform (`date`, `currency`, `uppercase`).
 - **Routing** — URL ke hisaab se component dikhana.
