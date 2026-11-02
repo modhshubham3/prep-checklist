@@ -44,7 +44,7 @@
     ta.addEventListener("input", upd); form.append(ta, cnt); if(!done) form.appendChild(sub); root.appendChild(form); upd();
 
     function submit(){
-      S.decide[d.id] = { choice: picked, reason: ta.value.trim(), t: Date.now(), right: picked === d.best }; P.save(); P.touchDay();
+      S.decide[d.id] = { choice: picked, reason: ta.value.trim(), t: Date.now(), right: picked === d.best }; P.save(); P.log("mind", 2);
       P.route();
     }
     if(!done) return;

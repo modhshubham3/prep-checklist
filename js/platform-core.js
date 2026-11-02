@@ -2,17 +2,36 @@
    Modules (learn.js, lab.js, decide.js) register themselves in P.mods; platform.js owns Home and the router. */
 (() => {
   const KEY = "prep-platform-v1";
-  const S = { learn: {}, lab: {}, decide: {}, dry: {}, days: [] };
+  const S = { learn: {}, lab: {}, decide: {}, dry: {}, days: [], act: {}, last: null };
   try{
     const r = JSON.parse(localStorage.getItem(KEY));
     if(r && typeof r === "object") for(const k of Object.keys(S)) if(r[k] && typeof r[k] === (Array.isArray(S[k]) ? "object" : "object")) S[k] = r[k];
   }catch(e){}
   if(!Array.isArray(S.days)) S.days = [];
+  if(!S.act || typeof S.act !== "object" || Array.isArray(S.act)) S.act = {};
 
   const P = window.P = { S, mods: {} };
   P.save = () => { try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
   P.today = () => new Date().toLocaleDateString("en-CA");
   P.touchDay = () => { const t = P.today(); if(!S.days.includes(t)) S.days.push(t); S.days = S.days.slice(-400); P.save(); };
+  /* Daily activity, like a fitness tracker: three rings with a goal each (points: lesson step / code run / decision ...). */
+  P.GOALS = { learn: 3, code: 4, mind: 2 };
+  P.log = (kind, n = 1) => {
+    const t = P.today(), a = S.act[t] || (S.act[t] = { learn: 0, code: 0, mind: 0 });
+    a[kind] = (a[kind] || 0) + n;
+    const keys = Object.keys(S.act).sort(); if(keys.length > 120) keys.slice(0, keys.length - 120).forEach(k => delete S.act[k]);
+    P.touchDay();
+  };
+  P.actOf = (date) => Object.assign({ learn: 0, code: 0, mind: 0 }, S.act[date] || {});
+  P.ring = (kind, date) => Math.min(1, P.actOf(date)[kind] / P.GOALS[kind]);
+  P.lastDays = (n) => { const out = []; for(let i = n - 1; i >= 0; i--){ const d = new Date(); d.setDate(d.getDate() - i); out.push(d.toLocaleDateString("en-CA")); } return out; };
+  // "Continue where you left off" (shown in the mini player): { kind: "learn"|"lab", id, title, icon, pos, total }
+  P.setLast = (o) => { S.last = Object.assign({ t: Date.now() }, o); P.save(); P.paintMini && P.paintMini(); };
+
+  // Cover art: a gradient from a hue plus an emoji — same idea as album art.
+  P.cover = (hue, icon, cls) => { const c = P.el("div", "cover" + (cls ? " " + cls : "")); c.style.background = "linear-gradient(135deg, hsl(" + hue + " 70% 48%), hsl(" + ((hue + 45) % 360) + " 75% 28%))"; c.appendChild(P.el("span", "cover-i", icon)); return c; };
+  P.TOPIC = { Strings: [265, "🔤"], Arrays: [200, "🧱"], Loops: [150, "🔁"], Conditions: [30, "🔀"], Maps: [320, "🗂️"], Recursion: [285, "🪆"], Math: [45, "➗"], Stacks: [8, "🥞"] };
+  P.LESSON_ICON = { "variables-and-types": "📦", conditions: "🔀", loops: "🔁", arrays: "🧱", strings: "🔤", functions: "⚙️", "objects-and-maps": "🗂️", recursion: "🪆", "how-to-solve-a-problem": "🧭" };
   P.streak = () => {
     const set = new Set(S.days), d = new Date(); let n = 0;
     if(!set.has(d.toLocaleDateString("en-CA"))) d.setDate(d.getDate() - 1);   // today not done yet doesn't break the streak
@@ -78,7 +97,7 @@
   P.header = (title, back, sub) => {
     const h = P.el("div", "mod-head");
     if(back) h.appendChild(P.btn("‹ " + back.label, "pback", () => P.nav(back.hash)));
-    h.appendChild(P.el("h2", null, title));
+    if(title) h.appendChild(P.el("h2", null, title));
     if(sub) h.appendChild(P.el("p", "mod-sub", sub));
     return h;
   };

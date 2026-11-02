@@ -10,33 +10,49 @@
   const MIN_APPROACH = 30;                       // characters of own thinking before the editor opens
   const show = v => typeof v === "string" ? JSON.stringify(v) : JSON.stringify(v);
 
-  /* ---------------- Code Lab: list ---------------- */
+  /* ---------------- Code Lab: list (playlist style) ---------------- */
   let levelFilter = 0;
+  const topicArt = x => P.TOPIC[x.topic] || [200, "🧩"];
+  function tile(x){
+    const s = lab(x.id), [h, ic] = topicArt(x);
+    const c = el("button", "tile" + (s.solved ? " done" : "")); c.type = "button";
+    const art = P.cover(h, ic, "tilecover"); art.appendChild(el("span", "lvl", "L" + x.level));
+    if(s.solved) art.appendChild(el("span", "tick", s.clean ? "★" : "✓"));
+    c.append(art, el("strong", null, x.title), el("small", null, s.solved ? (s.clean ? "Khud solve kiya" : "Help ke saath") : s.runs ? s.runs + " koshish" : x.topic));
+    c.addEventListener("click", () => P.nav("#/lab/" + x.id));
+    return c;
+  }
   function list(root){
-    root.appendChild(P.header("Code Lab", { label: "Home", hash: "#/home" }, "Chhote problems, live code, bina AI ke. Pehle approach likho, phir code."));
-    const solved = LAB().filter(x => lab(x.id).solved).length;
-    root.appendChild(el("p", "note", solved + " / " + LAB().length + " solve kiye"));
+    root.appendChild(P.header("", { label: "Home", hash: "#/home" }));
+    const L = LAB(), solved = L.filter(x => lab(x.id).solved).length, clean = L.filter(x => lab(x.id).clean).length;
+    const next = L.find(x => !lab(x.id).solved);
+    const hero = el("div", "mix");
+    const info = el("div", "mix-info");
+    info.append(el("small", null, "DAILY MIX"), el("h1", null, next ? next.title : "Sab solve!"),
+      el("p", null, next ? "Level " + next.level + " · " + next.topic + " · pehle approach, phir code" : "Ab inhe bina dekhe dobara likho"));
+    if(next){ info.appendChild(btn("▶  Shuru karo", "pbtn big", () => P.nav("#/lab/" + next.id))); }
+    const [h, ic] = next ? topicArt(next) : [150, "🏆"];
+    hero.append(P.cover(h, ic, "mixcover"), info); root.appendChild(hero);
+    root.appendChild(el("p", "note", solved + " / " + L.length + " solve · " + clean + " bina help ke ★"));
+
     const chips = el("div", "pchips");
-    [[0, "Sab"], [1, "Level 1 — Basics"], [2, "Level 2"], [3, "Level 3"]].forEach(([lv, t]) => {
-      const b = btn(t, "pchip" + (levelFilter === lv ? " on" : ""), () => { levelFilter = lv; P.route(); }); chips.appendChild(b);
-    });
+    [[0, "Sab"], [1, "Level 1"], [2, "Level 2"], [3, "Level 3"]].forEach(([lv, t]) => chips.appendChild(btn(t, "pchip" + (levelFilter === lv ? " on" : ""), () => { levelFilter = lv; P.route(); })));
     root.appendChild(chips);
-    const grid = el("div", "pcards");
-    LAB().filter(x => !levelFilter || x.level === levelFilter).forEach(x => {
-      const s = lab(x.id), c = el("button", "pcard" + (s.solved ? " done" : "")); c.type = "button";
-      c.append(el("span", "pcard-n", "L" + x.level), el("strong", null, x.title), el("span", "pcard-s", x.topic));
-      if(s.solved) c.appendChild(el("span", "pcard-tick", s.clean ? "✓ Khud solve kiya" : "✓ Solve (help ke saath)"));
-      else if(s.runs) c.appendChild(el("span", "pcard-tick warn", s.runs + " koshish"));
-      c.addEventListener("click", () => P.nav("#/lab/" + x.id));
-      grid.appendChild(c);
+
+    const topics = []; L.filter(x => !levelFilter || x.level === levelFilter).forEach(x => { let g = topics.find(t => t.n === x.topic); if(!g) topics.push(g = { n: x.topic, items: [] }); g.items.push(x); });
+    topics.forEach(g => {
+      const sec = el("section", "shelf"), head = el("div", "shelf-h");
+      head.append(el("h3", null, topicArt(g.items[0])[1] + " " + g.n), el("small", null, g.items.filter(x => lab(x.id).solved).length + " / " + g.items.length));
+      const row = el("div", "shelf-row"); g.items.forEach(x => row.appendChild(tile(x)));
+      sec.append(head, row); root.appendChild(sec);
     });
-    if(!LAB().length) grid.appendChild(el("p", "note", "Exercises load nahi hue."));
-    root.appendChild(grid);
+    if(!L.length) root.appendChild(el("p", "note", "Exercises load nahi hue."));
   }
 
   /* ---------------- Code Lab: one exercise ---------------- */
   function detail(root, x){
     const s = lab(x.id);
+    if(!s.solved){ const [h, ic] = topicArt(x); P.setLast({ kind: "lab", id: x.id, title: x.title, icon: ic, hue: h, runs: s.runs || 0 }); }
     root.appendChild(P.header(x.title, { label: "Saare problems", hash: "#/lab" }, "Level " + x.level + " · " + x.topic));
     const pr = el("div", "pbox"); const p = el("p", "prompt"); p.innerHTML = rich(x.prompt); pr.appendChild(p);
     const vis = x.tests.filter(t => !t.hidden).slice(0, 3);
@@ -110,10 +126,10 @@
       runB.disabled = true; results.textContent = "chal raha hai…";
       const r = await P.run(ta.value, { fn: x.fn, tests: x.tests });
       runB.disabled = false;
-      s.runs = (s.runs || 0) + 1; P.touchDay();
+      s.runs = (s.runs || 0) + 1; P.log("code");
       const allPass = paintResults(r);
       if(allPass && !s.solved){
-        s.solved = true; s.clean = !(s.hints || 0) && !s.shown && !(s.ai || 0); s.t = Date.now(); P.save();
+        s.solved = true; s.clean = !(s.hints || 0) && !s.shown && !(s.ai || 0); s.t = Date.now(); P.log("code", 2); P.save();
         celebrate();
       } else P.save();
       ladder();
@@ -179,7 +195,7 @@
       d2.appendChild(pre); d2.appendChild(el("p", "pq", l.predict.q));
       const opts = el("div", "popts"), fb = el("div", "pfeedback");
       l.predict.options.forEach((o, n) => opts.appendChild(btn(o, "popt", () => {
-        const ok = n === l.predict.answer; S.dry[l.id] = { right: ok }; P.save(); P.touchDay();
+        const ok = n === l.predict.answer; S.dry[l.id] = { right: ok }; P.save(); P.log("mind");
         [...opts.children].forEach((b, k) => { b.disabled = true; b.classList.toggle("right", k === l.predict.answer); b.classList.toggle("wrong", k === n && !ok); });
         fb.className = "pfeedback " + (ok ? "ok" : "bad"); fb.append(el("b", null, ok ? "Sahi! " : "Galat. "), document.createTextNode(l.predict.why));
       })));
@@ -201,7 +217,7 @@
         out.innerHTML = ""; out.className = "pfeedback"; out.appendChild(el("b", null, "Khud se pucho — kya tumne ye socha?"));
         const ul = el("ul", "aqs"); x.approachQs.forEach(q => ul.appendChild(el("li", null, q))); out.appendChild(ul);
         out.appendChild(el("p", null, "Edge cases: " + x.edge.join(" · "))); out.appendChild(el("p", "hint", "Key idea: " + x.hints[1]));
-        P.touchDay();
+        P.log("mind");
       });
       const c3 = el("div", "pctl"); c3.appendChild(chk);
       d3.append(ta, c3, out);
