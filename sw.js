@@ -3,7 +3,7 @@
 // Same-origin files: cache-first with background revalidation (stale-while-revalidate). A launch never waits on
 // the network; the fresh copy is stored for the next launch. Bump CACHE on every deploy so the precache is rebuilt.
 // The QR library CDN: cache-first. The sync / push APIs are never cached: progress must always be live.
-const CACHE = "prep-v13";
+const CACHE = "prep-v15";
 const SHELL = [
   "/", "/index.html",
   "/css/style.css", "/css/skin.css", "/css/platform.css", "/css/lamplight.css", "/css/mascot.css",
@@ -14,8 +14,14 @@ const SHELL = [
   "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"
 ];
 
+// Precache file by file, bypassing the HTTP cache ({cache:"reload"}), so a deploy never stores stale copies.
+// One missing file must not abort the install (cache.addAll rejects as a whole): it is logged and the rest still works.
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => Promise.all(SHELL.map(u =>
+    fetch(new Request(u, { cache: "reload" }))
+      .then(res => { if (!res.ok) throw new Error("HTTP " + res.status); return c.put(u, res); })
+      .catch(err => { console.warn("[sw] precache failed:", u, err && err.message); })
+  ))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", e => {
@@ -37,7 +43,12 @@ self.addEventListener("fetch", e => {
       const hit = await c.match(req, { ignoreSearch: true });
       const net = fetch(req).then(res => { if (res.ok) c.put(req, res.clone()); return res; }).catch(() => null);
       if (hit) { e.waitUntil(net); return hit; }                 // instant launch; refresh in the background
-      return (await net) || (await c.match("/")) || Response.error();
+      const res = await net;
+      if (res) return res;
+      // Offline and not cached: only a page navigation falls back to the app shell. A script/style/image must fail
+      // normally (serving index.html as JS would be a worse error than a missing file).
+      if (req.mode === "navigate") return (await c.match("/index.html")) || (await c.match("/")) || Response.error();
+      return Response.error();
     }));
     return;
   }

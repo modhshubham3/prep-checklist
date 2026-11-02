@@ -105,7 +105,9 @@ window.LAB = [
       { args: ["Hello World"], expect: "dlroW olleH" },
       { args: ["a"], expect: "a" },
       { args: [""], expect: "", hidden: true },
-      { args: ["racecar"], expect: "racecar", hidden: true }
+      { args: ["racecar"], expect: "racecar", hidden: true },
+      { args: ["  ab  "], expect: "  ba  ", hidden: true },
+      { args: [" x y "], expect: " y x ", hidden: true }
     ],
     approachQs: [
       "Input string hai, output bhi string. 'hello' ke characters kis order mein padhne padenge?",
@@ -330,7 +332,11 @@ window.LAB = [
       { args: [""], expect: true, hidden: true },
       { args: ["a"], expect: true, hidden: true },
       { args: ["No lemon, no melon"], expect: true, hidden: true },
-      { args: ["ab"], expect: false, hidden: true }
+      { args: ["ab"], expect: false, hidden: true },
+      { args: ["race_car"], expect: true, hidden: true },
+      { args: ["a_ba"], expect: true, hidden: true },
+      { args: ["1a2"], expect: false, hidden: true },
+      { args: ["12321"], expect: true, hidden: true }
     ],
     approachQs: [
       "Palindrome ka matlab kya hai? Pehla aur aakhri character ke baare mein kya sach hona chahiye?",
@@ -558,7 +564,7 @@ window.LAB = [
     title: "Character frequency",
     level: 2,
     topic: "Maps",
-    prompt: "Function charFrequency(text) ek object return karta hai jisme har character ke liye uski ginti ho. Case-sensitive hai ('A' aur 'a' alag), space bhi character hai, aur keys pehli baar dikhne ke order mein honi chahiye. Khali string par {}. Example: 'hello' -> { h: 1, e: 1, l: 2, o: 1 }.",
+    prompt: "Function charFrequency(text) ek object return karta hai jisme har character ke liye uski ginti ho. Case-sensitive hai ('A' aur 'a' alag), space bhi character hai, aur keys pehli baar dikhne ke order mein honi chahiye. Digits ke keys ka order JavaScript alag karta hai — is problem mein sirf letters aur spaces aayenge. Khali string par {}. Example: 'hello' -> { h: 1, e: 1, l: 2, o: 1 }.",
     fn: "charFrequency",
     starter: `function charFrequency(text) {
   // yahan apna code likho
@@ -617,7 +623,10 @@ window.LAB = [
       { args: ["abc", "ab"], expect: false },
       { args: ["", ""], expect: true, hidden: true },
       { args: ["aab", "abb"], expect: false, hidden: true },
-      { args: ["rat", "car"], expect: false, hidden: true }
+      { args: ["rat", "car"], expect: false, hidden: true },
+      { args: ["a b", "ab"], expect: false, hidden: true },
+      { args: ["dormitory", "dirty room"], expect: false, hidden: true },
+      { args: ["a b", "ba "], expect: true, hidden: true }
     ],
     approachQs: [
       "Anagram ka matlab kya hai? Dono strings mein kya same hona chahiye?",
@@ -811,7 +820,9 @@ window.LAB = [
       { args: [[3, 1]], expect: 1 },
       { args: [[5, 5, 5]], expect: null, hidden: true },
       { args: [[]], expect: null, hidden: true },
-      { args: [[7]], expect: null, hidden: true }
+      { args: [[7]], expect: null, hidden: true },
+      { args: [[9, 10, 2]], expect: 9, hidden: true },
+      { args: [[100, 25, 3, 100]], expect: 25, hidden: true }
     ],
     approachQs: [
       "'Distinct' ka matlab yahan kya hai? [10, 20, 20] mein doosra sabse bada 20 kyun nahi?",
@@ -1016,7 +1027,9 @@ window.LAB = [
       { args: ["a bb cc d"], expect: "bb" },
       { args: [""], expect: "", hidden: true },
       { args: ["  a  bb  "], expect: "bb", hidden: true },
-      { args: ["   "], expect: "", hidden: true }
+      { args: ["   "], expect: "", hidden: true },
+      { args: ["hi\tthere"], expect: "there", hidden: true },
+      { args: ["ab\ncdef gh"], expect: "cdef", hidden: true }
     ],
     approachQs: [
       "Pehle string ko words mein kaise todoge, extra spaces ke saath bhi?",

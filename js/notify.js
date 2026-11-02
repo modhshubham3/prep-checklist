@@ -5,15 +5,25 @@
   const toast = m => { const t = $("toast"); if(!t) return; t.textContent = m; t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 3200); };
 
   /* ---- deep links ---- */
-  function go(raw){
+  // Always cleans the URL when done (also for unknown ids), so a bad link can never fire again on reload or Back.
+  function go(raw, fromHash){
     let u; try{ u = new URL(raw, location.href); }catch(e){ return; }
-    const q = u.searchParams.get("q"), quiz = u.searchParams.get("quiz"), drill = u.searchParams.get("drill");
-    if(drill){ const t = drill.split(",").filter(x => /^[a-z]{2,10}$/.test(x)).slice(0, 6); const c = (u.searchParams.get("c") || "").slice(0, 40); if(window.prepDrill && window.prepDrill(t, c ? "Interview: " + c : "Interview prep")) return clean(); }
-    if(quiz){ const ids = quiz.split(",").filter(x => /^[a-z0-9]+$/.test(x)).slice(0, 5); if(ids.length && window.prepQuiz && window.prepQuiz(ids)) return clean(); }
-    if(q && /^[a-z0-9]+$/.test(q) && window.prepOpenCard && window.prepOpenCard(q)) clean();
+    let sp = u.searchParams;
+    if(!/(^|&)(q|quiz|drill)=/.test(u.search.slice(1)) && fromHash) sp = new URLSearchParams(fromHash);     // legacy "#/answers?drill=..." links
+    const q = sp.get("q"), quiz = sp.get("quiz"), drill = sp.get("drill");
+    try{
+      if(drill){ const t = drill.split(",").filter(x => /^[a-z]{2,10}$/.test(x)).slice(0, 6); const c = (sp.get("c") || "").slice(0, 40); if(window.prepDrill && window.prepDrill(t, c ? "Interview: " + c : "Interview prep")) return; }
+      if(quiz){ const ids = quiz.split(",").filter(x => /^[a-z0-9]+$/.test(x)).slice(0, 5); if(ids.length && window.prepQuiz && window.prepQuiz(ids)) return; }
+      if(q && /^[a-z0-9]+$/.test(q) && window.prepOpenCard && window.prepOpenCard(q)) return;
+    }finally{ clean(); }
   }
-  function clean(){ try{ history.replaceState(null, "", location.pathname + location.hash); }catch(e){} }
-  go(location.href);
+  function clean(){
+    try{
+      let h = location.hash; const i = h.indexOf("?"); if(i > -1) h = h.slice(0, i);
+      history.replaceState(null, "", location.pathname + h);
+    }catch(e){}
+  }
+  go(location.href, window.prepBootHashQuery);
   if("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => { if(e.data && e.data.open) go(e.data.open); });
 
   /* ---- bell + sheet ---- */
@@ -24,8 +34,8 @@
   mark(false);
 
   const sheet = document.createElement("div");
-  sheet.className = "scrim"; sheet.id = "notifysheet"; sheet.setAttribute("role", "dialog"); sheet.setAttribute("aria-modal", "true");
-  sheet.innerHTML = '<div class="sheet-ask"><p class="ask-q">Padhai ki notification</p>' +
+  sheet.className = "scrim"; sheet.id = "notifysheet"; sheet.setAttribute("role", "dialog"); sheet.setAttribute("aria-modal", "true"); sheet.setAttribute("aria-labelledby", "ntitle");
+  sheet.innerHTML = '<div class="sheet-ask"><p class="ask-q" id="ntitle">Padhai ki notification</p>' +
     '<p class="ask-topic">Har ghante ek sawaal (tap karo to wahi khulega) aur har 4 ghante mein 2 sawaal ka quiz. Raat 11 se subah 7 tak chup.</p>' +
     '<p class="sync-help" id="nstatus"></p><div class="ask-btns" id="nbtns"></div>' +
     '<button class="ask-cancel" id="nclose" type="button">Band karo</button></div>';

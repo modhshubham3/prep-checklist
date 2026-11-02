@@ -27,7 +27,8 @@
     const sit = el("div", "pbox"); const p = el("p", "prompt"); p.innerHTML = rich(d.situation); sit.appendChild(p);
     sit.appendChild(el("p", "pq", d.question)); root.appendChild(sit);
 
-    const done = get(d.id);
+    let done = get(d.id);
+    if(done && !(done.choice >= 0 && done.choice < d.options.length)){ delete S.decide[d.id]; done = null; }     // damaged entry: start fresh
     const form = el("div", "pbox"); form.appendChild(el("h3", null, "1. Tumhara faisla"));
     const opts = el("div", "dopts"); let picked = done ? done.choice : -1;
     d.options.forEach((o, n) => {
@@ -37,14 +38,18 @@
     });
     form.appendChild(opts);
     form.appendChild(el("h3", null, "2. Wajah likho (zaroori)"));
-    const ta = el("textarea", "note-ta"); ta.rows = 4; ta.value = done ? done.reason : ""; ta.disabled = !!done;
+    const ta = el("textarea", "note-ta"); ta.rows = 4; ta.value = done ? done.reason : ""; ta.disabled = !!done; ta.setAttribute("aria-label", "Apni wajah likho");
     ta.placeholder = "Maine ye isliye chuna kyunki… (kya risk hai, kya pata hona chahiye)";
     const cnt = el("p", "note small"); const sub = btn("Submit — expert ki soch dekho", "pbtn", submit);
-    function upd(){ const n = ta.value.trim().length; cnt.textContent = n >= MIN_REASON ? "" : n + " / " + MIN_REASON + " characters"; sub.disabled = picked < 0 || n < MIN_REASON; }
+    function upd(){
+      const n = ta.value.trim().length, ok = P.thoughtOk(ta.value, MIN_REASON, 6);
+      cnt.textContent = ok ? "" : n >= MIN_REASON ? "Apne shabdon mein wajah likho (ek hi akshar baar-baar nahi)" : n + " / " + MIN_REASON + " characters"; sub.disabled = picked < 0 || !ok;
+    }
     ta.addEventListener("input", upd); form.append(ta, cnt); if(!done) form.appendChild(sub); root.appendChild(form); upd();
 
     function submit(){
-      S.decide[d.id] = { choice: picked, reason: ta.value.trim(), t: Date.now(), right: picked === d.best }; P.save(); P.log("mind", 2);
+      S.decide[d.id] = { choice: picked, reason: ta.value.trim(), t: Date.now(), right: picked === d.best }; P.save();
+      P.log("mind", 2, "!dec:" + d.id);                          // pays the first time only: reset + resubmit earns nothing
       P.route();
     }
     if(!done) return;
@@ -65,9 +70,15 @@
     res.appendChild(el("p", "note", "Tumhari wajah: \"" + done.reason + "\" — kya isme upar ke sawaalon mein se koi chhoota?"));
     const row = el("div", "pctl"); const i = DEC().findIndex(y => y.id === d.id), nx = DEC()[i + 1];
     if(nx) row.appendChild(btn("Agla scenario ›", "pbtn", () => P.nav("#/decide/" + nx.id)));
-    row.appendChild(btn("Dobara socho (reset)", "pbtn ghost", () => { delete S.decide[d.id]; P.save(); P.route(); }));
+    row.appendChild(btn("Dobara socho (reset)", "pbtn ghost", () => {
+      if(!confirm("Purana faisla aur wajah hat jaayegi (ring points dobara nahi milenge). Dobara socho?")) return;
+      P.once("!dec:" + d.id); delete S.decide[d.id]; P.save(); P.route();
+    }));
     res.appendChild(row); root.appendChild(res);
   }
 
-  P.mods.decide = { render(root, id){ root.innerHTML = ""; const d = id && DEC().find(x => x.id === id); if(d) detail(root, d); else list(root); } };
+  P.mods.decide = { render(root, id){
+    root.innerHTML = ""; const d = id && DEC().find(x => x.id === id);
+    if(d) detail(root, d); else if(id) P.notFound(root, "scenario", "#/decide", "Saare scenarios"); else list(root);
+  } };
 })();

@@ -107,7 +107,7 @@
   <h2>Answers + examples</h2>
   <span class="ch-tally" id="ch2tally"></span>
 </div>
-<input class="cheat-search" id="cheat2search" type="search" placeholder="Search: boxing, N+1, MVCC">
+<input class="cheat-search" id="cheat2search" type="search" aria-label="Answers mein search karo" placeholder="Search: boxing, N+1, MVCC">
 <div class="cheat-filters sticky-filters" role="tablist">
   <button class="tab" role="tab" data-c2filter="all" aria-selected="true">Sab</button>
   <button class="tab" role="tab" data-c2filter="haan" aria-selected="false">Haan bhai</button>
@@ -272,7 +272,7 @@
           <label class="dy-lab">Kahan se mila <input id="dysrc" class="cheat-search" maxlength="60" value="Online"></label>
           <div class="ask-btns"><button id="dymadd" type="button">Jodo</button></div>
         </details>
-        <input class="cheat-search" id="dymsearch" type="search" placeholder="Apne sawaalon mein search karo">
+        <input class="cheat-search" id="dymsearch" type="search" aria-label="Apne sawaalon mein search karo" placeholder="Apne sawaalon mein search karo">
         <div id="dyminelist"></div>
       </div>
 
@@ -288,7 +288,7 @@
   <div class="cheat-bar">
     <h2>Practice</h2>
     <span class="ch-tally" id="prprog"></span>
-    <button class="cheat-close" id="practiceclose">Band karo</button>
+    <button class="cheat-close" id="practiceclose" type="button">Round khatam karo</button>
   </div>
   <div class="pr-bar" id="prbar" hidden><span id="prbarfill"></span></div>
   <div class="cheat-body">
@@ -365,7 +365,7 @@
         <code class="ch-ex c2-qc" id="prqc" hidden></code>
         <div id="prask">
           <p class="pr-tip" id="prtip">Jawab bolo ya likho — definition, ek example, aur kab use karte ho. AI check karke score dega.</p>
-          <textarea id="pranswer" class="note-ta pr-answer" rows="5" placeholder="Yahan likho, ya 🎤 dabake bolo…"></textarea>
+          <textarea id="pranswer" class="note-ta pr-answer" rows="5" aria-label="Tumhara jawab" placeholder="Yahan likho, ya 🎤 dabake bolo…"></textarea>
           <div class="pr-ansbar">
             <button id="prmic" class="pr-mic" type="button">🎤 Bolke jawab do</button>
             <button id="prcopy" class="pr-mic" type="button" title="Sawaal + reference + tumhara jawab copy — ChatGPT / Gemini / Claude app mein paste karo">📋 AI app ke liye copy</button>
@@ -417,7 +417,7 @@
   </div>
   <div class="cheat-body">
     <div class="inner">
-      <input class="cheat-search" id="cheatsearch" type="search" placeholder="Search karo — jaise nvarchar, cursor, ngOnInit, OFFSET">
+      <input class="cheat-search" id="cheatsearch" type="search" aria-label="Cheatsheet mein search karo" placeholder="Search karo — jaise nvarchar, cursor, ngOnInit, OFFSET">
       <div class="cheat-filters" role="tablist">
         <button class="tab" role="tab" data-cfilter="all" aria-selected="true">Sab</button>
         <button class="tab" role="tab" data-cfilter="haan" aria-selected="false">Haan bhai</button>
@@ -452,14 +452,14 @@
 
       <p class="sync-help sync-or"><b>Ya apna password chuno</b> — dono devices pe wahi daalna. Kam se kam 12 characters, aur kahin aur use kiya hua password mat daalna.</p>
       <div class="sync-join">
-        <input class="cheat-search" id="syncpass" type="password" autocomplete="new-password" placeholder="Sync password (12+ characters)">
+        <input class="cheat-search" id="syncpass" type="password" aria-label="Sync password" autocomplete="new-password" placeholder="Sync password (12+ characters)">
         <button class="cheat-close" id="syncpassgo" type="button">Chalu</button>
       </div>
 
       <details class="sync-more">
         <summary>Code pehle se hai? (purana tareeka)</summary>
         <div class="sync-join">
-          <input class="cheat-search" id="syncinput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Sync code paste karo">
+          <input class="cheat-search" id="syncinput" type="text" aria-label="Sync code" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Sync code paste karo">
           <button class="cheat-close" id="syncjoin" type="button">Jodo</button>
         </div>
       </details>
@@ -488,11 +488,11 @@
 <button type="button" class="mini" id="mini" hidden aria-label="Continue"></button>
 <nav class="nav" id="pnav" aria-label="Main">
   <div class="side-brand" aria-hidden="true"><svg viewBox="0 0 32 32" width="32" height="32"><rect width="32" height="32" rx="10" fill="#1E232E"/><circle cx="11.5" cy="15" r="4.2" fill="#FFB224"/><circle cx="20.5" cy="15" r="4.2" fill="#FFB224"/><circle cx="12.3" cy="15.4" r="1.6" fill="#1F1300"/><circle cx="19.7" cy="15.4" r="1.6" fill="#1F1300"/><path d="M14.5 21.5h3l-1.5 2z" fill="#FFB224"/></svg><b>prep<i>.</i></b></div>
-  <button type="button" data-go="home" data-key="Alt+1" title="Alt+1"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></span><span class="lbl">Aaj</span></button>
-  <button type="button" data-go="learn" data-key="Alt+2" title="Alt+2"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-book"/></svg></span><span class="lbl">Seekho</span></button>
-  <button type="button" data-go="lab" data-key="Alt+3" title="Alt+3"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-flask"/></svg></span><span class="lbl">Lab</span></button>
-  <button type="button" data-go="interview" data-key="Alt+4" title="Alt+4"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-cards"/></svg></span><span class="lbl">Revise</span></button>
-  <button type="button" data-go="career" data-key="Alt+5" title="Alt+5"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-brief"/></svg></span><span class="lbl">Career</span><i class="tab-dot" id="careerdot" hidden></i></button>
+  <button type="button" data-go="home" data-key="Alt+1" title="Aaj (Alt+1)" aria-label="Aaj" aria-keyshortcuts="Alt+1"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></span><span class="lbl">Aaj</span></button>
+  <button type="button" data-go="learn" data-key="Alt+2" title="Seekho (Alt+2)" aria-label="Seekho" aria-keyshortcuts="Alt+2"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-book"/></svg></span><span class="lbl">Seekho</span></button>
+  <button type="button" data-go="lab" data-key="Alt+3" title="Lab (Alt+3)" aria-label="Lab" aria-keyshortcuts="Alt+3"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-flask"/></svg></span><span class="lbl">Lab</span></button>
+  <button type="button" data-go="interview" data-key="Alt+4" title="Revise (Alt+4)" aria-label="Revise" aria-keyshortcuts="Alt+4"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-cards"/></svg></span><span class="lbl">Revise</span></button>
+  <button type="button" data-go="career" data-key="Alt+5" title="Career (Alt+5)" aria-label="Career" aria-keyshortcuts="Alt+5"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-brief"/></svg></span><span class="lbl">Career</span><i class="tab-dot" id="careerdot" hidden></i></button>
 </nav>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>

@@ -16,7 +16,7 @@
   --ok:#52DB8A; --ok-soft:rgba(82,219,138,.14); --on-ok:#05210F;
   --warn:#FFC857; --warn-soft:rgba(255,200,87,.14);
   --err:#FF7A70; --err-soft:rgba(255,122,112,.14); --on-err:#2A0805;
-  --code-bg:#0B0E14; --code-text:#E6E8EE; --code-gutter:#6F7789; --code-line:rgba(255,178,36,.10);
+  --code-bg:#0B0E14; --code-text:#E6E8EE; --code-gutter:#8089A0; --code-line:rgba(255,178,36,.10);
   --tk-kw:#C4A7FF; --tk-str:#8FDDA0; --tk-num:#FFB86B; --tk-fn:#7CC4FF; --tk-cm:#8B93A7;
   --e2:0 1px 2px rgba(0,0,0,.30), 0 4px 12px rgba(0,0,0,.22);
   --e3:0 12px 28px rgba(0,0,0,.45), 0 0 0 1px var(--line);
@@ -31,7 +31,7 @@
   --ok:#18794E; --ok-soft:rgba(24,121,78,.10); --on-ok:#FFFFFF;
   --warn:#8A5A00; --warn-soft:rgba(255,178,36,.18);
   --err:#C23A2E; --err-soft:rgba(194,58,46,.10); --on-err:#FFFFFF;
-  --code-bg:#F7F4EE; --code-text:#1D1A16; --code-gutter:#8A8378; --code-line:rgba(255,178,36,.20);
+  --code-bg:#F7F4EE; --code-text:#1D1A16; --code-gutter:#645E55; --code-line:rgba(255,178,36,.20);
   --tk-kw:#6D4FD6; --tk-str:#1B7A3C; --tk-num:#A24B00; --tk-fn:#1D5FB8; --tk-cm:#6E675E;
   --e2:0 1px 2px rgba(60,40,10,.10), 0 4px 12px rgba(60,40,10,.08);
   --e3:0 12px 28px rgba(60,40,10,.18), 0 0 0 1px var(--line);
@@ -47,7 +47,7 @@
   --ok:#18794E; --ok-soft:rgba(24,121,78,.10); --on-ok:#FFFFFF;
   --warn:#8A5A00; --warn-soft:rgba(255,178,36,.18);
   --err:#C23A2E; --err-soft:rgba(194,58,46,.10); --on-err:#FFFFFF;
-  --code-bg:#F7F4EE; --code-text:#1D1A16; --code-gutter:#8A8378; --code-line:rgba(255,178,36,.20);
+  --code-bg:#F7F4EE; --code-text:#1D1A16; --code-gutter:#645E55; --code-line:rgba(255,178,36,.20);
   --tk-kw:#6D4FD6; --tk-str:#1B7A3C; --tk-num:#A24B00; --tk-fn:#1D5FB8; --tk-cm:#6E675E;
   --e2:0 1px 2px rgba(60,40,10,.10), 0 4px 12px rgba(60,40,10,.08);
   --e3:0 12px 28px rgba(60,40,10,.18), 0 0 0 1px var(--line);
@@ -72,7 +72,7 @@
   --font-display:"Bricolage Grotesque","Figtree","Figtree Fallback",system-ui,sans-serif;
   --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 }
-body[data-sub]{ --sub-h:52px; }
+body[data-sub]{ --sub-h:56px; }
 body{ --top:calc(var(--appbar-h) + var(--safe-t) + var(--sub-h)); }
 
 html,body{ height:100%; overscroll-behavior:none; -webkit-tap-highlight-color:transparent; }

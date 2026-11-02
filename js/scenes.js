@@ -184,7 +184,7 @@
     init: function (c) {
       c.to("ctrg", { x: 281, y: 84 }, { now: true }); c.to("lamp", { x: 230, y: 106 }, { now: true });
       c.to("stamp", { x: 130, y: 94 }, { now: true }); c.to("dn", { x: 282, y: 144, o: 0, s: .5 }, { now: true });
-      for (var k = 0; k < 3; k++) { c.to("pc" + k, { x: 130 + (k + 1) * 72, y: 170 }, { now: true }); c.to("mk" + k, { x: 11, y: -18, o: 0, s: .3 }, { now: true }); }
+      for (var k = 0; k < 3; k++) { c.to("pc" + k, { x: 130 + (k + 1) * 66 /* 66 not 72: the 3rd parcel (half-width 22) stays inside the 360px view */, y: 170 }, { now: true }); c.to("mk" + k, { x: 11, y: -18, o: 0, s: .3 }, { now: true }); }
     },
     steps: (function () {
       function posOf(c, cur, delay) { for (var k = 0; k < 3; k++) c.to("pc" + k, { x: 130 + (k - cur) * 72 }, { d: .9, delay: delay || 0, ease: "ease-in-out" }); }

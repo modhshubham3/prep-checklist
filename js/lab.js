@@ -8,7 +8,14 @@
   const LEARN = () => window.LEARN || [];
   const lab = id => S.lab[id] || (S.lab[id] = {});
   const MIN_APPROACH = 30;                       // characters of own thinking before the editor opens
-  const show = v => typeof v === "string" ? JSON.stringify(v) : JSON.stringify(v);
+  const show = v => v === undefined ? "undefined" : JSON.stringify(v);
+  const dayIdx = () => { const [y, m, d] = P.today().split("-").map(Number); return Math.floor(Date.UTC(y, m - 1, d) / 864e5); };
+  // Friendly dead-end for a bad link like #/lab/nope
+  function missing(root, what, listHash, listLabel){
+    const b = el("div", "pbox nf"); b.append(el("h3", null, "Ye " + what + " nahi mila"), el("p", "note", "Link purana ya galat lag raha hai. List se dobara chuno."));
+    const r = el("div", "pctl"); r.appendChild(btn(listLabel + " ›", "pbtn", () => P.nav(listHash))); b.appendChild(r); root.appendChild(b);
+  }
+  P.notFound = missing;
 
   /* ---------------- Code Lab: list (playlist style) ---------------- */
   let levelFilter = 0;
@@ -64,26 +71,31 @@
     const ap = el("div", "pbox"); ap.appendChild(el("h3", null, "1. Pehle socho — approach likho"));
     ap.appendChild(el("p", "note", "Code se pehle apne shabdon mein steps likho. Ye hi wo muscle hai jo office mein khud kaam karne mein kaam aayegi."));
     const qs = el("ul", "aqs"); x.approachQs.forEach(q => qs.appendChild(el("li", null, q))); ap.appendChild(qs);
-    const at = el("textarea", "note-ta"); at.rows = 4; at.value = s.approach || ""; at.placeholder = "Step 1: … Step 2: … (apni bhasha mein, galat ho to bhi chalega)";
+    const at = el("textarea", "note-ta"); at.rows = 4; at.setAttribute("aria-label", "Apna approach likho"); at.value = s.approach || ""; at.placeholder = "Step 1: … Step 2: … (apni bhasha mein, galat ho to bhi chalega)";
     const cnt = el("p", "note small"); const go = btn("Approach ready — editor kholo", "pbtn");
     const editor = el("div", "pbox"); editor.hidden = true;
-    const upd = () => { const n = at.value.trim().length; cnt.textContent = n >= MIN_APPROACH ? "Achha hai ✓" : n + " / " + MIN_APPROACH + " characters — thoda aur likho"; go.disabled = n < MIN_APPROACH; };
+    const upd = () => {
+      const n = at.value.trim().length, ok = P.thoughtOk(at.value, MIN_APPROACH);
+      cnt.textContent = ok ? "Achha hai ✓" : n >= MIN_APPROACH ? "Alag-alag shabdon mein steps likho (ek hi akshar baar-baar nahi)" : n + " / " + MIN_APPROACH + " characters — thoda aur likho";
+      go.disabled = !ok;
+    };
     at.addEventListener("input", () => { s.approach = at.value; P.save(); upd(); });
     go.addEventListener("click", () => { editor.hidden = false; go.hidden = true; editor.scrollIntoView({ behavior: "smooth", block: "start" }); });
     upd(); ap.append(at, cnt, go); root.appendChild(ap);
-    if((s.approach || "").trim().length >= MIN_APPROACH){ editor.hidden = false; go.hidden = true; }
+    if(P.thoughtOk(s.approach, MIN_APPROACH)){ editor.hidden = false; go.hidden = true; }
 
     /* Step 2: editor */
     editor.appendChild(el("h3", null, "2. Ab code likho"));
-    const ta = P.codeBox(s.code || x.starter, 12);
+    const ta = P.codeBox(s.code || x.starter, 12, "Code editor — " + x.title);
     ta.addEventListener("input", () => { s.code = ta.value; P.save(); });
+    P.autosize(ta);
     const results = el("div", "results"); const hintsBox = el("div", "hints");
     const bar = el("div", "pctl");
     const runB = btn("▶ Run tests", "pbtn", doRun);
     const hintB = btn("", "pbtn ghost", doHint), aiB = btn("🤖 AI tutor se poochho", "pbtn ghost", doAI), solB = btn("Solution dekho", "pbtn ghost danger", doSolution);
-    const resetB = btn("Reset", "pbtn ghost", () => { if(confirm("Code starter par wapas le jaayein?")){ ta.value = x.starter; s.code = x.starter; P.save(); } });
+    const resetB = btn("Reset", "pbtn ghost", () => { if(confirm("Code starter par wapas le jaayein?")){ ta.value = x.starter; s.code = x.starter; P.save(); ta.dispatchEvent(new Event("input")); } });
     bar.append(runB, hintB, aiB, solB, resetB);
-    editor.append(ta, bar, results, hintsBox);
+    editor.append(ta, ta.hint, bar, results, hintsBox);
     root.appendChild(editor);
 
     let lastFail = [];
@@ -103,15 +115,16 @@
     }
     function paintResults(r){
       results.innerHTML = "";
-      if(r.error){ results.appendChild(el("div", "rerr", "⚠ " + r.error)); return; }
       if(r.logs && r.logs.length) results.appendChild(el("pre", "cons", r.logs.join("\n")));
+      if(r.error){ results.appendChild(el("div", "rerr", "⚠ " + r.error)); return false; }
       let pass = 0; lastFail = [];
-      const table = el("div", "rtable");
+      const table = el("div", "rtable"); let hiddenFail = 0;
       r.results.forEach((o, i) => {
         const t = x.tests[i]; if(o.ok) pass++;
         const row = el("div", "rrow " + (o.ok ? "ok" : "bad"));
         if(t.hidden){
-          row.textContent = (o.ok ? "✓" : "✗") + " Hidden test " + (i + 1) + (o.ok ? "" : " — edge case chhoot raha hai: " + x.edge.join(" · "));
+          if(!o.ok) hiddenFail++;
+          row.textContent = (o.ok ? "✓" : "✗") + " Hidden test " + (i + 1) + (o.ok ? "" : " — ek edge case chhoot raha hai");
         } else {
           row.textContent = (o.ok ? "✓ " : "✗ ") + x.fn + "(" + t.args.map(show).join(", ") + ")  →  expected " + show(t.expect) + (o.ok ? "" : ", mila " + (o.err ? "error: " + o.err : o.got));
           if(!o.ok) lastFail.push({ args: t.args, expect: t.expect, got: o.err ? "error: " + o.err : o.got });
@@ -120,18 +133,23 @@
       });
       results.appendChild(el("p", "rsum " + (pass === r.results.length ? "ok" : "bad"), pass + " / " + r.results.length + " tests pass"));
       results.appendChild(table);
+      if(hiddenFail >= 2) results.appendChild(el("p", "note small", "Ye edge cases socho: " + x.edge.join(" · ")));
       return pass === r.results.length;
     }
+    const flat = c => String(c || "").replace(/\s+/g, "");
     async function doRun(){
       runB.disabled = true; results.textContent = "chal raha hai…";
-      const r = await P.run(ta.value, { fn: x.fn, tests: x.tests });
+      const code = ta.value, fresh = s.lastRun == null || flat(code) !== flat(s.lastRun);   // same code again is not a new attempt
+      const r = await P.run(code, { fn: x.fn, tests: x.tests });
       runB.disabled = false;
-      s.runs = (s.runs || 0) + 1; P.log("code");
+      if(fresh){ s.runs = (s.runs || 0) + 1; s.lastRun = code; P.log("code", 1, "run:" + x.id, 2); }
       const allPass = paintResults(r);
+      if(!fresh) results.insertBefore(el("p", "note small", "Code pichhli run jaisa hi hai — ye koshish mein nahi gina gaya. Kuch badlo, phir run karo."), results.firstChild);
       if(allPass && !s.solved){
-        s.solved = true; s.clean = !(s.hints || 0) && !s.shown && !(s.ai || 0); s.t = Date.now(); P.log("code", 2); P.save();
+        s.solved = true; s.clean = !(s.hints || 0) && !s.shown && !(s.ai || 0); s.t = Date.now(); P.log("code", 2, "!solve:" + x.id); P.save();
         celebrate();
       } else P.save();
+      P.patchLast("lab", x.id, { runs: s.runs || 0 });
       ladder();
     }
     function doHint(){ s.hints = Math.min(3, (s.hints || 0) + 1); P.save(); ladder(); }
@@ -171,8 +189,19 @@
   }
 
   /* ---------------- Logic Gym ---------------- */
-  const dayNum = () => Math.floor(Date.now() / 864e5);
   function nextProblem(){ return LAB().find(x => !lab(x.id).solved); }
+  // Today's dry-run question is chosen ONCE per day and remembered (S.dayq), so reloading shows the same question (and a wrong
+  // answer stays answered). Tomorrow the day changes and a different lesson is picked.
+  function todaysDry(){
+    const t = P.today(), L = LEARN(); if(!L.length) return null;
+    let q = S.dayq;
+    if(q && q.d === t && L.some(l => l.id === q.id)) return q;
+    const pool = L.filter(l => (S.dry[l.id] || {}).right !== true), arr = pool.length ? pool : L;
+    let pick = arr[dayIdx() % arr.length];
+    if(q && pick.id === q.id && arr.length > 1) pick = arr[(arr.indexOf(pick) + 1) % arr.length];
+    S.dayq = { d: t, id: pick.id, pick: null, prev: q ? q.id : "", drill: "" }; P.save();
+    return S.dayq;
+  }
   function logic(root){
     root.appendChild(P.header("Logic Gym", { label: "Home", hash: "#/home" }, "Roz thoda dimaag ki kasrat. 20 minute, bina AI ke."));
     root.appendChild(el("p", "streak", "🔥 " + P.streak() + " din ka streak"));
@@ -189,43 +218,58 @@
     // 2. dry-run
     const d2 = el("div", "pbox"); d2.appendChild(el("h3", null, "2. Dry-run — bina chalaye output batao"));
     d2.appendChild(el("p", "note", "Code ko dimaag mein chalana hi asli logic hai. Compiler ka kaam khud karo."));
-    const pool = LEARN().filter(l => (S.dry[l.id] || {}).right !== true);
-    const l = pool.length ? pool[dayNum() % pool.length] : LEARN()[dayNum() % Math.max(1, LEARN().length)];
+    const dq = todaysDry(), l = dq && LEARN().find(y => y.id === dq.id);
     if(l){
       const pre = el("pre", "code-list"); l.code.forEach((line, i) => { const r = el("div", "cl"); r.append(el("span", "cl-n", String(i + 1)), el("span", "cl-t", line || " ")); pre.appendChild(r); });
-      d2.appendChild(pre); d2.appendChild(el("p", "pq", l.predict.q));
+      d2.appendChild(pre);
+      const pq = el("p", "pq"); pq.innerHTML = rich(l.predict.q); d2.appendChild(pq);
       const opts = el("div", "popts"), fb = el("div", "pfeedback");
-      l.predict.options.forEach((o, n) => opts.appendChild(btn(o, "popt", () => {
-        const ok = n === l.predict.answer; S.dry[l.id] = { right: ok }; P.save(); P.log("mind");
+      const reveal = n => {
+        const ok = n === l.predict.answer;
         [...opts.children].forEach((b, k) => { b.disabled = true; b.classList.toggle("right", k === l.predict.answer); b.classList.toggle("wrong", k === n && !ok); });
-        fb.className = "pfeedback " + (ok ? "ok" : "bad"); fb.append(el("b", null, ok ? "Sahi! " : "Galat. "), document.createTextNode(l.predict.why));
+        fb.className = "pfeedback " + (ok ? "ok" : "bad"); fb.innerHTML = "";
+        const tx = el("div", "fb-text"); tx.appendChild(el("b", null, ok ? "Sahi! " : "Galat. ")); const w = el("span"); w.innerHTML = rich(l.predict.why); tx.appendChild(w); fb.appendChild(tx);
+      };
+      l.predict.options.forEach((o, n) => opts.appendChild(btn(o, "popt", () => {
+        if(dq.pick != null) return;                                   // one attempt a day, reload does not give another
+        const ok = n === l.predict.answer; dq.pick = n; S.dry[l.id] = { right: ok || !!(S.dry[l.id] || {}).right, d: dq.d, pick: n };
+        P.save(); P.log("mind", 1, "dry:" + l.id); reveal(n);
+        const right = LEARN().filter(y => (S.dry[y.id] || {}).right).length; cntNote.textContent = "Dry-run sahi: " + right + " / " + LEARN().length + " · kal naya aayega";
       })));
       d2.append(opts, fb);
       const right = LEARN().filter(y => (S.dry[y.id] || {}).right).length;
-      d2.appendChild(el("p", "note small", "Dry-run sahi: " + right + " / " + LEARN().length + " · kal naya aayega"));
+      const cntNote = el("p", "note small", "Dry-run sahi: " + right + " / " + LEARN().length + " · kal naya aayega"); d2.appendChild(cntNote);
+      if(dq.pick != null && dq.pick < l.predict.options.length) reveal(dq.pick);
     }
     root.appendChild(d2);
 
-    // 3. approach drill
+    // 3. approach drill (the same drill all day)
     const d3 = el("div", "pbox"); d3.appendChild(el("h3", null, "3. Approach drill — sirf soch, code nahi"));
-    const pickable = LAB().filter(x => x.level >= 1); const x = pickable[(dayNum() * 7 + 3) % Math.max(1, pickable.length)];
+    const pickable = LAB().filter(x => x.level >= 1); const x = pickable[(dayIdx() * 5 + 3) % Math.max(1, pickable.length)];
     if(x){
       const pp = el("p", "prompt"); pp.innerHTML = rich(x.prompt); d3.appendChild(pp);
-      const ta = el("textarea", "note-ta"); ta.rows = 4; ta.placeholder = "Code mat likho. Sirf steps: pehle ye, phir ye… edge cases bhi.";
-      const out = el("div", "pfeedback");
-      const chk = btn("Apne steps check karo", "pbtn", () => {
-        if(ta.value.trim().length < MIN_APPROACH){ P.toast("Thoda detail mein likho (kam se kam " + MIN_APPROACH + " characters)"); return; }
-        out.innerHTML = ""; out.className = "pfeedback"; out.appendChild(el("b", null, "Khud se pucho — kya tumne ye socha?"));
+      const ta = el("textarea", "note-ta"); ta.rows = 4; ta.placeholder = "Code mat likho. Sirf steps: pehle ye, phir ye… edge cases bhi."; ta.setAttribute("aria-label", "Approach drill — apne steps likho");
+      const out = el("div", "pfeedback blk");
+      const showKey = () => {
+        out.innerHTML = ""; out.className = "pfeedback blk"; out.appendChild(el("b", null, "Khud se pucho — kya tumne ye socha?"));
         const ul = el("ul", "aqs"); x.approachQs.forEach(q => ul.appendChild(el("li", null, q))); out.appendChild(ul);
         out.appendChild(el("p", null, "Edge cases: " + x.edge.join(" · "))); out.appendChild(el("p", "hint", "Key idea: " + x.hints[1]));
-        P.log("mind");
+      };
+      const chk = btn("Apne steps check karo", "pbtn", () => {
+        if(!P.thoughtOk(ta.value, MIN_APPROACH)){ P.toast("Thoda detail mein likho — alag-alag shabdon mein, kam se kam " + MIN_APPROACH + " characters"); return; }
+        showKey(); if(S.dayq) S.dayq.drill = x.id; P.save();
+        P.log("mind", 1, "drill:" + x.id);
       });
       const c3 = el("div", "pctl"); c3.appendChild(chk);
       d3.append(ta, c3, out);
+      if(S.dayq && S.dayq.d === P.today() && S.dayq.drill === x.id){ showKey(); out.insertBefore(el("p", "note small", "Aaj ka drill ho chuka ✓ — kal naya aayega"), out.firstChild); }
     }
     root.appendChild(d3);
   }
 
-  P.mods.lab = { render(root, id){ root.innerHTML = ""; const x = id && LAB().find(y => y.id === id); if(x) detail(root, x); else list(root); } };
+  P.mods.lab = { render(root, id){
+    root.innerHTML = ""; const x = id && LAB().find(y => y.id === id);
+    if(x) detail(root, x); else if(id) missing(root, "problem", "#/lab", "Saare problems"); else list(root);
+  } };
   P.mods.logic = { render(root){ root.innerHTML = ""; logic(root); } };
 })();

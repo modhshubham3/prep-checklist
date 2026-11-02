@@ -56,10 +56,11 @@
 :root[data-theme="light"] .code-ta{ background:#1b1f2a; }
 .code-list{ margin:0 0 10px; padding:8px 0; background:#0b0d12; color:#e8e6e1; border-radius:12px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13.5px; overflow-x:auto; -webkit-user-select:text; user-select:text; }
 :root[data-theme="light"] .code-list{ background:#1b1f2a; }
-.cl{ display:flex; gap:10px; padding:2px 12px; white-space:pre; border-left:3px solid transparent; }
+.cl{ display:flex; gap:10px; padding:2px 12px; white-space:pre-wrap; overflow-wrap:anywhere; border-left:3px solid transparent; }   /* long lines wrap (never clipped), double spaces stay */
+.cl-t, .lyr .cl-t{ min-width:0; flex:1; }
 .cl-n{ width:1.6em; text-align:right; color:#6b7280; flex:none; }
 .cl.on{ background:rgba(255,178,77,.18); border-left-color:var(--saffron); }
-.cons{ margin:8px 0 0; padding:10px 12px; background:#0b0d12; color:#9ee493; border-radius:10px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; white-space:pre-wrap; min-height:38px; -webkit-user-select:text; user-select:text; overflow-wrap:anywhere; }
+.cons{ max-height:min(50vh, 360px); overflow:auto; margin:8px 0 0; padding:10px 12px; background:#0b0d12; color:#9ee493; border-radius:10px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; white-space:pre-wrap; min-height:38px; -webkit-user-select:text; user-select:text; overflow-wrap:anywhere; }
 .cons.big{ min-height:60px; }
 .cons.err{ color:#ff9a8f; }
 
@@ -78,7 +79,7 @@
 .vempty{ color:var(--ink-soft); font-size:.9rem; }
 .var{ display:flex; flex-direction:column; border:1px solid var(--rule); border-radius:10px; padding:6px 12px; background:var(--card); transition:background .3s,border-color .3s; }
 .var.changed{ border-color:var(--saffron); background:rgba(255,178,77,.16); animation:pop .4s ease; }
-.var-n{ font-size:.72rem; color:var(--ink-soft); } .var-v{ font-family:ui-monospace,Menlo,Consolas,monospace; overflow-wrap:anywhere; }
+.var-n{ font-size:.72rem; color:var(--ink-soft); } .var-v{ font-family:ui-monospace,Menlo,Consolas,monospace; overflow-wrap:anywhere; white-space:pre-wrap; }
 @keyframes pop{ 0%{ transform:scale(.9); } 60%{ transform:scale(1.06); } 100%{ transform:scale(1); } }
 .say{ margin:10px 0 0; line-height:1.55; min-height:3em; font-weight:600; }
 
@@ -175,9 +176,9 @@
 .np-meta small{ letter-spacing:.1em; font-weight:800; color:var(--pen); } .np-meta h1{ font-size:1.55rem; line-height:1.15; margin:4px 0; } .np-meta p{ margin:0; color:var(--ink-soft); font-size:.9rem; }
 .concept summary{ font-weight:700; min-height:44px; display:flex; align-items:center; cursor:pointer; }
 .player{ background:linear-gradient(180deg, var(--pen-soft), var(--card) 40%); }
-.lyrics{ background:#0b0d12; border-radius:16px; padding:10px 0; max-height:230px; overflow:auto; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13.5px; -webkit-user-select:text; user-select:text; }
+.lyrics{ position:relative; background:#0b0d12; border-radius:16px; padding:10px 0; max-height:min(230px, 30vh); min-height:96px; overflow:auto; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13.5px; -webkit-user-select:text; user-select:text; }
 :root[data-theme="light"] .lyrics{ background:#1b1f2a; }
-.lyr{ display:flex; gap:10px; padding:5px 14px; opacity:.4; white-space:pre; color:#e8e6e1; border-left:3px solid transparent; transition:opacity .25s, background .25s; }
+.lyr{ display:flex; gap:10px; padding:5px 14px; opacity:.4; white-space:pre-wrap; overflow-wrap:anywhere; color:#e8e6e1; border-left:3px solid transparent; transition:opacity .25s, background .25s; }
 .lyr .cl-n{ color:#6b7280; width:1.6em; text-align:right; flex:none; }
 .lyr.on{ opacity:1; font-weight:700; background:rgba(255,178,77,.18); border-left-color:var(--saffron); }
 .vh{ margin:12px 0 6px; font-size:.74rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); }
@@ -210,3 +211,43 @@
 .scene-n{ color:var(--ink-soft); font-size:.8rem; font-variant-numeric:tabular-nums; flex:none; }
 .pfeedback{ display:flex; gap:12px; align-items:center; } .pfeedback .fb-text{ flex:1; min-width:0; } .fb-boltu{ flex:none; }
 .win-boltu{ float:right; margin:-6px 0 6px 8px; }
+
+/* =====================================================================================
+   v3 fixes — code text keeps its spaces, long lines wrap, a steady player, chevrons, touch-size editor
+   ===================================================================================== */
+/* text that may contain code or double spaces must not collapse them */
+.pq, .popt, .say, .prompt, .pfeedback .fb-text, .hint, .pcard-s{ white-space:pre-wrap; overflow-wrap:anywhere; }
+.pfeedback.blk{ display:block; }
+.popts .popt{ min-width:0; }
+
+/* Now Playing: the controls live in a bar pinned to the bottom of the card, so they never jump while chips grow / shrink */
+.player{ position:relative; }
+#platform .pbar{ position:sticky; bottom:0; z-index:3; margin:8px -16px -16px; padding:0 16px 8px; background:var(--s1, var(--card)); border-top:1px solid var(--line, var(--rule)); border-radius:0 0 16px 16px; }
+#platform .pbar .scrub{ margin-top:2px; }
+#platform .pbar .controls{ margin-top:0; }
+#platform .pbar .ctl-play{ width:56px; height:56px; font-size:1.5rem; }
+#platform .pbar .ctl{ width:44px; height:44px; }
+.say{ margin:10px 0 4px; }
+.vh{ margin:10px 0 6px; }
+@media (max-width:420px){ .player.pbox{ padding:12px; } #platform .pbar{ margin:6px -12px -12px; padding:0 12px 6px; } .pbox .lyr{ padding:4px 10px; } }
+
+/* disclosure chevron for <details> (the default marker disappears once summary is display:flex) */
+.concept summary, .sol summary{ list-style:none; gap:10px; }
+.concept summary::-webkit-details-marker, .sol summary::-webkit-details-marker{ display:none; }
+.concept summary::before, .sol summary::before{ content:""; flex:none; width:8px; height:8px; margin:0 4px 3px 2px; border-right:2px solid var(--pen, currentColor); border-bottom:2px solid var(--pen, currentColor); transform:rotate(-45deg); transition:transform .18s; }
+.concept[open] > summary::before, .sol[open] > summary::before{ transform:rotate(45deg); margin-bottom:5px; }
+@media (prefers-reduced-motion:reduce){ .concept summary::before, .sol summary::before{ transition:none; } }
+
+.story-hint{ display:inline-flex; align-items:center; min-height:44px; padding:0 16px; margin:0 0 8px; border-radius:22px; border:1px dashed var(--pen); background:transparent; color:var(--pen); font:inherit; font-weight:700; cursor:pointer; }
+.story-hint[hidden]{ display:none; }
+.pl-now{ margin:-4px 0 8px !important; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.nf h3{ margin-bottom:6px; }
+.code-hint{ margin:6px 0 0; }
+.code-ta{ display:block; max-height:70vh; }
+@media (pointer:coarse){
+  .code-hint{ display:none; }
+  .code-ta, #platform .note-ta, #platform textarea{ font-size:16px; }     /* under 16px iOS Safari zooms the page on focus */
+}
+.vars{ align-content:flex-start; }                              /* extra min-height must not stretch the chips */
+#platform .pbar .time{ margin-top:-6px; }
+#platform .pbar .ctl-play{ width:52px; height:52px; font-size:1.4rem; }

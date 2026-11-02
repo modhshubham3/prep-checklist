@@ -168,3 +168,27 @@ input[type=radio],input[type=checkbox]{ accent-color:var(--accent); }
 .cheat-open:hover{ transform:none; box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent); }
 .cheat-open strong{ font:700 17px/22px var(--font-display); } .cheat-open span{ color:var(--text2); opacity:1; }
 .cheat-open .co-n{ color:var(--accent-text); }
+
+/* ---- QA round: touch targets, contrast, practice exit ---- */
+/* Chips / tabs / filter pills: a 44px tall target that still draws a 32px pill (transparent border + padding-box background). */
+.pchip,.tab,.chip{ box-sizing:border-box; height:44px; min-height:44px; border:6px solid transparent; background-clip:padding-box !important; }
+.tab[aria-selected="true"],.pchip.on,.chip[aria-selected="true"]{ border:6px solid transparent; }
+.tab,.cheat-filters button,.tools button{ min-height:44px; }
+.pchip::after,.tab::after,.chip::after{ inset:0 -2px; }
+.cheat-filters,.tabs{ align-items:center; }
+.seg{ padding:3px; } .seg button{ min-height:44px; } .seg button::after{ inset:0; }
+.subbar .chips{ align-items:center; }
+/* range sliders: 6px track + 19px padding each side = 44px hit area */
+.scrub{ padding-top:19px; padding-bottom:19px; }
+/* group counters (".g-n") and code line numbers: >= 4.5:1 in both themes */
+.ch-grp .g-n{ opacity:1; color:var(--text2); }
+.cl-n,.lyr .cl-n{ color:var(--code-gutter); }
+/* the running practice round gets a visible way out (also on phones); the start screen needs none (chips leave it) */
+#practice:has(#prsetup[hidden]) .cheat-close{ display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 16px; border:0; border-radius:var(--r-pill); background:var(--s2); color:var(--text); box-shadow:inset 0 0 0 1px var(--line-strong); font:700 14px/20px var(--font-ui); cursor:pointer; white-space:nowrap; }
+#practice:has(#prsetup[hidden]) .cheat-close:hover{ background:var(--s3); }
+/* new-version toast (service worker) */
+.upd{ position:fixed; left:16px; right:16px; width:fit-content; max-width:min(480px,calc(100vw - 32px)); margin-inline:auto; bottom:calc(var(--nav-h) + 16px + env(safe-area-inset-bottom)); z-index:80; display:flex; align-items:center; gap:8px; padding:8px 8px 8px 16px; background:var(--s3); color:var(--text); border-radius:var(--r-lg); box-shadow:var(--e3); font:600 14px/20px var(--font-ui); }
+.upd span{ flex:1; min-width:0; }
+.upd button{ flex:none; white-space:nowrap; min-height:44px; padding:0 16px; border:0; border-radius:var(--r-md); background:var(--accent); color:var(--on-accent); font:700 14px/20px var(--font-ui); cursor:pointer; }
+.upd .upd-x{ background:transparent; color:var(--text2); padding:0 12px; }
+@media (min-width:900px){ .upd{ bottom:24px; left:calc(var(--side-w) + 16px); } }

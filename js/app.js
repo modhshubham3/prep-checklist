@@ -516,7 +516,8 @@ function cheatFilter(){
     const okF = cfilter === "all" ? true : (cfilter === "baaki" ? !st : st === cfilter);
     return okF && (!q || node.dataset.find.includes(q));
   }, !!q, cfilter !== "all");
-  const e = document.getElementById("chempty"); if(e) e.hidden = !!cheatList.querySelector(".ch-card:not(.hidden)");
+  // "Nothing found" only when a search/filter is active AND no group has a match (collapsed groups hide their cards, so test the group heads)
+  const e = document.getElementById("chempty"); if(e) e.hidden = !(q || cfilter !== "all") || !!cheatList.querySelector(".ch-grp:not(.hidden)");
 }
 document.getElementById("chexpand").addEventListener("click", () => { cheatFold.all(CHEAT.map(g => g.g), true); cheatFilter(); });
 document.getElementById("chcollapse").addEventListener("click", () => { cheatFold.all([], false); cheatFilter(); });
@@ -759,7 +760,7 @@ function cheat2Filter(){
     }
     return ok;
   }, !!q, c2filter !== "all");
-  const e = document.getElementById("c2empty"); if(e) e.hidden = !!cheat2List.querySelector(".ch-card:not(.hidden)");
+  const e = document.getElementById("c2empty"); if(e) e.hidden = !(q || c2filter !== "all") || !!cheat2List.querySelector(".ch-grp:not(.hidden)");
 }
 
 // "Sab kholo" opens every group and answer; "Sab band" folds everything back.
@@ -1811,7 +1812,8 @@ const diary = (() => {
   document.querySelectorAll("[data-dytab]").forEach(b => b.addEventListener("click", () => setTab(b.dataset.dytab)));
   $("diaryopen").addEventListener("click", () => { ov.classList.add("on"); document.body.style.overflow = "hidden"; setTab(tab); });
   $("diaryclose").addEventListener("click", () => { ov.classList.remove("on"); document.body.style.overflow = ""; });
-  document.addEventListener("keydown", e => { if(e.key === "Escape" && ov.classList.contains("on")) $("diaryclose").click(); });
+  // Career has no "back" of its own (the bottom nav leaves it): Esc there must not close the only screen and leave a blank page.
+  document.addEventListener("keydown", e => { if(e.key === "Escape" && ov.classList.contains("on") && document.body.dataset.mode !== "career") $("diaryclose").click(); });
   onRecs.push(() => { if(!ov.contains(document.activeElement) || document.activeElement.tagName !== "TEXTAREA") draw(); });
   draw();
   return { draw };
