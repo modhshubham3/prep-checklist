@@ -18,10 +18,10 @@
 
   /* ---- bell + sheet ---- */
   const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-  const bell = document.createElement("button");
-  bell.className = "theme-btn bell"; bell.type = "button"; bell.id = "bellbtn"; bell.setAttribute("aria-label", "Notification");
-  bell.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 003.4 0"/></svg>';
-  const row = document.querySelector(".toprow"); if(row) row.insertBefore(bell, row.firstChild);
+  const bell = $("bellbtn");   // static in index.html: no late insert, no layout shift
+  const rowTxt = $("notifyrowtxt"), rowDot = document.querySelector("#notifyrow .bell-i");
+  const mark = on => { bell.classList.toggle("on", !!on); if(rowDot) rowDot.classList.toggle("on", !!on); if(rowTxt) rowTxt.textContent = on ? "ON \u2014 har ghante ek sawaal" : supported ? "Band hai" : "Is browser mein nahi chalti"; };
+  mark(false);
 
   const sheet = document.createElement("div");
   sheet.className = "scrim"; sheet.id = "notifysheet"; sheet.setAttribute("role", "dialog"); sheet.setAttribute("aria-modal", "true");
@@ -50,16 +50,16 @@
     // A subscription made with other VAPID keys can never receive anything: drop it and start over.
     if(sub && sub.options && sub.options.applicationServerKey){
       const have = btoa(String.fromCharCode(...new Uint8Array(sub.options.applicationServerKey))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-      if(have !== cfg.publicKey){ try{ await api({ unsubscribe: true, endpoint: sub.endpoint }); await sub.unsubscribe(); }catch(e){} sub = null; bell.classList.remove("on"); }
+      if(have !== cfg.publicKey){ try{ await api({ unsubscribe: true, endpoint: sub.endpoint }); await sub.unsubscribe(); }catch(e){} sub = null; mark(false); }
     }
     if(sub){
-      st.textContent = "Is device pe notification ON hai.";
+      mark(true); st.textContent = "Is device pe notification ON hai.";
       btn("Test notification bhejo", async () => { const r = await api({ test: true, subscription: sub.toJSON() }); toast(r.ok ? "Test bhej diya" : "Nahi gaya — dobara ON karo"); });
       btn("Band karo", async () => { await api({ unsubscribe: true, endpoint: sub.endpoint }); await sub.unsubscribe(); toast("Notification band"); });
     } else if(Notification.permission === "denied"){
       st.textContent = "Browser ne notification block kar rakhi hai — site settings mein allow karo.";
     } else {
-      st.textContent = "Abhi band hai.";
+      mark(false); st.textContent = "Abhi band hai.";
       btn("Notification ON karo", async () => {
         const perm = await Notification.requestPermission();
         if(perm !== "granted") throw new Error("Permission nahi mili");
@@ -73,7 +73,7 @@
   }
   const syncCode = () => { try{ return localStorage.getItem("prep-sync-key") || undefined; }catch(e){ return undefined; } };
   supported && navigator.serviceWorker.ready.then(() => getSub()).then(s => {
-    bell.classList.toggle("on", !!s);
+    mark(s);
     // Tell the server which sync record is yours, so notifications favour your weak topics.
     if(s && syncCode()) api({ subscription: s.toJSON(), sync: syncCode() }).catch(() => {});
   }).catch(() => {});

@@ -10,41 +10,64 @@
 <title>Interview Prep — .NET, Angular, PostgreSQL</title>
 <!-- Personal prep tool: keep it out of search results. Remove if it should be findable. -->
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0d0f14" media="(prefers-color-scheme: dark)">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+<meta name="theme-color" content="#0F1219">
+<link rel="preload" href="/fonts/Figtree.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/BricolageGrotesque.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/skin.css">
 <link rel="stylesheet" href="css/platform.css">
+<link rel="stylesheet" href="css/lamplight.css">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/png" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<script>try{var t=localStorage.getItem("prep-theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<script>try{var t=localStorage.getItem("prep-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;var d=t?t==="dark":!(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=d?"#0F1219":"#FAF7F2";}catch(e){}</script>
 </head>
 <body>
-<script>(function(){var m="home",h=location.hash,q=location.search,x=/^#\/([a-z]+)/.exec(h);if(/[?&](q|quiz|drill)=/.test(q))m="interview";else if(x){if(["learn","lab","logic","decide"].indexOf(x[1])>-1)m=x[1];else if(["interview","plan","answers","checklist","practice","cheat","diary"].indexOf(x[1])>-1)m="interview";}document.body.dataset.mode=m;})();</script>
+<script>(function(){var m="home",h=location.hash,q=location.search,x=/^#\/([a-z]+)/.exec(h);if(/[?&](q|quiz|drill)=/.test(q))m="interview";else if(x){if(["learn","lab","logic","decide"].indexOf(x[1])>-1)m=x[1];else if(["interview","revise","plan","answers","checklist","practice","cheat"].indexOf(x[1])>-1)m="interview";else if(["career","diary"].indexOf(x[1])>-1)m="career";}document.body.dataset.mode=m;document.body.dataset.nav=m==="logic"||m==="decide"?"lab":m;})();</script>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-4.5v-6h-7v6H4a1 1 0 0 1-1-1z"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6.5C10.5 5 8 4.5 4 4.5v13c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-13c-4 0-6.5.5-8 2zM12 6.5v13"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6.2L4.8 18.3A2 2 0 0 0 6.5 21.3h11a2 2 0 0 0 1.7-3L14 9.2V3M7.5 15h9"/></symbol>
+<symbol id="i-cards" viewBox="0 0 24 24"><rect x="4" y="7" width="13" height="13" rx="2.5"/><path d="M8 3.5h10.5A1.5 1.5 0 0 1 20 5v11M8 12h5M8 15.5h3"/></symbol>
+<symbol id="i-brief" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 13h18"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 9.5a6 6 0 1 1 12 0c0 5.5 2 7 2 7H4s2-1.5 2-7zM10 20a2 2 0 0 0 4 0"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2.5c.5 3.5 5.5 6 5.5 11a5.5 5.5 0 0 1-11 0c0-2 1-3.5 2-4.5.2 1.5.8 2.5 1.8 3C10.2 8.5 10.5 5 12 2.5z"/></symbol>
+<symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M6 21h12M5 7h14M5 7l-2.5 6a3 3 0 0 0 5 0zM19 7l-2.5 6a3 3 0 0 0 5 0z"/></symbol>
+</svg>
 <header class="appbar" id="appbar">
-  <a class="brand" id="brand" href="#/home"><span class="brand-back">‹ </span>Prep</a>
+  <a class="brand" id="brand" href="#/home" aria-label="Prep home">
+    <svg class="brand-back" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg>
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="#1E232E"/><circle cx="11.5" cy="15" r="4.2" fill="#FFB224"/><circle cx="20.5" cy="15" r="4.2" fill="#FFB224"/><circle cx="12.3" cy="15.4" r="1.6" fill="#1F1300"/><circle cx="19.7" cy="15.4" r="1.6" fill="#1F1300"/><path d="M14.5 21.5h3l-1.5 2z" fill="#FFB224"/></svg>
+    <span class="brand-word" id="brandword">prep<i>.</i></span>
+  </a>
   <div class="toprow">
-    <button class="theme-btn" id="syncbtn" type="button" aria-haspopup="dialog">Sync</button>
-    <button class="theme-btn" id="themebtn" type="button" aria-label="Theme badlo"></button>
+    <button class="abtn" id="bellbtn" type="button" aria-label="Notification"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-bell"/></svg></button>
+    <button class="abtn" id="mebtn" type="button" aria-haspopup="dialog" aria-label="Me &mdash; settings. Sync: off" data-s="off"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-user"/></svg><i class="sdot" aria-hidden="true"></i></button>
   </div>
 </header>
-<div class="wrap">
-
-<div class="start" role="region" aria-label="Aaj ka plan">
-  <button type="button" class="start-card" id="homeplan">
-    <span class="start-k">Aaj ka plan</span>
-    <strong id="homeplant">Study plan kholo</strong>
-    <span id="homeplans" class="start-s"></span>
-    <span class="co-n">&rsaquo;</span>
-  </button>
-  <p class="start-line" id="homeline"></p>
+<div class="subbar" id="subbar" hidden>
+  <div class="chips" id="revbar" role="tablist" aria-label="Revise">
+    <button type="button" class="chip" role="tab" data-tab="answers" data-key="">Answers</button>
+    <button type="button" class="chip" role="tab" data-tab="practice" data-key="">Practice</button>
+    <button type="button" class="chip" role="tab" data-tab="cheat" data-key="">Cheat</button>
+    <button type="button" class="chip" role="tab" data-tab="checklist" data-key="">Checklist</button>
+    <button type="button" class="chip" role="tab" data-tab="plan" data-key="">Plan</button>
+  </div>
+  <div class="seg" id="labseg" role="tablist" aria-label="Lab">
+    <button type="button" role="tab" data-go="lab">Code</button>
+    <button type="button" role="tab" data-go="logic">Logic</button>
+    <button type="button" role="tab" data-go="decide">Decide</button>
+  </div>
 </div>
+<div id="stage">
+<div class="wrap" id="answers">
 
 <!-- Legacy launchers: hidden. shell.js clicks these to open a screen, app.js still binds them. -->
 <div class="launch" id="legacy-launch" hidden aria-hidden="true">
@@ -173,6 +196,7 @@
   </div>
   <div class="cheat-body">
     <div class="inner">
+      <button type="button" class="mock-cta" id="careermock"><span class="mc-t"><b>Mock interview</b><small>8 sawaal, AI interviewer, end mein Hire / No hire</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chev"/></svg></button>
       <div class="cheat-filters" role="tablist">
         <button class="tab" role="tab" data-dytab="jobs" aria-selected="true">Jobs</button>
         <button class="tab" role="tab" data-dytab="int" aria-selected="false">Interviews</button>
@@ -408,6 +432,14 @@
   </div>
 </div>
 
+<div id="platform">
+  <div class="mod" id="m-home"></div>
+  <div class="mod" id="m-learn"></div>
+  <div class="mod" id="m-lab"></div>
+  <div class="mod" id="m-logic"></div>
+  <div class="mod" id="m-decide"></div>
+</div>
+</div>
 <div class="scrim" id="syncsheet" role="dialog" aria-modal="true" aria-labelledby="synctitle">
   <div class="sheet-ask sync-sheet">
     <p class="ask-q" id="synctitle">Phone aur laptop sync</p>
@@ -452,33 +484,43 @@
   </div>
 </div>
 
-<div id="platform">
-  <div class="mod" id="m-home"></div>
-  <div class="mod" id="m-learn"></div>
-  <div class="mod" id="m-lab"></div>
-  <div class="mod" id="m-logic"></div>
-  <div class="mod" id="m-decide"></div>
-</div>
 <button type="button" class="mini" id="mini" hidden aria-label="Continue"></button>
-<nav class="tabbar" id="pnav" aria-label="Platform">
-  <button type="button" data-go="home" data-key=""><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/></svg><span>Home</span></button>
-  <button type="button" data-go="learn" data-key=""><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M9 8h6"/></svg><span>Seekho</span></button>
-  <button type="button" data-go="lab" data-key=""><svg viewBox="0 0 24 24"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/></svg><span>Code Lab</span></button>
-  <button type="button" data-go="logic" data-key=""><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 10a3 3 0 116 0c0 2-3 2-3 4M12 17h.01"/></svg><span>Logic</span></button>
-  <button type="button" data-go="decide" data-key=""><svg viewBox="0 0 24 24"><path d="M12 3v18M5 7h14M5 7l-2 6a3 3 0 006 0zM19 7l-2 6a3 3 0 006 0z"/></svg><span>Decide</span></button>
-  <button type="button" data-go="interview" data-key=""><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg><span>Interview</span></button>
-</nav>
-
-<nav class="tabbar" id="tabbar" aria-label="Main">
-  <button type="button" data-tab="plan" data-key="Alt+1" title="Alt+1"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg><span>Plan</span></button>
-  <button type="button" data-tab="answers" data-key="Alt+2" title="Alt+2" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M4 19V5M9 8h6"/></svg><span>Answers</span></button>
-  <button type="button" data-tab="checklist" data-key="Alt+3" title="Alt+3"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg><span>Checklist</span></button>
-  <button type="button" data-tab="practice" data-key="Alt+4" title="Alt+4"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Practice</span></button>
-  <button type="button" data-tab="cheat" data-key="Alt+5" title="Alt+5"><svg viewBox="0 0 24 24"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg><span>Cheat</span></button>
-  <button type="button" data-tab="diary" data-key="Alt+6" title="Alt+6"><svg viewBox="0 0 24 24"><path d="M5 4h12a2 2 0 012 2v14H7a2 2 0 01-2-2z"/><path d="M9 9h6M9 13h6"/></svg><span>Diary</span></button>
+<nav class="nav" id="pnav" aria-label="Main">
+  <div class="side-brand" aria-hidden="true"><svg viewBox="0 0 32 32" width="32" height="32"><rect width="32" height="32" rx="10" fill="#1E232E"/><circle cx="11.5" cy="15" r="4.2" fill="#FFB224"/><circle cx="20.5" cy="15" r="4.2" fill="#FFB224"/><circle cx="12.3" cy="15.4" r="1.6" fill="#1F1300"/><circle cx="19.7" cy="15.4" r="1.6" fill="#1F1300"/><path d="M14.5 21.5h3l-1.5 2z" fill="#FFB224"/></svg><b>prep<i>.</i></b></div>
+  <button type="button" data-go="home" data-key="Alt+1" title="Alt+1"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></span><span class="lbl">Aaj</span></button>
+  <button type="button" data-go="learn" data-key="Alt+2" title="Alt+2"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-book"/></svg></span><span class="lbl">Seekho</span></button>
+  <button type="button" data-go="lab" data-key="Alt+3" title="Alt+3"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-flask"/></svg></span><span class="lbl">Lab</span></button>
+  <button type="button" data-go="interview" data-key="Alt+4" title="Alt+4"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-cards"/></svg></span><span class="lbl">Revise</span></button>
+  <button type="button" data-go="career" data-key="Alt+5" title="Alt+5"><span class="pill"><svg viewBox="0 0 24 24"><use href="#i-brief"/></svg></span><span class="lbl">Career</span><i class="tab-dot" id="careerdot" hidden></i></button>
 </nav>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="scrim" id="settings" role="dialog" aria-modal="true" aria-labelledby="settitle">
+  <div class="sheet-ask settings-sheet">
+    <div class="grab" aria-hidden="true"></div>
+    <p class="ask-q" id="settitle">Me &mdash; settings</p>
+    <p class="set-label" id="themelab">Theme</p>
+    <div class="seg" id="themeseg" role="radiogroup" aria-labelledby="themelab">
+      <button type="button" role="radio" data-theme-set="dark" aria-checked="false">Dark</button>
+      <button type="button" role="radio" data-theme-set="light" aria-checked="false">Light</button>
+      <button type="button" role="radio" data-theme-set="auto" aria-checked="false">Auto</button>
+    </div>
+    <p class="set-label">Sync</p>
+    <button type="button" class="set-row" id="syncbtn" data-s="off" aria-haspopup="dialog">
+      <i class="sdot-i" aria-hidden="true"></i>
+      <span class="sr-t"><b>Phone aur laptop sync</b><small id="syncrow">Off &mdash; sirf is device pe</small></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chev"/></svg>
+    </button>
+    <p class="set-label">Reminder</p>
+    <button type="button" class="set-row" id="notifyrow">
+      <i class="sdot-i bell-i" aria-hidden="true"></i>
+      <span class="sr-t"><b>Padhai ki notification</b><small id="notifyrowtxt">Har ghante ek sawaal</small></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chev"/></svg>
+    </button>
+    <button class="ask-cancel" id="setclose" type="button">Band karo</button>
+  </div>
+</div>
 
 <div class="scrim" id="scrim" role="dialog" aria-modal="true" aria-labelledby="askq">
   <div class="sheet-ask">
@@ -509,5 +551,6 @@
 <script src="js/decide.js"></script>
 <script src="js/platform.js"></script>
 <script src="js/notify.js"></script>
+<script src="js/feel.js"></script>
 </body>
 </html>

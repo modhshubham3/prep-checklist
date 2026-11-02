@@ -1,90 +1,204 @@
-/* Platform router + Home. Modes (body[data-mode]): home | learn | lab | logic | decide | interview.
-   "interview" is the original prep app (tabs handled by shell.js). Hash routes: #/home  #/learn[/id]  #/lab[/id]  #/logic  #/decide[/id]  #/interview  #/<old tab>. */
+/* Platform router + Home (Aaj).
+   Tabs: Aaj (home) · Seekho (learn) · Lab (lab / logic / decide, segmented) · Revise (answers practice cheat checklist plan, chips)
+   · Career (diary + mock interview). body[data-mode] = home | learn | lab | logic | decide | interview (Revise) | career;
+   body[data-nav] = the highlighted tab. Revise/Career screens are the old Interview-Prep views driven by shell.js.
+   Hash routes: #/home #/learn[/id] #/lab[/id] #/logic #/decide[/id] #/answers #/plan #/checklist #/practice #/cheat #/diary #/career
+   (+ #/interview, #/revise). Route changes run inside a View Transition (fade-through / shared-axis) with a CSS fallback. */
 (() => {
-  const { el, btn, S } = P;
+  const { el, S } = P;
   const MODS = ["home", "learn", "lab", "logic", "decide"];
-  const TABS = ["plan", "answers", "checklist", "practice", "cheat", "diary"];
-  const root = id => document.getElementById("m-" + id);
+  const REV = ["plan", "answers", "checklist", "practice", "cheat"];
+  const NAV = { home: "home", learn: "learn", lab: "lab", logic: "lab", decide: "lab", interview: "interview", career: "career" };
+  const TITLES = { learn: "Seekho", lab: "Code Lab", decide: "Decision Lab" };
+  const SCREEN = { plan: "plan", checklist: "allq", practice: "practice", cheat: "cheat", diary: "diary" };
+  const $ = id => document.getElementById(id);
+  const root = id => $("m-" + id);
+  const body = document.body, de = document.documentElement;
 
   function parse(){
-    if(/[?&](q|quiz|drill)=/.test(location.search)) return { mode: "interview" };       // notification deep links
+    if(/[?&](q|quiz|drill)=/.test(location.search)) return { mode: "interview", tab: "" };       // notification deep links
     const m = /^#\/([a-z]+)(?:\/([a-z0-9-]+))?$/.exec(location.hash);
     if(!m) return { mode: "home" };
     if(MODS.includes(m[1])) return { mode: m[1], id: m[2] || "" };
-    if(m[1] === "interview" || TABS.includes(m[1])) return { mode: "interview" };
+    if(m[1] === "interview" || m[1] === "revise") return { mode: "interview", tab: "" };
+    if(REV.includes(m[1])) return { mode: "interview", tab: m[1] };
+    if(m[1] === "career" || m[1] === "diary") return { mode: "career" };
     return { mode: "home" };
   }
 
-  let lastKey = "";
-  function route(){
-    const r = parse(), key = r.mode + "/" + (r.id || "");
-    document.body.dataset.mode = r.mode;
-    document.querySelectorAll("#pnav button").forEach(b => { if(b.dataset.go === r.mode) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
-    document.querySelectorAll("#platform .mod").forEach(m => { m.classList.toggle("on", m.id === "m-" + r.mode); m.inert = m.id !== "m-" + r.mode; });
-    if(r.mode === "interview"){
-      if(!location.hash || location.hash === "#/interview"){ try{ history.replaceState(null, "", "#/answers" + location.search); }catch(e){} }
-      if(window.prepShell) window.prepShell.fromHash();
-      lastKey = key; paintMini(); return;
+  /* ---------------- scroll memory + screen helpers ---------------- */
+  const memo = {};
+  function scroller(c){
+    if(!c) return null;
+    if(c.mode === "interview" || c.mode === "career"){
+      if(c.tab === "answers") return document.querySelector(".wrap");
+      const v = $(SCREEN[c.tab]); return v && v.querySelector(".cheat-body");
     }
-    // Leaving the interview screens: close open overlays first (practice may ask "interview chhod rahe ho?").
-    if(window.prepShell && !window.prepShell.closeAll()){ P.nav("#/interview"); return; }
-    const host = root(r.mode);
-    (r.mode === "home" ? renderHome : (P.mods[r.mode] || { render(h){ h.textContent = "Coming soon"; } }).render)(host, r.id);
-    if(key !== lastKey) host.scrollTop = 0;
-    lastKey = key; paintMini();
+    return root(c.mode);
+  }
+
+  /* ---------------- View Transitions (with a CSS fallback) ---------------- */
+  const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const stage = $("stage");
+  function swap(update, kind){
+    if(typeof document.startViewTransition === "function"){
+      de.dataset.vt = reduced() ? "fade" : kind;
+      let vt;
+      try{ vt = document.startViewTransition(() => { try{ update(); }catch(e){ console.error(e); } }); }
+      catch(e){ delete de.dataset.vt; update(); return; }
+      vt.ready.catch(() => {}); vt.updateCallbackDone.catch(() => {});
+      vt.finished.catch(() => {}).then(() => { delete de.dataset.vt; });
+    } else {
+      update();
+      const c = kind === "fwd" ? "entering-x" : kind === "back" ? "entering-b" : "entering";
+      stage.classList.remove("entering", "entering-x", "entering-b"); void stage.offsetWidth; stage.classList.add(c);
+      setTimeout(() => stage.classList.remove(c), 300);
+    }
+  }
+
+  /* ---------------- router ---------------- */
+  let cur = null, pendingHref = "", afterFns = [];
+  P.after = fn => { afterFns.push(fn); };
+  P.lastLab = "lab";
+
+  function keyOf(r){ return r.mode === "career" ? "career" : r.mode === "interview" ? "interview/" + (r.tab || "") : r.mode + "/" + (r.id || ""); }
+
+  function route(o){
+    o = o || {};
+    if(o.evt){ if(location.href === pendingHref) return; P.pushed = Math.max(0, (P.pushed || 0) - 1); }
+    pendingHref = location.href;
+    const r = parse(), key = keyOf(r);
+    if(!cur){ apply(false); return; }
+    if(o.nav && cur.key === key && !(r.mode === "interview" && !r.tab)){        // tapped the screen we are on: back to top
+      const sc = scroller(cur); if(sc) sc.scrollTo({ top: 0, behavior: reduced() ? "auto" : "smooth" });
+      return;
+    }
+    const kind = cur.mode === r.mode && (r.id || "") !== (cur.id || "") ? (r.id ? "fwd" : "back") : "fade";
+    const rerender = !o.nav && !o.evt && cur.key === key;                    // P.route() on the visible screen (e.g. decision reset)
+    swap(() => apply(rerender), kind);
   }
   P.route = route;
 
-  /* ---------------- Home: fitness-tracker style "Today" ---------------- */
-  const NS = "http://www.w3.org/2000/svg";
-  const svg = (tag, attrs) => { const e = document.createElementNS(NS, tag); for(const k in attrs) e.setAttribute(k, attrs[k]); return e; };
-  const KINDS = [["learn", "Seekho", "📖", "Predict, animation, playground"], ["code", "Code Lab", "🧩", "Code runs + solves"], ["mind", "Mind", "🧠", "Decisions, dry-run, drills"]];
-  const DAY = ["R", "S", "M", "T", "W", "T", "F"];                         // getDay(): Sun=0 -> labelled below from the date itself
-  const dayLetter = d => ["S", "M", "T", "W", "T", "F", "S"][new Date(d + "T12:00:00").getDay()];
-
-  function ringsSvg(date){
-    const root = svg("svg", { viewBox: "0 0 140 140", class: "rings", role: "img" });
-    const parts = [];
-    [["learn", 60], ["code", 46], ["mind", 32]].forEach(([k, r]) => {
-      const C = 2 * Math.PI * r, p = P.ring(k, date);
-      root.appendChild(svg("circle", { cx: 70, cy: 70, r, class: "ring-track" }));
-      if(p > 0){
-        const arc = svg("circle", { cx: 70, cy: 70, r, class: "ring-arc r-" + k, "stroke-dasharray": C + " " + C, "stroke-dashoffset": C, transform: "rotate(-90 70 70)" });
-        requestAnimationFrame(() => requestAnimationFrame(() => arc.setAttribute("stroke-dashoffset", C * (1 - p))));
-        root.appendChild(arc);
+  function apply(rerender){
+    const r = parse(), prev = cur;
+    if(prev){ const sc = scroller(prev); if(sc) memo[prev.key] = sc.scrollTop; }
+    const legacy = r.mode === "interview" || r.mode === "career";
+    let next;
+    if(legacy){
+      const was = body.dataset.mode, tab = r.mode === "career" ? "diary" : (r.tab || (window.prepShell ? prepShell.tabFromHash() : "answers"));
+      body.dataset.mode = r.mode;
+      if(!location.hash || /^#\/(interview|revise)$/.test(location.hash)){ try{ history.replaceState(null, "", "#/" + tab + location.search); }catch(e){} }
+      if(window.prepShell && !prepShell.show(tab)){          // practice asked "interview chhod rahe ho?" and the user said no
+        body.dataset.mode = was; try{ history.replaceState(null, "", "#/" + prepShell.current()); }catch(e){}
+        return;
       }
-      parts.push(k + " " + Math.round(p * 100) + "%");
-    });
-    root.setAttribute("aria-label", "Aaj ke goals: " + parts.join(", "));
-    return root;
+      next = { mode: r.mode, id: "", tab, key: r.mode === "career" ? "career" : "interview/" + tab };
+    } else {
+      if(window.prepShell && !prepShell.closeAll()){ try{ history.replaceState(null, "", "#/" + prepShell.current()); }catch(e){} return; }
+      next = { mode: r.mode, id: r.id || "", key: keyOf(r) };
+    }
+    if(prev && !rerender && prev.key === next.key && !legacy) return;
+    if(prev && prev.mode !== next.mode || (prev && prev.id !== next.id)){ const ph = prev.mode && root(prev.mode); if(ph && ph._cleanup) ph._cleanup(); }   // stop a lesson's timers when leaving it
+
+    /* chrome */
+    body.dataset.mode = r.mode; body.dataset.nav = NAV[r.mode];
+    const pushed = !!r.id && !!TITLES[r.mode];
+    if(pushed) body.dataset.pushed = "1"; else delete body.dataset.pushed;
+    const word = $("brandword"); if(word){ if(pushed) word.textContent = TITLES[r.mode]; else if(!word.querySelector("i")) word.innerHTML = "prep<i>.</i>"; }
+    const sub = (r.mode === "lab" || r.mode === "logic" || r.mode === "decide") && !r.id ? "lab" : r.mode === "interview" ? "rev" : "";
+    if(sub) body.dataset.sub = sub; else delete body.dataset.sub;
+    $("subbar").hidden = !sub;
+    if(r.mode === "lab" || r.mode === "logic" || r.mode === "decide") P.lastLab = r.mode;
+    document.querySelectorAll("#pnav [data-go]").forEach(b => { if(b.dataset.go === NAV[r.mode]) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+    document.querySelectorAll("#labseg [data-go]").forEach(b => { const on = b.dataset.go === r.mode; b.setAttribute("aria-selected", on ? "true" : "false"); });
+    document.querySelectorAll("#platform .mod").forEach(m => { const on = m.id === "m-" + r.mode; m.classList.toggle("on", on); m.inert = !on; });
+
+    /* content */
+    if(!legacy){
+      const host = root(r.mode);
+      if(rerender || host._key !== next.key || host._dirty){
+        (r.mode === "home" ? renderHome : (P.mods[r.mode] || { render(h){ h.textContent = "Coming soon"; } }).render)(host, r.id);
+        host._key = next.key; host._dirty = false;
+      }
+    }
+    cur = next;
+    if(!rerender){ const sc = scroller(cur); if(sc) sc.scrollTop = memo[cur.key] || 0; }
+    $("appbar").dataset.scrolled = "false";
+    paintMini();
+    const fns = afterFns; afterFns = []; fns.forEach(f => { try{ f(); }catch(e){ console.error(e); } });
   }
 
-  function badges(){
-    const solved = (window.LAB || []).filter(x => (S.lab[x.id] || {}).solved).length, clean = (window.LAB || []).filter(x => (S.lab[x.id] || {}).clean).length;
-    const lessons = (window.LEARN || []).filter(l => (S.learn[l.id] || {}).done).length, dec = (window.DECIDE || []).filter(d => S.decide[d.id]).length, sk = P.streak();
-    const all3 = Object.keys(S.act).some(d => ["learn", "code", "mind"].every(k => P.ring(k, d) >= 1));
-    return [["🌱", "Pehla kadam", "Koi bhi ek activity", S.days.length > 0], ["🔥", "3 din", "3 din ka streak", sk >= 3], ["⚡", "7 din", "7 din ka streak", sk >= 7],
-      ["🧩", "5 solve", "5 problems solve karo", solved >= 5], ["🏆", "15 solve", "15 problems solve karo", solved >= 15], ["★", "Bina help", "3 problems bina hint ke", clean >= 3],
-      ["📖", "5 lessons", "5 lessons complete", lessons >= 5], ["⚖️", "5 faisle", "5 decisions", dec >= 5], ["🎯", "Teeno rings", "Ek din mein teeno goals poore", all3]];
+  /* ---------------- Home: Aaj ---------------- */
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = (tag, attrs) => { const e = document.createElementNS(NS, tag); for(const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+  const KINDS = [["learn", "Seekho", "Predict, animation, playground"], ["code", "Code Lab", "Code runs + solves"], ["mind", "Mind", "Decisions, dry-run, drills"]];
+  const dayLetter = d => ["S", "M", "T", "W", "T", "F", "S"][new Date(d + "T12:00:00").getDay()];
+  const RS = "prep-ring-seen";
+  const ringSeen = t => { try{ const o = JSON.parse(localStorage.getItem(RS)); if(o && o.d === t) return o.v || {}; }catch(e){} return {}; };
+
+  // Rings animate only when their value changed since they were last shown today (first show of the day: from 0).
+  function ringsSvg(date){
+    const rs = svg("svg", { viewBox: "0 0 140 140", class: "rings", role: "img" }), parts = [], seen = ringSeen(date), now = {};
+    [["learn", 60], ["code", 46], ["mind", 32]].forEach(([k, r]) => {
+      const C = 2 * Math.PI * r, p = P.ring(k, date), from = seen[k] == null ? 0 : seen[k];
+      rs.appendChild(svg("circle", { cx: 70, cy: 70, r, class: "ring-track" }));
+      if(p > 0 || from > 0){
+        const arc = svg("circle", { cx: 70, cy: 70, r, class: "ring-arc r-" + k, "stroke-dasharray": C + " " + C, "stroke-dashoffset": C * (1 - from), transform: "rotate(-90 70 70)" });
+        if(from !== p) requestAnimationFrame(() => requestAnimationFrame(() => arc.setAttribute("stroke-dashoffset", C * (1 - p))));
+        rs.appendChild(arc);
+      }
+      now[k] = p; parts.push(k + " " + Math.round(p * 100) + "%");
+    });
+    try{ localStorage.setItem(RS, JSON.stringify({ d: date, v: now })); }catch(e){}
+    rs.setAttribute("aria-label", "Aaj ke goals: " + parts.join(", "));
+    return rs;
+  }
+
+  function step(kind, icon, title, sub, done, hash){
+    const b = el("button", "hstep " + kind + (done ? " done" : "")); b.type = "button";
+    const i = el("span", "hs-i"); i.appendChild(P.icon(icon));
+    const t = el("span", "hs-t"); t.append(el("b", null, title), el("small", null, sub));
+    const ok = el("span", "hs-ok"); if(done) ok.appendChild(P.icon("check"));
+    b.append(i, t, ok); b.addEventListener("click", () => P.nav(hash)); return b;
   }
 
   function renderHome(host){
-    host.innerHTML = "";
+    host.replaceChildren();
     const t = P.today(), a = P.actOf(t), tot = KINDS.reduce((n, [k]) => n + P.ring(k, t), 0) / 3;
+    const nl = (window.LEARN || []).find(l => !(S.learn[l.id] || {}).done);
+    const nx = (window.LAB || []).find(x => !(S.lab[x.id] || {}).solved);
+    const nd = (window.DECIDE || []).find(d => !S.decide[d.id]);
 
     const top = el("div", "tday");
     const when = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" });
     const tt = el("div"); tt.append(el("small", null, when.toUpperCase()), el("h1", null, "Aaj"));
-    top.append(tt, el("span", "pill", "🔥 " + P.streak() + " din")); host.appendChild(top);
+    const sp = el("span", "spill"); sp.append(P.icon("flame"), document.createTextNode(P.streak() + " din")); top.append(tt, sp);
+    host.appendChild(top);
+
+    // the one primary action: today's 30 minutes = a lesson, a problem, a decision
+    const tasks = [
+      ["learn", "book", nl ? nl.title : "Saare lessons ho gaye", nl ? "Seekho · ~8 min" : "Seekho · dobara dekh sakte ho", P.ring("learn", t) >= 1, nl ? "#/learn/" + nl.id : "#/learn"],
+      ["code", "code", nx ? nx.title : "Saare problems solve", nx ? "Code Lab · ~15 min" : "Code Lab · revision", P.ring("code", t) >= 1, nx ? "#/lab/" + nx.id : "#/lab"],
+      ["mind", "scale", nd ? nd.title : "Saare faisle ho gaye", nd ? "Decision Lab · ~7 min" : "Decision Lab · revision", P.ring("mind", t) >= 1, nd ? "#/decide/" + nd.id : "#/decide"],
+    ];
+    const doneN = tasks.filter(x => x[4]).length, firstOpen = tasks.find(x => !x[4]);
+    const hero = el("div", "hero"); hero.setAttribute("role", "region"); hero.setAttribute("aria-label", "Aaj ka plan");
+    hero.append(el("div", "hero-k", doneN === 3 ? "Aaj ka kaam ho gaya" : "Aaj ka plan"), el("h2", null, "Aaj ka 30 min"),
+      el("p", null, doneN === 3 ? "Teeno goals poore. Ek aur lesson ya Revise karke din band karo." : "Pehle khud socho, phir AI. Teen chhote kaam: lesson, code, faisla."));
+    const steps = el("div", "hsteps"); tasks.forEach(x => steps.appendChild(step(x[0], x[1], x[2], x[3], x[4], x[5]))); hero.appendChild(steps);
+    const go = el("button", "pbtn big"); go.type = "button"; go.id = "homego";
+    go.textContent = doneN === 0 ? "Aaj ka 30 min — shuru karo" : doneN === 3 ? "Aaj ka 30 min poora ✓ — Revise karo" : "Aaj ka 30 min — jaari rakho";
+    go.addEventListener("click", () => P.nav(doneN === 3 ? "#/answers" : firstOpen[5]));
+    hero.appendChild(go); host.appendChild(hero);
 
     // rings + legend
     const card = el("div", "ringcard"), figure = el("div", "ringfig");
     figure.appendChild(ringsSvg(t));
     const c = el("div", "ring-c"); c.append(el("b", null, Math.round(tot * 100) + "%"), el("small", null, "goal")); figure.appendChild(c);
     const legend = el("div", "ringleg");
-    KINDS.forEach(([k, name, ic, sub]) => {
+    KINDS.forEach(([k, name, sub]) => {
       const row = el("div", "leg"); const sw = el("span", "sw sw-" + k);
-      const txt = el("div"); txt.append(el("strong", null, ic + " " + name), el("small", null, sub));
+      const txt = el("div"); txt.append(el("strong", null, name), el("small", null, sub));
       row.append(sw, txt, el("b", "leg-v", Math.min(a[k], P.GOALS[k]) + " / " + P.GOALS[k]));
       legend.appendChild(row);
     });
@@ -100,85 +214,59 @@
     });
     host.appendChild(week);
 
-    // continue (music-player style)
+    // continue where you left off
     const L = S.last;
-    const nl = (window.LEARN || []).find(l => !(S.learn[l.id] || {}).done);
-    const cont = el("button", "cont"); cont.type = "button";
     if(L && !(L.kind === "learn" ? (S.learn[L.id] || {}).done : (S.lab[L.id] || {}).solved)){
+      const cont = el("button", "cont"); cont.type = "button";
       cont.appendChild(P.cover(L.hue || 200, L.icon || "▶", "sm"));
       const m = el("span", "cont-t"); m.append(el("small", null, "CONTINUE"), el("strong", null, L.title), el("small", null, L.kind === "learn" ? "Seekho · step " + L.pos + " / " + L.total : "Code Lab · " + (L.runs || 0) + " koshish"));
-      cont.appendChild(m);
-      if(L.kind === "learn"){ const bar = el("span", "cont-bar"); bar.style.setProperty("--p", (100 * L.pos / L.total) + "%"); cont.appendChild(bar); }
-      cont.appendChild(el("span", "cont-play", "▶"));
+      const pl = el("span", "cont-play"); pl.appendChild(P.icon("play"));
+      cont.append(m, pl);
+      if(L.kind === "learn"){ const bar = el("span", "cont-bar"); bar.style.setProperty("--pn", L.pos / L.total); cont.appendChild(bar); }
       cont.addEventListener("click", () => P.nav("#/" + (L.kind === "learn" ? "learn/" : "lab/") + L.id));
-    } else if(nl){
-      cont.appendChild(P.cover(250, P.LESSON_ICON[nl.id] || "📘", "sm"));
-      const m = el("span", "cont-t"); m.append(el("small", null, "UP NEXT"), el("strong", null, nl.title), el("small", null, "Seekho · " + nl.frames.length + " steps"));
-      cont.append(m, el("span", "cont-play", "▶")); cont.addEventListener("click", () => P.nav("#/learn/" + nl.id));
-    } else { cont.appendChild(el("strong", null, "Saare lessons ho gaye ✓")); cont.disabled = true; }
-    host.appendChild(cont);
-
-    // stat tiles
-    const cnt = (arr, f) => (arr || []).filter(f).length;
-    const tiles = el("div", "stats");
-    [["🔥", P.streak(), "din streak"], ["🧩", cnt(window.LAB, x => (S.lab[x.id] || {}).solved), "problems solve"], ["📖", cnt(window.LEARN, l => (S.learn[l.id] || {}).done), "lessons"], ["⚖️", cnt(window.DECIDE, d => S.decide[d.id]), "faisle"]].forEach(([ic, v, lab]) => {
-      const x = el("div", "stat"); x.append(el("span", "stat-i", ic), el("b", null, String(v)), el("small", null, lab)); tiles.appendChild(x);
-    });
-    host.appendChild(tiles);
-
-    // weekly activity chart: one series (total points), today emphasised
-    const days = P.lastDays(7), vals = days.map(d => { const o = P.actOf(d); return o.learn + o.code + o.mind; }), max = Math.max(6, ...vals);
-    const chart = el("div", "wchart"); chart.appendChild(el("h3", null, "Is hafte ki activity"));
-    const bars = el("div", "bars");
-    days.forEach((d, i) => {
-      const col = el("div", "bcol" + (d === t ? " today" : "")); col.title = d + ": " + vals[i] + " points";
-      const bar = el("div", "bar"); bar.style.height = Math.max(vals[i] ? 6 : 3, 100 * vals[i] / max) + "%";
-      const wrap = el("div", "barwrap"); wrap.appendChild(bar);
-      col.append(el("small", "bv", d === t || vals[i] === max ? String(vals[i]) : ""), wrap, el("small", "bl", dayLetter(d))); bars.appendChild(col);
-    });
-    chart.appendChild(bars);
-    const det = el("details", "tbl"); det.appendChild(el("summary", null, "Table dikhao"));
-    const table = el("table"); days.forEach((d, i) => { const r = table.insertRow(); r.insertCell().textContent = d; r.insertCell().textContent = vals[i] + " points"; }); det.appendChild(table);
-    chart.appendChild(det); host.appendChild(chart);
-
-    // browse tiles
-    host.appendChild(el("h3", "sec", "Browse"));
-    const grid = el("div", "browse");
-    [["learn", "📖", "Seekho", 265], ["lab", "🧩", "Code Lab", 150], ["logic", "🧠", "Logic Gym", 30], ["decide", "⚖️", "Decision Lab", 330], ["interview", "🎯", "Interview Prep", 200]].forEach(([go, ic, name, h]) => {
-      const b = el("button", "btile"); b.type = "button"; b.style.background = "linear-gradient(135deg, hsl(" + h + " 65% 42%), hsl(" + ((h + 40) % 360) + " 70% 26%))";
-      b.append(el("strong", null, name), el("span", "btile-i", ic)); b.addEventListener("click", () => P.nav("#/" + go)); grid.appendChild(b);
-    });
-    host.appendChild(grid);
-
-    // achievements
-    host.appendChild(el("h3", "sec", "Achievements"));
-    const bd = el("div", "badges");
-    badges().forEach(([ic, name, how, on]) => { const b = el("div", "badge" + (on ? " on" : "")); b.title = how; b.append(el("span", "badge-i", on ? ic : "🔒"), el("b", null, name), el("small", null, how)); bd.appendChild(b); });
-    host.appendChild(bd);
+      host.appendChild(cont);
+    }
 
     const rules = el("div", "callout");
-    rules.innerHTML = "<b>Rules:</b> pehle khud likho · hint ek run ke baad · solution 5 koshish + 3 hints ke baad · office mein Claude ko dene se pehle 10 minute khud socho.";
+    rules.textContent = "Rules: pehle khud likho · hint ek run ke baad · solution 5 koshish + 3 hints ke baad · office mein Claude ko dene se pehle 10 minute khud socho.";
     host.appendChild(rules);
   }
 
   /* ---------------- mini player: continue where you left off ---------------- */
   function paintMini(){
-    const m = document.getElementById("mini"), L = S.last, mode = document.body.dataset.mode, r = parse();
+    const m = $("mini"), L = S.last, mode = body.dataset.mode, r = parse();
     const finished = !L || (L.kind === "learn" ? (S.learn[L.id] || {}).done : (S.lab[L.id] || {}).solved);
     const here = L && r.id === L.id && r.mode === (L.kind === "learn" ? "learn" : "lab");
-    if(!m || finished || mode === "interview" || mode === "home" || here){ if(m) m.hidden = true; return; }
-    m.hidden = false; m.innerHTML = "";
-    const bar = el("span", "mini-bar"); bar.style.setProperty("--p", L.kind === "learn" ? (100 * L.pos / L.total) + "%" : "0%");
+    if(!m || finished || mode === "interview" || mode === "career" || mode === "home" || here){ if(m) m.hidden = true; return; }
+    m.hidden = false; m.replaceChildren();
+    const bar = el("span", "mini-bar"); bar.style.setProperty("--pn", L.kind === "learn" ? L.pos / L.total : 0);
     m.append(P.cover(L.hue || 200, L.icon || "▶", "xs"));
     const t = el("span", "mini-t"); t.append(el("strong", null, L.title), el("small", null, L.kind === "learn" ? "Seekho · step " + L.pos + " / " + L.total : "Code Lab · " + (L.runs || 0) + " koshish"));
-    m.append(t, el("span", "cont-play sm", "▶"), bar);
+    const pl = el("span", "cont-play sm"); pl.appendChild(P.icon("play"));
+    m.append(t, pl, bar);
     m.onclick = () => P.nav("#/" + (L.kind === "learn" ? "learn/" : "lab/") + L.id);
   }
   P.paintMini = paintMini;
 
-  window.addEventListener("hashchange", route);
-  window.addEventListener("popstate", route);
-  document.querySelectorAll("#pnav button").forEach(b => b.addEventListener("click", () => P.nav("#/" + b.dataset.go)));
-  const brand = document.getElementById("brand"); if(brand) brand.addEventListener("click", e => { e.preventDefault(); P.nav("#/home"); });
+  /* ---------------- wiring ---------------- */
+  // Android fires popstate and hashchange for one Back: route() ignores the second (same href).
+  window.addEventListener("popstate", () => route({ evt: true }));
+  window.addEventListener("hashchange", () => route({ evt: true }));
+  document.querySelectorAll("#pnav [data-go]").forEach(b => b.addEventListener("click", () => {
+    const g = b.dataset.go, active = body.dataset.nav === g;
+    let hash = { home: "#/home", learn: "#/learn", lab: "#/" + P.lastLab, interview: "#/" + (window.prepLastRev || "answers"), career: "#/career" }[g];
+    if(active && cur && cur.id) hash = "#/" + cur.mode;
+    P.nav(hash);
+  }));
+  document.querySelectorAll("#labseg [data-go]").forEach(b => b.addEventListener("click", () => P.nav("#/" + b.dataset.go)));
+  const brand = $("brand");
+  if(brand) brand.addEventListener("click", e => {
+    e.preventDefault();
+    if(body.dataset.pushed){
+      if((P.pushed || 0) > 0 && history.length > 1){ history.back(); return; }
+      P.nav("#/" + (cur ? cur.mode : "home")); return;
+    }
+    P.nav("#/home");
+  });
   route();
 })();

@@ -11,7 +11,11 @@
   if(!S.act || typeof S.act !== "object" || Array.isArray(S.act)) S.act = {};
 
   const P = window.P = { S, mods: {} };
-  P.save = () => { try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
+  // Saving marks every hidden screen stale: it re-renders lazily when next shown. The visible one updates itself.
+  P.save = () => {
+    try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+    document.querySelectorAll("#platform .mod:not(.on)").forEach(m => { m._dirty = true; });
+  };
   P.today = () => new Date().toLocaleDateString("en-CA");
   P.touchDay = () => { const t = P.today(); if(!S.days.includes(t)) S.days.push(t); S.days = S.days.slice(-400); P.save(); };
   /* Daily activity, like a fitness tracker: three rings with a goal each (points: lesson step / code run / decision ...). */
@@ -29,7 +33,9 @@
   P.setLast = (o) => { S.last = Object.assign({ t: Date.now() }, o); P.save(); P.paintMini && P.paintMini(); };
 
   // Cover art: a gradient from a hue plus an emoji — same idea as album art.
-  P.cover = (hue, icon, cls) => { const c = P.el("div", "cover" + (cls ? " " + cls : "")); c.style.background = "linear-gradient(135deg, hsl(" + hue + " 70% 48%), hsl(" + ((hue + 45) % 360) + " 75% 28%))"; c.appendChild(P.el("span", "cover-i", icon)); return c; };
+  // Cover art: a flat tile tinted by a hue (CSS reads --h) with an emoji; no gradient, no drop-shadow.
+  P.cover = (hue, icon, cls) => { const c = P.el("div", "cover" + (cls ? " " + cls : "")); c.style.setProperty("--h", hue); c.appendChild(P.el("span", "cover-i", icon)); return c; };
+  P.icon = (name, cls) => { const s = document.createElementNS("http://www.w3.org/2000/svg", "svg"), u = document.createElementNS("http://www.w3.org/2000/svg", "use"); s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("aria-hidden", "true"); if(cls) s.setAttribute("class", cls); u.setAttribute("href", "#i-" + name); s.appendChild(u); return s; };
   P.TOPIC = { Strings: [265, "🔤"], Arrays: [200, "🧱"], Loops: [150, "🔁"], Conditions: [30, "🔀"], Maps: [320, "🗂️"], Recursion: [285, "🪆"], Math: [45, "➗"], Stacks: [8, "🥞"] };
   P.LESSON_ICON = { "variables-and-types": "📦", conditions: "🔀", loops: "🔁", arrays: "🧱", strings: "🔤", functions: "⚙️", "objects-and-maps": "🗂️", recursion: "🪆", "how-to-solve-a-problem": "🧭" };
   P.streak = () => {
@@ -45,7 +51,7 @@
   P.rich = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
   P.toast = m => { const t = document.getElementById("toast"); if(!t) return; t.textContent = m; t.classList.add("on"); clearTimeout(P._tt); P._tt = setTimeout(() => t.classList.remove("on"), 2200); };
-  P.nav = (hash) => { if(location.hash !== hash){ try{ history.pushState(null, "", hash); }catch(e){ location.hash = hash; } } P.route && P.route(); };
+  P.nav = (hash) => { if(location.hash !== hash){ P.pushed = (P.pushed || 0) + 1; try{ history.pushState(null, "", hash); }catch(e){ location.hash = hash; } } P.route && P.route({ nav: true }); };
 
   /* ---- Run learner code in a Web Worker: isolated from the page, killed after a timeout (infinite loops) ---- */
   const WORKER_SRC = `
@@ -94,9 +100,9 @@
     return ta;
   };
 
+  // Back navigation is the app bar's chevron on pushed screens; the page header is just a title.
   P.header = (title, back, sub) => {
     const h = P.el("div", "mod-head");
-    if(back) h.appendChild(P.btn("‹ " + back.label, "pback", () => P.nav(back.hash)));
     if(title) h.appendChild(P.el("h2", null, title));
     if(sub) h.appendChild(P.el("p", "mod-sub", sub));
     return h;

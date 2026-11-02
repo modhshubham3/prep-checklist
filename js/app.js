@@ -141,13 +141,29 @@ function copyTopic(row, text){
   } else fallback();
 }
 
+/* Heavy lists (checklist, cheatsheet, answers) are built lazily: in idle slices after Home has painted,
+   or all at once (ensure) the first time their screen opens. They were ~22k DOM nodes and a ~800ms task at boot. */
+function lazyBuild(n, step, fin){
+  let i = 0, done = false, h = 0, idle = false;
+  function run(budget){
+    const t0 = performance.now();
+    while(i < n && (budget == null || performance.now() - t0 < budget)) step(i++);
+    if(i >= n){ if(!done){ done = true; if(fin) fin(); } return true; }
+    return false;
+  }
+  function cancel(){ if(!h) return; if(idle) cancelIdleCallback(h); else clearTimeout(h); h = 0; }
+  function tick(dl){ h = 0; const b = dl && dl.timeRemaining ? Math.max(4, Math.min(12, dl.timeRemaining() - 2)) : 8; if(!run(b)) schedule(); }
+  function schedule(){ idle = typeof requestIdleCallback === "function"; h = idle ? requestIdleCallback(tick, { timeout: 600 }) : setTimeout(tick, 30); }
+  return { start(){ if(!done && !h) schedule(); }, ensure(){ if(!done){ cancel(); run(null); } }, get done(){ return done; } };
+}
+
 const list  = document.getElementById("list");
 const marks = document.getElementById("marks");
 const scrim = document.getElementById("scrim");
 const askTopic = document.getElementById("asktopic");
 const emptyMsg = document.getElementById("empty");
 
-DATA.forEach((sec, si) => {
+function buildSection(sec, si){
   const el = document.createElement("section");
   el.id = "sec-" + sec.id;
   if(sec.flagged) el.className = "flagged";
@@ -223,7 +239,8 @@ DATA.forEach((sec, si) => {
     el.scrollIntoView({behavior:"smooth", block:"start"});
   });
   marks.appendChild(m);
-});
+}
+const checklistL = lazyBuild(DATA.length, i => buildSection(DATA[i], i), () => refresh());
 
 /* ---- confirm sheet ---- */
 function openAsk(row, label){
@@ -324,12 +341,12 @@ function refresh(){
       else if(v === "naa") naa++;
     }));
     total += t; haan += h; thoda += td;
-    const el = document.getElementById("sec-" + sec.id);
+    const el = document.getElementById("sec-" + sec.id), bar = marks.children[si];
+    if(!el || !bar) return;
     el.querySelector("[data-count]").textContent = h + "/" + t;
     el.classList.toggle("complete", h === t);
-    const bar = marks.children[si];
-    bar.querySelector(".f-haan").style.width = (h / t * 100) + "%";
-    bar.querySelector(".f-thoda").style.width = ((h + td) / t * 100) + "%";
+    bar.querySelector(".f-haan").style.transform = "scaleX(" + (h / t) + ")";
+    bar.querySelector(".f-thoda").style.transform = "scaleX(" + ((h + td) / t) + ")";
   });
   document.getElementById("tally").innerHTML =
     haan + "<span> / " + total + " pakka</span>";
@@ -436,7 +453,7 @@ const cheatSearch = document.getElementById("cheatsearch");
 var cfilter = "all";
 const cheatFold = folds("prep-folds-cheat");
 
-CHEAT.forEach((grp, gi) => {
+function buildCheatGroup(grp, gi){
   cheatList.appendChild(grpHead(grp.g, cheatFold, () => cheatFilter()));
   grp.items.forEach(([term, def], ii) => {
     const key = kK(term);
@@ -463,10 +480,11 @@ CHEAT.forEach((grp, gi) => {
     c.append(mb, tb);
     cheatList.appendChild(c);
   });
-});
+}
+const cheatL = lazyBuild(CHEAT.length, i => buildCheatGroup(CHEAT[i], i), () => cheatRefresh());
 
 function cheatRefresh(){
-  cheatList.querySelectorAll(".ch-card").forEach(c => {
+  if(cheatL.done) cheatList.querySelectorAll(".ch-card").forEach(c => {
     const v = state[c.dataset.key];
     if(v) c.dataset.state = v; else delete c.dataset.state;
   });
@@ -480,7 +498,7 @@ function cheatRefresh(){
     haan + "/" + total + (thoda ? " · " + thoda + " thoda" : "");
   if(typeof cheatFilter === "function") cheatFilter();
 }
-cheatRefresh();
+cheatRefresh();   // tally only: the list itself builds lazily
 
 document.getElementById("cheatopen").addEventListener("click", () => {
   cheat.classList.add("on");
@@ -491,6 +509,7 @@ document.getElementById("cheatclose").addEventListener("click", () => {
   document.body.style.overflow = "";
 });
 function cheatFilter(){
+  if(!cheatL.done) return;
   const q = cheatSearch.value.trim().toLowerCase();
   walkGroups(cheatList, cheatFold, node => {
     const st = node.dataset.state;
@@ -671,8 +690,8 @@ function buildTick(){
   if(buildQ.length) buildRaf = requestAnimationFrame(buildTick);
 }
 
-const cheat2Frag = document.createDocumentFragment();
-CHEAT2.forEach((grp, gi) => {
+function buildAnswerGroup(grp, gi){
+  const cheat2Frag = document.createDocumentFragment();
   cheat2Frag.appendChild(grpHead(grp.g, cheat2Fold, () => cheat2Filter()));
 
   grp.items.forEach((it, ii) => {
@@ -717,13 +736,15 @@ CHEAT2.forEach((grp, gi) => {
     c.append(mb, main);
     cheat2Frag.appendChild(c);
   });
-});
-cheat2List.appendChild(cheat2Frag);
+  cheat2List.appendChild(cheat2Frag);
+}
+const answersL = lazyBuild(CHEAT2.length, i => buildAnswerGroup(CHEAT2[i], i), () => cheat2Refresh());
 
 // Search helpers: 1 character matches half the book (opens hundreds of cards = multi-second freeze), so wait for 2.
 function qOf(inp){ const v = inp.value.trim().toLowerCase(); return v.length < 2 ? "" : v; }
 function debounce(fn, ms){ let t; return function(){ clearTimeout(t); t = setTimeout(fn, ms); }; }
 function cheat2Filter(){
+  if(!answersL.done) return;
   const q = qOf(cheat2Search);
   walkGroups(cheat2List, cheat2Fold, node => {
     const st = node.dataset.state;
@@ -755,11 +776,10 @@ function cheat2Toggle(open){
 
 function cheat2Refresh(){
   let total = 0, haan = 0, thoda = 0;
-  cheat2List.querySelectorAll(".ch-card").forEach(c => {
-    total++;
+  CHEAT2.forEach(g => g.items.forEach(it => { total++; const v = state[kA(it.q)]; if(v === "haan") haan++; else if(v === "thoda") thoda++; }));
+  if(answersL.done) cheat2List.querySelectorAll(".ch-card").forEach(c => {
     const v = state[c.dataset.key];
     if(v) c.dataset.state = v; else delete c.dataset.state;
-    if(v === "haan") haan++; else if(v === "thoda") thoda++;
   });
   ch2Tally.textContent = haan + "/" + total + (thoda ? " \u00b7 " + thoda + " thoda" : "");
   cheat2Filter();
@@ -799,21 +819,21 @@ document.getElementById("allqclose").addEventListener("click", () => {
 /* ================= THEME ================= */
 // Follows the system setting until the user picks one; the choice is stored
 // and re-applied by the inline script in <head> before first paint.
-const themeBtn = document.getElementById("themebtn");
 const darkMQ = window.matchMedia("(prefers-color-scheme: dark)");
-function isDark(){
-  const t = document.documentElement.dataset.theme;
-  return t ? t === "dark" : darkMQ.matches;
-}
+function themeSetting(){ const t = document.documentElement.dataset.theme; return t === "light" || t === "dark" ? t : "auto"; }
+function isDark(){ const t = themeSetting(); return t === "auto" ? darkMQ.matches : t === "dark"; }
 function paintThemeBtn(){
-  themeBtn.textContent = isDark() ? "☀︎ Light" : "☾ Dark";
+  const cur = themeSetting();
+  document.querySelectorAll("[data-theme-set]").forEach(b => b.setAttribute("aria-checked", b.dataset.themeSet === cur ? "true" : "false"));
+  const m = document.querySelector('meta[name="theme-color"]');            // status bar follows the in-app choice
+  if(m) m.content = isDark() ? "#0F1219" : "#FAF7F2";
 }
-themeBtn.addEventListener("click", () => {
-  const next = isDark() ? "light" : "dark";
-  document.documentElement.dataset.theme = next;
-  try{ localStorage.setItem("prep-theme", next); }catch(e){}
+document.querySelectorAll("[data-theme-set]").forEach(b => b.addEventListener("click", () => {
+  const v = b.dataset.themeSet;
+  if(v === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v;
+  try{ if(v === "auto") localStorage.removeItem("prep-theme"); else localStorage.setItem("prep-theme", v); }catch(e){}
   paintThemeBtn();
-});
+}));
 darkMQ.addEventListener("change", paintThemeBtn);
 paintThemeBtn();
 cheat2Refresh();
@@ -839,7 +859,10 @@ const sync = (() => {
 
   function status(s, msg){
     btn.dataset.s = s;
-    btn.textContent = { off:"Sync", syncing:"Sync\u2026", ok:"Synced \u2713", error:"Sync !" }[s];
+    const me = document.getElementById("mebtn");
+    if(me){ me.dataset.s = s; me.setAttribute("aria-label", "Me \u2014 settings. Sync: " + { off:"off", syncing:"syncing", ok:"synced", error:"error" }[s]); }
+    const row = document.getElementById("syncrow");
+    if(row) row.textContent = { off:"Off \u2014 sirf is device pe", syncing:"Sync ho raha hai\u2026", ok:"Synced \u2713 \u2014 sab devices ek jaise", error:"Sync nahi hua \u2014 dobara try karo" }[s];
     statusEl.textContent = msg || {
       off: "Abhi sirf is device pe save ho raha hai.",
       syncing: "Sync ho raha hai\u2026",
@@ -954,7 +977,7 @@ const sync = (() => {
     if(c) run();
   }
 
-  btn.addEventListener("click", () => { paint(); if(code && btn.dataset.s !== "syncing") status(btn.dataset.s || "ok"); sheet.classList.add("on"); });
+  btn.addEventListener("click", () => { const st = document.getElementById("settings"); if(st) st.classList.remove("on"); paint(); if(code && btn.dataset.s !== "syncing") status(btn.dataset.s || "ok"); sheet.classList.add("on"); });
   document.getElementById("syncclose").addEventListener("click", () => sheet.classList.remove("on"));
   sheet.addEventListener("click", e => { if(e.target === sheet) sheet.classList.remove("on"); });
   document.getElementById("syncstart").addEventListener("click", () => setCode(newCode()));
@@ -1230,7 +1253,7 @@ const practice = (() => {
     if(i >= queue.length) return interview ? finishInterview() : done();
     const x = queue[i];
     $("prprog").textContent = (i + 1) + " / " + queue.length;
-    $("prbarfill").style.width = (i / queue.length * 100) + "%";
+    $("prbarfill").style.transform = "scaleX(" + (i / queue.length) + ")";
     $("prgrp").textContent = interview ? "Mock interview" : x.g;
     $("prq").innerHTML = inl(x.it.pq || x.it.q);
     $("prqc").hidden = !x.it.qc;
@@ -1482,6 +1505,7 @@ const practice = (() => {
 
 // Open one question's card (a notification tap): clear filters, unfold its topic, open it, scroll to it.
 function openCard(id){
+  answersL.ensure();
   const card = cheat2List.querySelector('.ch-card[data-key="a:' + id + '"]');
   if(!card) return false;
   ensureCard(card);
@@ -1937,3 +1961,13 @@ const plan = (() => {
 if("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){
   window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
 }
+
+
+/* ================= LAZY LISTS: public hooks ================= */
+// prepEnsure("answers" | "checklist" | "cheat"): build that list now (first visit). Idle slices build the rest in the background.
+window.prepEnsure = name => { ({ answers: answersL, checklist: checklistL, cheat: cheatL })[name]?.ensure(); };
+(() => {
+  const go = () => { answersL.start(); cheatL.start(); checklistL.start(); };
+  const later = () => { if(typeof requestIdleCallback === "function") requestIdleCallback(go, { timeout: 2500 }); else setTimeout(go, 800); };
+  if(document.readyState === "complete") later(); else addEventListener("load", later);
+})();

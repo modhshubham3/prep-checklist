@@ -1,51 +1,11 @@
-:root{
-  --paper:#f2f4f7;
-  --card:#ffffff;
-  --ink:#141d28;
-  --ink-soft:#5c6875;
-  --rule:#d8dee6;
-  --pen:#2340d6;
-  --pen-soft:#e6eaff;
-  --done:#1a7a52;
-  --flag:#a86400;
-  --flag-soft:#fbf1dd;
-  --miss:#c0392b;
-}
-:root:not([data-theme="light"]){
-  @media (prefers-color-scheme: dark){
-    --paper:#12161c;
-    --card:#191f27;
-    --ink:#e8ecf1;
-    --ink-soft:#95a1b0;
-    --rule:#2b333d;
-    --pen:#7d95ff;
-    --pen-soft:#1e2740;
-    --done:#4fc191;
-    --flag:#e0a84a;
-    --flag-soft:#2c2415;
-    --miss:#e8756a;
-  }
-}
-:root[data-theme="dark"]{
-  --paper:#12161c;
-  --card:#191f27;
-  --ink:#e8ecf1;
-  --ink-soft:#95a1b0;
-  --rule:#2b333d;
-  --pen:#7d95ff;
-  --pen-soft:#1e2740;
-  --done:#4fc191;
-  --flag:#e0a84a;
-  --flag-soft:#2c2415;
-  --miss:#e8756a;
-}
+/* Colour tokens live in skin.css (Lamplight). Old token names are aliased there. */
 *{box-sizing:border-box;}
 html{-webkit-text-size-adjust:100%;}
 body{
   margin:0;
   background:var(--paper);
   color:var(--ink);
-  font-family:"Archivo","Helvetica Neue",Arial,sans-serif;
+  font-family:var(--font-ui);
   font-size:16px;
   line-height:1.5;
   -webkit-font-smoothing:antialiased;
@@ -138,7 +98,7 @@ h1{
   flex:1;height:26px;border-radius:3px;background:var(--rule);
   position:relative;overflow:hidden;cursor:pointer;border:none;padding:0;
 }
-.mark i{position:absolute;top:0;bottom:0;left:0;width:0;transition:width .35s ease;}
+.mark i{position:absolute;top:0;bottom:0;left:0;width:100%;transform:scaleX(0);transform-origin:left;transition:transform .35s ease;}
 .mark .f-thoda{background:var(--flag);}
 .mark .f-haan{background:var(--done);}
 .mark:focus-visible{outline:2px solid var(--pen);outline-offset:2px;}
@@ -404,7 +364,6 @@ section.hidden,.group.hidden,.row.hidden{display:none;}
 .ch-tbl th{font-weight:700;background:var(--pen-soft);}
 .ch-card.hidden{display:none;}
 .ch-grp.hidden{display:none;}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 
 /* ---- theme toggle ---- */
 .toprow{display:flex;justify-content:flex-end;margin-bottom:6px;}
@@ -508,7 +467,7 @@ section.hidden,.group.hidden,.row.hidden{display:none;}
 
 /* ---- practice v2 ---- */
 .pr-bar{height:3px;background:var(--rule);}
-.pr-bar span{display:block;height:100%;width:0;background:var(--pen);transition:width .25s;}
+.pr-bar span{display:block;height:100%;width:100%;transform:scaleX(0);transform-origin:left;background:var(--pen);transition:transform .25s;}
 .pr-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
 .pr-stats div{background:var(--card);border:1px solid var(--rule);border-radius:11px;padding:10px 8px;text-align:center;}
 .pr-stats b{display:block;font-size:22px;font-weight:800;color:var(--pen);font-variant-numeric:tabular-nums;}

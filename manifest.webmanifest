@@ -1,12 +1,12 @@
 {
   "name": "Interview Prep — .NET, Angular, PostgreSQL",
   "short_name": "Prep",
-  "description": "Interview prep: answers, tricky questions, checklist and practice mode.",
+  "description": "Aaj ka 30 min: lessons, code lab, decisions, interview revision and career tracker.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0d0f14",
-  "theme_color": "#0d0f14",
+  "background_color": "#0F1219",
+  "theme_color": "#0F1219",
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -37,20 +37,20 @@
   ],
   "shortcuts": [
     {
-      "name": "Study plan",
-      "url": "/#/plan"
+      "name": "Aaj ka 30 min",
+      "url": "/#/home"
     },
     {
       "name": "Practice",
       "url": "/#/practice"
     },
     {
-      "name": "Checklist",
-      "url": "/#/checklist"
+      "name": "Answers",
+      "url": "/#/answers"
     },
     {
-      "name": "Cheatsheet",
-      "url": "/#/cheat"
+      "name": "Lab",
+      "url": "/#/lab"
     }
   ]
 }
